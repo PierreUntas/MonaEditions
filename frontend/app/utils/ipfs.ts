@@ -1,10 +1,10 @@
-// Configuration - utilise le proxy API pour les uploads
+// Configuration - use API proxy for uploads
 const IPFS_API = '/api/ipfs';
 
-// Cache en mémoire pour éviter les requêtes répétées
+// In-memory cache to avoid repeated requests
 const ipfsCache = new Map<string, any>();
 
-// Gateway IPFS public (rapide et fiable)
+// Public IPFS gateway (fast and reliable)
 const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
 
 export async function uploadToIPFS(data: any): Promise<string> {
@@ -18,19 +18,19 @@ export async function uploadToIPFS(data: any): Promise<string> {
     });
 
     if (!response.ok) {
-        let errorMessage = `Erreur upload IPFS: ${response.statusText}`;
+        let errorMessage = `IPFS upload error: ${response.statusText}`;
         try {
             const errorData = await response.json();
             if (errorData.error) {
                 errorMessage = errorData.error;
             } else if (errorData.details) {
-                errorMessage = `${errorData.error || 'Erreur upload IPFS'}: ${errorData.details}`;
+                errorMessage = `${errorData.error || 'IPFS upload error'}: ${errorData.details}`;
             }
         } catch {
             try {
                 const errorText = await response.text();
                 if (errorText) {
-                    errorMessage = `Erreur upload IPFS: ${errorText}`;
+                    errorMessage = `IPFS upload error: ${errorText}`;
                 }
             } catch {}
         }
@@ -51,19 +51,19 @@ export async function uploadFileToIPFS(file: File): Promise<string> {
     });
 
     if (!response.ok) {
-        let errorMessage = `Erreur upload fichier IPFS: ${response.statusText}`;
+        let errorMessage = `IPFS file upload error: ${response.statusText}`;
         try {
             const errorData = await response.json();
             if (errorData.error) {
                 errorMessage = errorData.error;
             } else if (errorData.details) {
-                errorMessage = `${errorData.error || 'Erreur upload fichier IPFS'}: ${errorData.details}`;
+                errorMessage = `${errorData.error || 'IPFS file upload error'}: ${errorData.details}`;
             }
         } catch {
             try {
                 const errorText = await response.text();
                 if (errorText) {
-                    errorMessage = `Erreur upload fichier IPFS: ${errorText}`;
+                    errorMessage = `IPFS file upload error: ${errorText}`;
                 }
             } catch {}
         }
@@ -85,7 +85,7 @@ function cleanCID(cid: string): string {
 export async function getFromIPFSGateway(cid: string): Promise<any> {
     const cleanCid = cleanCID(cid);
     if (ipfsCache.has(cleanCid)) {
-        console.log(`✓ Cache hit: ${cleanCid}`);
+        // Cache hit (internal): cleanCid
         return ipfsCache.get(cleanCid);
     }
 
@@ -101,12 +101,12 @@ export async function getFromIPFSGateway(cid: string): Promise<any> {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-            throw new Error(`Erreur IPFS: ${response.statusText}`);
+            throw new Error(`IPFS error: ${response.statusText}`);
         }
 
         const data = await response.json();
         ipfsCache.set(cleanCid, data);
-        console.log(`✓ Gateway success: ${cleanCid}`);
+        // Gateway success (internal): cleanCid
         return data;
     } catch (error) {
         clearTimeout(timeoutId);

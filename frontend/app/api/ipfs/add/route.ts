@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 const IPFS_RPC = process.env.IPFS_RPC;
 
 export async function POST(request: NextRequest) {
-    console.log("🚀 Upload vers IPFS RPC:", IPFS_RPC);
+    // Uploading to IPFS RPC (internal). IPFS_RPC may be undefined.
 
     if (!IPFS_RPC) {
-        console.error("❌ IPFS_RPC n'est pas configuré");
+        console.error("❌ IPFS_RPC not configured");
         return NextResponse.json(
             {
                 error: "Configuration manquante: IPFS_RPC non défini côté serveur.",
@@ -27,9 +27,9 @@ export async function POST(request: NextRequest) {
         }
 
         const file = fileEntry as File;
-        console.log("📦 Fichier reçu:", file.name, file.size);
+        // Received file (internal): name, size -> file.name, file.size
 
-        // Prépare le FormData à forwarder vers le RPC IPFS
+        // Prepare the FormData to forward to the IPFS RPC
         const forward = new FormData();
         forward.append("file", file, file.name);
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         const cid = last.Hash ?? last?.cid?.["/"] ?? last.cid;
         const size = last.Size ? Number(last.Size) : file.size;
 
-        console.log("✅ IPFS add result:", last);
+        // IPFS add result (internal): last
 
         return NextResponse.json({
             Hash: cid,

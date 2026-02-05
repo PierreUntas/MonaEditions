@@ -7,7 +7,7 @@ const Header = () => {
     const { login, logout, authenticated, user } = usePrivy();
     const [copied, setCopied] = useState(false);
 
-    // Récupérer le premier wallet de l'utilisateur (embedded ou externe)
+    // Get the user's first wallet (embedded or external)
     const wallet = user?.wallet || user?.linkedAccounts?.find((account: any) => account.type === 'wallet');
     const walletAddress = (wallet as any)?.address;
 

@@ -66,7 +66,7 @@ export default function ExplorePage() {
                     const tokenId = log.args.honeyBatchId as bigint;
                     const producerAddress = log.args.producer as `0x${string}`;
 
-                    // Exécuter les 3 appels en parallèle pour chaque lot
+                    // Execute the 3 calls in parallel for each batch
                     const [batchInfo, balance, producerData] = await Promise.all([
                         publicClient.readContract({
                             address: HONEY_TRACE_STORAGE_ADDRESS,
@@ -105,10 +105,10 @@ export default function ExplorePage() {
                     };
                 });
 
-                // Attendre toutes les requêtes blockchain
+                // Wait for all blockchain requests
                 const results = await Promise.all(batchesPromises);
 
-                // Construire la map des producteurs
+                // Build the producers map
                 const producersMap = new Map<string, ProducerInfo>();
                 const batchesData = results.map(({ batch, producerInfo }) => {
                     if (!producersMap.has(producerInfo.address)) {
@@ -125,7 +125,7 @@ export default function ExplorePage() {
                 setProducers(producersMap);
                 setIsLoading(false);
 
-                // Charger les données IPFS en parallèle
+                // Load IPFS data in parallel
                 setIsLoadingIPFS(true);
                 const ipfsPromises = batchesData.map(async (batch) => {
                     if (!batch.metadata) return null;
@@ -134,14 +134,14 @@ export default function ExplorePage() {
                         const ipfsData = await getFromIPFSGateway(batch.metadata);
                         return { tokenId: batch.tokenId, ipfsData };
                     } catch (error) {
-                        console.error(`Erreur chargement IPFS lot ${batch.tokenId}:`, error);
+                        console.error(`Error loading IPFS data for batch ${batch.tokenId}:`, error);
                         return null;
                     }
                 });
 
                 const ipfsResults = await Promise.all(ipfsPromises);
 
-                // Mettre à jour tous les lots avec leurs données IPFS
+                // Update all batches with their IPFS data
                 setBatches(prev => {
                     const updated = [...prev];
                     ipfsResults.forEach(result => {
@@ -155,7 +155,7 @@ export default function ExplorePage() {
                     return updated;
                 });
 
-                // Charger les notes et avis pour chaque lot
+                // Load ratings and comments for each batch
                 const ratingsPromises = batchesData.map(async (batch) => {
                     try {
                         const commentsCount = await publicClient.readContract({
@@ -184,14 +184,14 @@ export default function ExplorePage() {
                         }
                         return null;
                     } catch (error) {
-                        console.error(`Erreur chargement avis lot ${batch.tokenId}:`, error);
+                        console.error(`Error loading comments for batch ${batch.tokenId}:`, error);
                         return null;
                     }
                 });
 
                 const ratingsResults = await Promise.all(ratingsPromises);
 
-                // Mettre à jour les lots avec les notes
+                // Update batches with ratings
                 setBatches(prev => {
                     const updated = [...prev];
                     ratingsResults.forEach(result => {
@@ -212,7 +212,7 @@ export default function ExplorePage() {
                 setIsLoadingIPFS(false);
 
             } catch (error) {
-                console.error('Erreur lors du chargement des lots:', error);
+                console.error('Error loading batches:', error);
                 setIsLoading(false);
             }
         };

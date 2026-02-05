@@ -93,7 +93,7 @@ export default function ProducerDetailsPage() {
                         const ipfsData = await getFromIPFSGateway(producerData.metadata);
                         setProducerIPFSData(ipfsData);
                     } catch (error) {
-                        console.error('Erreur chargement IPFS producteur:', error);
+                        console.error('Error loading producer IPFS data:', error);
                     } finally {
                         setIsLoadingIPFS(false);
                     }
@@ -139,11 +139,11 @@ export default function ProducerDetailsPage() {
                 batchesData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
                 setBatches(batchesData);
 
-                // Charger les données IPFS et les notes en parallèle
+                // Load IPFS data and ratings in parallel
                 for (let i = 0; i < batchesData.length; i++) {
                     const tokenId = batchesData[i].tokenId;
                     
-                    // Récupérer les commentaires pour calculer la note moyenne
+                    // Fetch comments to compute the average rating
                     const commentsCount = await publicClient.readContract({
                         address: HONEY_TRACE_STORAGE_ADDRESS,
                         abi: HONEY_TRACE_STORAGE_ABI,
@@ -173,7 +173,7 @@ export default function ProducerDetailsPage() {
                                     : b
                             ));
                         } catch (error) {
-                            console.error(`Erreur chargement IPFS lot ${tokenId}:`, error);
+                            console.error(`Error loading batch IPFS data ${tokenId}:`, error);
                             setBatches(prev => prev.map(b =>
                                 b.tokenId === tokenId
                                     ? { ...b, averageRating, commentsCount: Number(commentsCount) }
@@ -190,7 +190,7 @@ export default function ProducerDetailsPage() {
                 }
 
             } catch (error) {
-                console.error('Erreur lors du chargement des détails:', error);
+                console.error('Error loading producer details:', error);
             } finally {
                 setIsLoading(false);
             }

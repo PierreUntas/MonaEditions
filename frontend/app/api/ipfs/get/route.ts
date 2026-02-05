@@ -1,8 +1,7 @@
-// typescript
-// File: frontend/app/api/ipfs/get/route.ts
+// TODO: Test various cases
 import { NextRequest, NextResponse } from 'next/server';
 
-// Gateways par défaut (fallbacks)
+// Default gateways (fallbacks)
 const DEFAULT_GATEWAYS = [
     'https://gateway.pinata.cloud/ipfs/',
     'https://ipfs.io/ipfs/',
@@ -12,7 +11,7 @@ const DEFAULT_GATEWAYS = [
 
 const customGateway = process.env.IPFS_GATEWAY_URL ?? '';
 
-// Gateway personnalisé en priorité, puis fallbacks
+// Custom gateway prioritized first, then fallbacks
 const IPFS_GATEWAYS = Array.from(new Set([customGateway, ...DEFAULT_GATEWAYS].filter(Boolean)));
 
 function cleanCID(cid: string): string {
@@ -47,7 +46,7 @@ async function fetchFromGateway(
         if (response.status === 429 && retryCount < maxRetries) {
             const retryAfter = response.headers.get('Retry-After');
             const delay = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, retryCount) * 1000;
-            console.log(`⏳ Rate limit atteint, retry dans ${delay}ms (tentative ${retryCount + 1}/${maxRetries})`);
+            // Rate limit reached; retrying after backoff (internal)
             await new Promise(resolve => setTimeout(resolve, delay));
             return fetchFromGateway(gateway, cid, retryCount + 1, maxRetries);
         }
@@ -79,12 +78,12 @@ export async function GET(request: NextRequest) {
 
             if (!response.ok) {
                 if (response.status === 429) {
-                    console.log(`⚠️ Gateway ${gateway} rate limit, essai suivant...`);
+                    // Gateway rate limited; trying next gateway (internal)
                     continue;
                 }
 
                 if (response.status >= 500) {
-                    console.log(`⚠️ Gateway ${gateway} erreur serveur, essai suivant...`);
+                    // Gateway server error; trying next gateway (internal)
                     continue;
                 }
 
@@ -113,13 +112,13 @@ export async function GET(request: NextRequest) {
                 });
             }
         } catch (error) {
-            console.error(`Erreur avec gateway ${gateway}:`, error);
+            console.error(`Error with gateway ${gateway}:`, error);
             lastError = error as Error;
             continue;
         }
     }
 
-    console.error('❌ Tous les gateways IPFS ont échoué');
+    console.error('❌ All IPFS gateways failed');
     return NextResponse.json(
         {
             error: 'Échec de la récupération IPFS depuis tous les gateways',

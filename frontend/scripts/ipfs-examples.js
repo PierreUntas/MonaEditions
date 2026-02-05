@@ -1,9 +1,9 @@
-// Exemple d'utilisation IPFS local pour BeeBlock
-// Ce fichier montre comment uploader et récupérer des données
+// Local IPFS usage examples for BeeBlock
+// This file demonstrates how to upload and retrieve data
 
 const IPFS_API = process.env.IPFS_RPC || "http://127.0.0.1:5001";
 
-// Exemple 1: Upload d'un objet JSON (données de batch de miel)
+// Example 1: Upload a JSON object (honey batch data)
 async function uploadBatchData() {
     const batchData = {
         batchId: "BATCH-2026-001",
@@ -25,7 +25,7 @@ async function uploadBatchData() {
         timestamp: new Date().toISOString()
     };
 
-    console.log("📦 Upload des données du batch...");
+    console.info("📦 Uploading batch data...");
     
     const blob = new Blob([JSON.stringify(batchData, null, 2)], { 
         type: 'application/json' 
@@ -41,17 +41,17 @@ async function uploadBatchData() {
 
     const result = await response.json();
     
-    console.log("✅ Données uploadées avec succès!");
-    console.log(`📝 Hash IPFS: ${result.Hash}`);
-    console.log(`🔗 URL locale: http://127.0.0.1:8080/ipfs/${result.Hash}`);
-    console.log(`🌐 URL publique: https://ipfs.io/ipfs/${result.Hash}`);
+    console.info("✅ Data uploaded successfully!");
+    console.info(`📝 IPFS Hash: ${result.Hash}`);
+    console.info(`🔗 Local URL: http://127.0.0.1:8080/ipfs/${result.Hash}`);
+    console.info(`🌐 Public URL: https://ipfs.io/ipfs/${result.Hash}`);
     
     return result.Hash;
 }
 
-// Exemple 2: Récupération des données
+// Example 2: Retrieve data
 async function getBatchData(hash) {
-    console.log(`\n📥 Récupération des données du hash: ${hash}`);
+    console.info(`\n📥 Fetching data for hash: ${hash}`);
     
     const response = await fetch(`${IPFS_API}/api/v0/cat?arg=${hash}`, {
         method: 'POST',
@@ -59,16 +59,16 @@ async function getBatchData(hash) {
 
     const data = await response.json();
     
-    console.log("✅ Données récupérées:");
-    console.log(JSON.stringify(data, null, 2));
+    console.info("✅ Data retrieved:");
+    console.info(JSON.stringify(data, null, 2));
     
     return data;
 }
 
-// Exemple 3: Upload d'un fichier image (photo du miel)
+// Example 3: Upload an image file (photo of the honey)
 async function uploadImage(imagePath) {
     const fs = require('fs');
-    const FormData = require('form-data'); // Nécessite: npm install form-data
+    const FormData = require('form-data'); // Requires: npm install form-data
     
     const formData = new FormData();
     formData.append('file', fs.createReadStream(imagePath));
@@ -80,8 +80,8 @@ async function uploadImage(imagePath) {
 
     const result = await response.json();
     
-    console.log("✅ Image uploadée!");
-    console.log(`🖼️  Hash: ${result.Hash}`);
+    console.info("✅ Image uploaded!");
+    console.info(`🖼️  Hash: ${result.Hash}`);
     
     return result.Hash;
 }
@@ -120,34 +120,34 @@ async function uploadBatchNFTMetadata() {
 
     const result = await response.json();
     
-    console.log("✅ Métadonnées NFT uploadées!");
-    console.log(`📝 Hash: ${result.Hash}`);
+    console.info("✅ NFT metadata uploaded!");
+    console.info(`📝 Hash: ${result.Hash}`);
     
-    return result.Hash;
+    return result.Hash; 
 }
 
 // Lancer les exemples
 async function main() {
     try {
-        console.log("🐝 BeeBlock - Exemples IPFS\n");
-        console.log("=".repeat(50));
+        console.info("🐝 BeeBlock - IPFS examples\n");
+        console.info("=".repeat(50));
         
         // Test 1: Upload batch data
         const hash = await uploadBatchData();
         
-        // Test 2: Récupérer les données
+        // Test 2: Retrieve data
         await getBatchData(hash);
         
-        // Test 3: Métadonnées NFT
-        console.log("\n" + "=".repeat(50));
+        // Test 3: NFT metadata
+        console.info("\n" + "=".repeat(50));
         await uploadBatchNFTMetadata();
         
-        console.log("\n" + "=".repeat(50));
-        console.log("✅ Tous les tests sont réussis!");
-        console.log("\n💡 Ouvrez la WebUI: http://127.0.0.1:5001/webui");
+        console.info("\n" + "=".repeat(50));
+        console.info("✅ All tests passed!");
+        console.info("\n💡 Open the WebUI: http://127.0.0.1:5001/webui");
         
     } catch (error) {
-        console.error("❌ Erreur:", error.message);
+        console.error("❌ Error:", error.message);
     }
 }
 

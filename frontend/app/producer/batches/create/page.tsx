@@ -122,7 +122,7 @@ export default function CreateBatchPage() {
             setBatchData({ ...batchData, etiquetage: `ipfs://${cid}` });
             alert('✅ Étiquette uploadée sur IPFS !');
         } catch (error) {
-            console.error('Erreur lors de l\'upload de l\'étiquette:', error);
+            console.error('Error uploading label:', error);
             alert('❌ Erreur lors de l\'upload de l\'étiquette');
             setLabelFileName('');
         } finally {
@@ -189,7 +189,7 @@ export default function CreateBatchPage() {
                 }
             );
 
-            console.log('Approval transaction hash:', txHash);
+            // Approval transaction hash (internal): txHash
             alert('⏳ Approbation en cours... La transaction doit être confirmée sur la blockchain (~12 sec). Attendez la confirmation avant de créer votre lot.');
 
             const checkApproval = setInterval(async () => {
@@ -207,7 +207,7 @@ export default function CreateBatchPage() {
             }, 60000);
 
         } catch (error) {
-            console.error('Erreur lors de l\'approbation:', error);
+            console.error('Error during approval:', error);
             alert('❌ Erreur lors de l\'approbation. Veuillez réessayer.');
             setIsApproving(false);
         }
@@ -243,7 +243,7 @@ export default function CreateBatchPage() {
             };
 
             const cid = await uploadToIPFS(completeData);
-            console.log('CID IPFS du lot:', cid);
+            // IPFS CID for batch (internal): cid
 
             setIsUploading(false);
             setIsCreating(true);
@@ -264,24 +264,24 @@ export default function CreateBatchPage() {
                 }
             );
 
-            console.log('Batch creation transaction hash:', txHash);
+            // Batch creation transaction hash (internal): txHash
             alert('⏳ Transaction envoyée ! En attente de confirmation...');
 
-            // Créer un client public pour lire la blockchain
+            // Create a public client to read the blockchain
             const publicClient = createPublicClient({
                 chain: sepolia,
                 transport: http(process.env.NEXT_PUBLIC_RPC_URL_SEPOLIA),
             });
 
-            // Attendre le receipt de la transaction
+            // Wait for the transaction receipt
             const receipt = await publicClient.waitForTransactionReceipt({
                 hash: txHash.hash as `0x${string}`,
             });
 
-            console.log('Receipt reçu:', receipt);
-            console.log('Nombre de logs:', receipt.logs.length);
+            // Receipt received (internal): receipt
+            // Number of logs (internal): receipt.logs.length
 
-            // Chercher l'event NewHoneyBatch dans les logs
+            // Find the NewHoneyBatch event in the logs
             const batchCreatedEvent = receipt.logs.find(log => {
                 try {
                     const decoded = decodeEventLog({
@@ -289,15 +289,15 @@ export default function CreateBatchPage() {
                         data: log.data,
                         topics: log.topics,
                     });
-                    console.log('Event décodé:', decoded.eventName, decoded);
+                    // Decoded event (internal): decoded.eventName, decoded
                     return decoded.eventName === 'NewHoneyBatch';
                 } catch (e) {
-                    console.log('Erreur décodage log:', e);
+                    // Error decoding log (internal): e
                     return false;
                 }
             });
 
-            console.log('Event NewHoneyBatch trouvé:', batchCreatedEvent);
+            // NewHoneyBatch event found (internal): batchCreatedEvent
 
             if (batchCreatedEvent) {
                 const decoded = decodeEventLog({
@@ -306,18 +306,18 @@ export default function CreateBatchPage() {
                     topics: batchCreatedEvent.topics,
                 }) as any;
 
-                console.log('Decoded args:', decoded.args);
+                // Decoded args (internal): decoded.args
                 const batchId = decoded.args.honeyBatchId?.toString();
-                console.log('BatchId extrait:', batchId);
+                // Extracted batchId (internal): batchId
                 setCreatedBatchId(batchId);
                 alert(`✅ Lot créé avec succès ! ID du lot: ${batchId}`);
             } else {
-                console.error('❌ Event NewHoneyBatch non trouvé dans les logs');
+                console.error('❌ NewHoneyBatch event not found in logs');
                 alert('⚠️ Transaction confirmée mais impossible de récupérer l\'ID du lot. Vérifiez la console.');
                 setCreatedBatchId('confirmed');
             }
         } catch (error) {
-            console.error('Erreur lors de la création du lot:', error);
+            console.error('Error creating batch:', error);
             alert('❌ Erreur lors de la création du lot');
         } finally {
             setIsUploading(false);
@@ -325,7 +325,7 @@ export default function CreateBatchPage() {
         }
     };
 
-    // État de chargement pendant la vérification
+    // Loading state while checking permissions
     if (isCheckingAuthorization || isLoadingProducer) {
         return (
             <div className="min-h-screen bg-yellow-bee">

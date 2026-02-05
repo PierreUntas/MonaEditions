@@ -119,7 +119,7 @@ export default function BatchDetailsPage() {
                         const ipfsData = await getFromIPFSGateway(batchInfo.metadata);
                         setBatchIPFSData(ipfsData);
                     } catch (error) {
-                        console.error('Erreur chargement IPFS du lot:', error);
+                        console.error('Error loading batch IPFS data:', error);
                     } finally {
                         setIsLoadingIPFS(false);
                     }
@@ -146,7 +146,7 @@ export default function BatchDetailsPage() {
                         const producerIpfsData = await getFromIPFSGateway(producerData.metadata);
                         setProducerIPFSData(producerIpfsData);
                     } catch (error) {
-                        console.error('Erreur chargement IPFS du producteur:', error);
+                        console.error('Error loading producer IPFS data:', error);
                     }
                 }
 
@@ -169,7 +169,7 @@ export default function BatchDetailsPage() {
                 }
 
             } catch (error) {
-                console.error('Erreur lors du chargement des détails:', error);
+                console.error('Error loading batch details:', error);
             } finally {
                 setIsLoading(false);
             }
@@ -276,7 +276,7 @@ export default function BatchDetailsPage() {
                     )}
                 </div>
 
-                {/* Section Étiquette */}
+                {/* Label section */}
                 {batchIPFSData?.etiquetage && (
                     <div className="bg-yellow-bee rounded-lg p-6 opacity-70 border border-[#000000] mb-6">
                         <h2 className="text-2xl font-[Carbon_bl] text-[#000000] mb-4">

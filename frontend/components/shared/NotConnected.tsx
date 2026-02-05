@@ -1,6 +1,6 @@
 const NotConnected = () => {
     return (
-        <div>Not connected</div>
+        <div>Non connecté</div>
     )
 }
 

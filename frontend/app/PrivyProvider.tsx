@@ -19,7 +19,7 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
     const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
     
     if (!appId) {
-        console.error("⚠️ NEXT_PUBLIC_PRIVY_APP_ID n'est pas défini dans .env.local");
+        console.error("⚠️ NEXT_PUBLIC_PRIVY_APP_ID is not defined in .env.local");
         return (
             <div className="flex items-center justify-center min-h-screen bg-yellow-50">
                 <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">

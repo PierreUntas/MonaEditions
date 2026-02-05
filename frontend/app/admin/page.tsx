@@ -67,10 +67,9 @@ export default function AdminPage() {
                 }
             );
             
-            console.log('Transaction hash:', txHash);
             setNewProducerAddress('');
         } catch (error) {
-            console.error('Erreur lors de l\'autorisation du producteur:', error);
+            console.error('Error authorizing producer:', error);
         } finally {
             setIsAuthorizingProducer(false);
         }
@@ -98,16 +97,15 @@ export default function AdminPage() {
                 }
             );
             
-            console.log('Transaction hash:', txHash);
             setRemoveProducerAddress('');
         } catch (error) {
-            console.error('Erreur lors de la révocation du producteur:', error);
+            console.error('Error revoking producer:', error);
         } finally {
             setIsRevokingProducer(false);
         }
     };
 
-    // État de chargement pendant la vérification
+    // Loading state while checking permissions
     if (isCheckingAdmin || isLoadingAdmin) {
         return (
             <div className="min-h-screen bg-yellow-bee">
@@ -150,7 +148,7 @@ export default function AdminPage() {
             <div className="container mx-auto p-6 max-w-xl">
                 <h1 className="text-4xl font-[Carbon_Phyber] mb-6 text-center text-[#000000]">Gestion des Producteurs</h1>
 
-                {/* Autoriser un producteur */}
+                {/* Authorize a producer */}
                 <div className="bg-yellow-bee rounded-lg p-4 mb-4 opacity-70">
                     <h2 className="text-xl font-[Carbon_bl] mb-3 text-[#000000]">Autoriser un Producteur</h2>
                     <form onSubmit={handleAuthorizeProducer} className="space-y-3">
@@ -176,7 +174,7 @@ export default function AdminPage() {
                     </form>
                 </div>
 
-                {/* Révoquer un producteur */}
+                {/* Revoke a producer */}
                 <div className="bg-yellow-bee rounded-lg p-4 mb-4 opacity-70">
                     <h2 className="text-xl font-[Carbon_bl] mb-3 text-[#000000]">Révoquer un Producteur</h2>
                     <form onSubmit={handleRevokeProducer} className="space-y-3">
@@ -202,7 +200,7 @@ export default function AdminPage() {
                     </form>
                 </div>
 
-                {/* Vérifier le statut de producteur */}
+                {/* Check producer status */}
                 <div className="bg-yellow-bee rounded-lg p-4 opacity-70">
                     <h2 className="text-xl font-[Carbon_bl] mb-3 text-[#000000]">Vérifier le Statut Producteur</h2>
                     <div className="space-y-3">

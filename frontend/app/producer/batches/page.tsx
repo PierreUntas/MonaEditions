@@ -105,7 +105,7 @@ export default function ProducerBatchesPage() {
                 batchesData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
                 setBatches(batchesData);
 
-                // Charger les données IPFS pour chaque lot
+                // Load IPFS data for each batch
                 setIsLoadingIPFS(true);
                 for (let i = 0; i < batchesData.length; i++) {
                     if (batchesData[i].metadata) {
@@ -117,14 +117,14 @@ export default function ProducerBatchesPage() {
                                     : batch
                             ));
                         } catch (error) {
-                            console.error(`Erreur chargement IPFS pour lot ${batchesData[i].tokenId}:`, error);
+                            console.error(`Error loading IPFS for batch ${batchesData[i].tokenId}:`, error);
                         }
                     }
                 }
                 setIsLoadingIPFS(false);
 
             } catch (error) {
-                console.error('Erreur lors du chargement des lots:', error);
+                console.error('Error loading batches:', error);
             } finally {
                 setIsLoading(false);
             }
@@ -133,7 +133,7 @@ export default function ProducerBatchesPage() {
         fetchBatches();
     }, [address, isAuthorized]);
 
-    // État de chargement pendant la vérification
+    // Loading state while checking permissions
     if (isCheckingAuthorization || isLoadingProducer) {
         return (
             <div className="min-h-screen bg-yellow-bee">

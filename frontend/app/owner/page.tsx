@@ -52,7 +52,7 @@ export default function AdminPage() {
             });
             setNewAdminAddress('');
         } catch (error) {
-            console.error('Erreur lors de l\'ajout de l\'admin:', error);
+            console.error('Error adding admin:', error);
         }
     };
 
@@ -69,11 +69,11 @@ export default function AdminPage() {
             });
             setRemoveAdminAddress('');
         } catch (error) {
-            console.error('Erreur lors de la suppression de l\'admin:', error);
+            console.error('Error removing admin:', error);
         }
     };
 
-    // État de chargement pendant la vérification
+    // Loading state while checking permissions
     if (isCheckingOwner || isLoadingOwner) {
         return (
             <div className="min-h-screen bg-yellow-bee">
@@ -116,7 +116,7 @@ export default function AdminPage() {
             <div className="container mx-auto p-6 max-w-xl">
                 <h1 className="text-4xl font-[Carbon_Phyber] mb-6 text-center text-[#000000]">Gestion des Admins</h1>
 
-                {/* Ajouter un admin */}
+                {/* Add an admin */}
                 <div className="bg-yellow-bee rounded-lg p-4 mb-4 opacity-70">
                     <h2 className="text-xl font-[Carbon_bl] mb-3 text-[#000000]">Ajouter un Admin</h2>
                     <form onSubmit={handleAddAdmin} className="space-y-3">
@@ -142,7 +142,7 @@ export default function AdminPage() {
                     </form>
                 </div>
 
-                {/* Retirer un admin */}
+                {/* Remove an admin */}
                 <div className="bg-yellow-bee rounded-lg p-4 mb-4 opacity-70">
                     <h2 className="text-xl font-[Carbon_bl] mb-3 text-[#000000]">Retirer un Admin</h2>
                     <form onSubmit={handleRemoveAdmin} className="space-y-3">
@@ -168,7 +168,7 @@ export default function AdminPage() {
                     </form>
                 </div>
 
-                {/* Vérifier le statut d'admin */}
+                {/* Check admin status */}
                 <div className="bg-yellow-bee rounded-lg p-4 opacity-70">
                     <h2 className="text-xl font-[Carbon_bl] mb-3 text-[#000000]">Vérifier le Statut Admin</h2>
                     <div className="space-y-3">

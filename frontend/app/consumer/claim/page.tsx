@@ -69,14 +69,14 @@ function ClaimTokenForm() {
                 }
             );
 
-            console.log('Transaction hash:', txHash);
+            // Transaction hash (internal): txHash
             setSuccess(true);
             alert('✅ Token réclamé avec succès !');
             setBatchId('');
             setSecretKey('');
             setMerkleProofInput('');
         } catch (err: any) {
-            console.error('Erreur lors de la réclamation:', err);
+            console.error('Error claiming token:', err);
             setError(`❌ Erreur: ${err.message || 'Clé invalide ou déjà utilisée'}`);
         } finally {
             setIsPending(false);

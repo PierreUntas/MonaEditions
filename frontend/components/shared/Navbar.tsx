@@ -11,23 +11,23 @@ export default function Navbar() {
     const { login, logout, authenticated, user } = usePrivy();
     const { address } = useAccount();
 
-    // États pour les rôles
+    // State for roles
     const [isOwner, setIsOwner] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isProducer, setIsProducer] = useState(false);
 
-    // Récupérer le wallet de l'utilisateur
+    // Get the user's wallet
     const wallet = user?.wallet || user?.linkedAccounts?.find((account: any) => account.type === 'wallet');
     const walletAddress = (wallet as any)?.address;
 
-    // Vérifier si l'utilisateur est owner
+    // Check if the user is the owner
     const { data: ownerAddress } = useReadContract({
         address: HONEY_TRACE_STORAGE_ADDRESS,
         abi: HONEY_TRACE_STORAGE_ABI,
         functionName: 'owner',
     });
 
-    // Vérifier si l'utilisateur est admin
+    // Check if the user is admin
     const { data: isAdminResult } = useReadContract({
         address: HONEY_TRACE_STORAGE_ADDRESS,
         abi: HONEY_TRACE_STORAGE_ABI,
@@ -35,7 +35,7 @@ export default function Navbar() {
         args: address ? [address] : undefined,
     });
 
-    // Vérifier si l'utilisateur est producteur autorisé
+    // Check if the user is an authorized producer
     const { data: producerData } = useReadContract({
         address: HONEY_TRACE_STORAGE_ADDRESS,
         abi: HONEY_TRACE_STORAGE_ABI,
@@ -43,7 +43,7 @@ export default function Navbar() {
         args: address ? [address] : undefined,
     });
 
-    // Mettre à jour les rôles
+    // Update roles
     useEffect(() => {
         if (address && ownerAddress) {
             setIsOwner(address.toLowerCase() === (ownerAddress as string).toLowerCase());
@@ -104,7 +104,7 @@ export default function Navbar() {
             {/* Slide Menu */}
             <nav className={`fixed top-0 right-0 h-screen w-80 bg-gray-bee/60 backdrop-blur-md shadow-2xl z-40 transform transition-transform duration-300 overflow-y-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="flex flex-col min-h-full pt-24 pb-8 px-6">
-                    {/* Section de connexion */}
+                    {/* Login section */}
                     <div className="mb-6 pb-4 border-b border-black/10">
                         {authenticated ? (
                             <div className="space-y-3">
@@ -123,7 +123,7 @@ export default function Navbar() {
                                             <span className="text-[10px] ml-auto">{copied ? '✓ Copié' : '📋'}</span>
                                         </button>
                                     )}
-                                    {/* Affichage des rôles */}
+                                    {/* Roles display */}
                                     {(isOwner || isAdmin || isProducer) && (
                                         <div className="mt-2 pt-2 border-t border-black/10">
                                             <p className="text-[10px] text-black/40 mb-1">RÔLES</p>
@@ -171,7 +171,7 @@ export default function Navbar() {
                     </div>
 
                     <div className="flex-1 space-y-2">
-                        {/* Liens publics - toujours visibles */}
+                        {/* Public links - always visible */}
                         <a href="/" className="block py-4 px-5 text-black font-[Olney_Light] text-lg hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
                             Accueil
                         </a>
@@ -184,7 +184,7 @@ export default function Navbar() {
                             À propos
                         </a>
 
-                        {/* Section Administration - visible seulement pour Owner et Admin */}
+                        {/* Administration section - visible for Owner and Admin only */}
                         {(isOwner || isAdmin) && (
                             <>
                                 <div className="my-4 border-t border-black/10"></div>
@@ -206,7 +206,7 @@ export default function Navbar() {
                             </>
                         )}
 
-                        {/* Section Consommateur - visible pour tous les utilisateurs connectés */}
+                        {/* Consumer section - visible for all authenticated users */}
                         {authenticated && (
                             <>
                                 <div className="my-4 border-t border-black/10"></div>
@@ -219,7 +219,7 @@ export default function Navbar() {
                             </>
                         )}
 
-                        {/* Section Producteur - visible seulement pour les producteurs autorisés */}
+                        {/* Producer section - visible for authorized producers only */}
                         {isProducer && (
                             <>
                                 <div className="my-4 border-t border-black/10"></div>

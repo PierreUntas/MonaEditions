@@ -10,10 +10,31 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * @dev Interface for the HoneyTokenization contract
  */
 interface IHoneyTokenization {
-    function mintHoneyBatch(address producer, uint256 amount, string memory uri) external returns (uint256);
-    function balanceOf(address account, uint256 id) external view returns (uint256);
-    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes memory data) external;
+    function mintHoneyBatch(
+        address producer,
+        uint256 amount,
+        string memory uri
+    ) external returns (uint256);
+
+    function balanceOf(
+        address account,
+        uint256 id
+    ) external view returns (uint256);
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) external;
+
     function tokenProducer(uint256 tokenId) external view returns (address);
+
+    function isApprovedForAll(
+        address account,
+        address operator
+    ) external view returns (bool);
 }
 
 /**
@@ -29,7 +50,6 @@ interface IHoneyTokenization {
  * Token distribution uses Merkle Tree proofs for gas-efficient and secure claiming.
  */
 contract HoneyTraceStorage is Ownable, ReentrancyGuard {
-
     // ============ CONSTANTS ============
 
     /// @dev Maximum number of tokens that can be minted in a single batch
@@ -42,7 +62,6 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
 
     /**
      * @dev Structure representing a honey producer
-     * @param id Ethereum address of the producer
      * @param authorized Whether the producer is authorized to create batches
      * @param name Business name of the producer
      * @param location Physical location of production
@@ -50,7 +69,6 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @param metadata Additional information in JSON format (certifications, etc.)
      */
     struct Producer {
-        address id;
         bool authorized;
         string name;
         string location;
@@ -64,12 +82,14 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @param honeyType Type of honey (e.g., "Acacia", "Lavender")
      * @param metadata Batch-specific information (origin, harvest date, etc.)
      * @param merkleRoot Root hash of the Merkle Tree containing all secret keys for this batch
+     * @param hasBeenClaimed Flag indicating if at least one token has been claimed (locks metadata)
      */
     struct HoneyBatch {
         uint id;
         string honeyType;
         string metadata;
         bytes32 merkleRoot;
+        bool hasBeenClaimed;
     }
 
     /**
@@ -115,9 +135,9 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
 
     /**
      * @dev Mapping to track number of comments per user per batch
-        * First key: batch ID
-        * Second key: user address
-        * Value: number of comments made by the user for that batch
+     * First key: batch ID
+     * Second key: user address
+     * Value: number of comments made by the user for that batch
      */
     mapping(uint => mapping(address => uint)) public commentCount;
 
@@ -137,7 +157,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     event AuthorizationProducer(address indexed producer, bool isAuthorized);
 
     /**
-    * @dev Emitted when an admin is removed
+     * @dev Emitted when an admin is removed
      * @param admin Address of the removed admin
      */
     event AdminRemoved(address indexed admin);
@@ -161,7 +181,11 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @param honeyBatchId ID of the claimed batch
      * @param keyHash Hash of the secret key used for claiming
      */
-    event HoneyTokenClaimed(address indexed consumer, uint indexed honeyBatchId, bytes32 keyHash);
+    event HoneyTokenClaimed(
+        address indexed consumer,
+        uint indexed honeyBatchId,
+        bytes32 keyHash
+    );
 
     /**
      * @dev Emitted when a consumer adds a comment to a batch
@@ -169,7 +193,23 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @param honeyBatchId ID of the batch being reviewed
      * @param rating Numerical rating given
      */
-    event NewComment(address indexed consumer, uint indexed honeyBatchId, uint8 rating);
+    event NewComment(
+        address indexed consumer,
+        uint indexed honeyBatchId,
+        uint8 rating
+    );
+
+    /**
+     * @dev Emitted when a producer updates batch metadata
+     * @param producer Address of the producer
+     * @param batchId ID of the updated batch
+     * @param newMetadata New metadata content
+     */
+    event BatchMetadataUpdated(
+        address indexed producer,
+        uint indexed batchId,
+        string newMetadata
+    );
 
     // ============ ERRORS ============
 
@@ -205,6 +245,21 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
 
     /// @dev Thrown when a string parameter length is invalid
     error InvalidStringLength();
+
+    /// @dev Thrown when trying to update metadata after tokens have been claimed
+    error metadataLocked();
+
+    /// @dev Thrown when trying to update metadata for a batch that doesn't exist
+    error BatchDoesNotExist();
+
+    /// @dev Thrown when a producer tries to update metadata for a batch they don't own
+    error NotYourBatch();
+
+    /// @dev Thrown when trying to create a batch with an empty merkle root
+    error EmptyMerkleRoot();
+
+    /// @dev Thrown when trying to create a batch with zero tokens
+    error BatchMustHaveTokens();
 
     // ============ MODIFIERS ============
 
@@ -254,7 +309,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     }
 
     /**
-    * @dev Remove an admin to the system
+     * @dev Remove an admin to the system
      * @param _admin Address to be removed from admin privileges
      *
      * Requirements:
@@ -278,8 +333,14 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      *
      * Emits an {AuthorizationProducer} event
      */
-    function authorizeProducer(address _producer, bool _isAuthorized) external onlyAdmin {
-        require(producers[_producer].authorized != _isAuthorized, authorizationAlreadyApply());
+    function authorizeProducer(
+        address _producer,
+        bool _isAuthorized
+    ) external onlyAdmin {
+        require(
+            producers[_producer].authorized != _isAuthorized,
+            authorizationAlreadyApply()
+        );
         producers[_producer].authorized = _isAuthorized;
         emit AuthorizationProducer(_producer, _isAuthorized);
     }
@@ -304,9 +365,14 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         string memory _companyRegisterNumber,
         string memory _metadata
     ) external onlyAuthorizedProducer {
-        if (bytes(_name).length == 0 || bytes(_name).length > 256) revert InvalidStringLength();
-        if (bytes(_location).length == 0 || bytes(_location).length > 256) revert InvalidStringLength();
-        if (bytes(_companyRegisterNumber).length == 0 || bytes(_companyRegisterNumber).length > 64) revert InvalidStringLength();
+        if (bytes(_name).length == 0 || bytes(_name).length > 256)
+            revert InvalidStringLength();
+        if (bytes(_location).length == 0 || bytes(_location).length > 256)
+            revert InvalidStringLength();
+        if (
+            bytes(_companyRegisterNumber).length == 0 ||
+            bytes(_companyRegisterNumber).length > 64
+        ) revert InvalidStringLength();
         if (bytes(_metadata).length > 1024) revert InvalidStringLength();
 
         Producer storage producer = producers[msg.sender];
@@ -330,6 +396,9 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      *
      * Requirements:
      * - Caller must be an authorized producer
+     * - Amount must be greater than 0
+     * - Amount must not exceed MAX_BATCH_SIZE
+     * - Merkle root must not be empty
      * - Producer must have called setApprovalForAll on HoneyTokenization
      *
      * Emits a {NewHoneyBatch} event
@@ -340,9 +409,18 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         uint256 _amount,
         bytes32 _merkleRoot
     ) external onlyAuthorizedProducer {
-        if (bytes(_honeyType).length == 0 || bytes(_honeyType).length > 64) revert InvalidStringLength();
-        if (bytes(_metadata).length == 0 || bytes(_metadata).length > 1024) revert InvalidStringLength();
+        // Validate string lengths
+        if (bytes(_honeyType).length == 0 || bytes(_honeyType).length > 64)
+            revert InvalidStringLength();
+        if (bytes(_metadata).length == 0 || bytes(_metadata).length > 1024)
+            revert InvalidStringLength();
+
+        // Validate amount
+        require(_amount > 0, BatchMustHaveTokens());
         require(_amount <= MAX_BATCH_SIZE, batchSizeTooLarge());
+
+        // Validate merkle root
+        require(_merkleRoot != bytes32(0), EmptyMerkleRoot());
 
         uint tokenId = honeyTokenization.mintHoneyBatch(
             msg.sender,
@@ -359,6 +437,45 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         emit NewHoneyBatch(msg.sender, tokenId);
     }
 
+    /**
+     * @dev Allows a producer to update batch metadata ONLY before any token has been claimed
+     * @param _batchId ID of the batch to update
+     * @param _newMetadata New metadata in JSON format
+     *
+     * This ensures that once a consumer has purchased and claimed a token,
+     * the batch information becomes permanently immutable, maintaining traceability integrity.
+     *
+     * Requirements:
+     * - Caller must be an authorized producer
+     * - Producer must be the creator of this batch
+     * - NO token must have been claimed yet (hasBeenClaimed = false)
+     * - New metadata must be valid length
+     *
+     * Emits a {BatchMetadataUpdated} event
+     */
+
+    function updateBatchMetadata(
+        uint256 _batchId,
+        string memory _newMetadata
+    ) external onlyAuthorizedProducer {
+        HoneyBatch storage batch = honeyBatches[_batchId];
+
+        require(batch.merkleRoot != bytes32(0), BatchDoesNotExist());
+
+        require(!batch.hasBeenClaimed, metadataLocked());
+
+        address producer = honeyTokenization.tokenProducer(_batchId);
+        require(producer == msg.sender, NotYourBatch());
+
+        if (
+            bytes(_newMetadata).length == 0 || bytes(_newMetadata).length > 1024
+        ) revert InvalidStringLength();
+
+        batch.metadata = _newMetadata;
+
+        emit BatchMetadataUpdated(msg.sender, _batchId, _newMetadata);
+    }
+
     // ============ CONSUMER FUNCTIONS ============
 
     /**
@@ -367,12 +484,16 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @param _secretKey Secret key from the QR code
      * @param _merkleProof Array of hashes proving the key belongs to the Merkle Tree
      *
-     * The function performs three security checks:
-     * 1. Verifies tokens are still available (balanceOf > 0)
-     * 2. Verifies the secret key hasn't been used before
-     * 3. Verifies the Merkle proof is valid
+     * The function performs four security checks:
+     * 1. Verifies the batch exists
+     * 2. Verifies tokens are still available (balanceOf > 0)
+     * 3. Verifies the secret key hasn't been used before
+     * 4. Verifies the Merkle proof is valid
+     *
+     * After a successful claim, the batch metadata becomes permanently locked.
      *
      * Requirements:
+     * - Batch must exist
      * - Batch must have tokens remaining
      * - Secret key must not have been claimed before
      * - Merkle proof must be valid
@@ -386,10 +507,17 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         bytes32[] memory _merkleProof
     ) external nonReentrant {
         HoneyBatch storage batch = honeyBatches[_honeyBatchId];
+
+        // Check 0: Verify batch exists
+        require(batch.merkleRoot != bytes32(0), "Batch does not exist");
+
         address producer = honeyTokenization.tokenProducer(_honeyBatchId);
 
         // Check 1: Verify tokens are available
-        uint256 remainingTokens = honeyTokenization.balanceOf(producer, _honeyBatchId);
+        uint256 remainingTokens = honeyTokenization.balanceOf(
+            producer,
+            _honeyBatchId
+        );
         require(remainingTokens > 0, noTokenLeft());
 
         // Check 2: Verify key hasn't been used
@@ -397,16 +525,27 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         require(!claimedKeys[_honeyBatchId][leaf], keyAlreadyClaimed());
 
         // Check 3: Verify Merkle proof
-        require(MerkleProof.verify(_merkleProof, batch.merkleRoot, leaf), invalidMerkleProof());
+        require(
+            MerkleProof.verify(_merkleProof, batch.merkleRoot, leaf),
+            invalidMerkleProof()
+        );
 
         // Mark key as claimed
         claimedKeys[_honeyBatchId][leaf] = true;
 
+        // Lock metadata upon first claim
+        batch.hasBeenClaimed = true;
+
         emit HoneyTokenClaimed(msg.sender, _honeyBatchId, leaf);
 
         // Transfer token from producer to consumer
-        honeyTokenization.safeTransferFrom(producer, msg.sender, _honeyBatchId, 1, "");
-
+        honeyTokenization.safeTransferFrom(
+            producer,
+            msg.sender,
+            _honeyBatchId,
+            1,
+            ""
+        );
     }
 
     /**
@@ -425,10 +564,17 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         uint8 _rating,
         string memory _metadata
     ) external {
-        require(honeyTokenization.balanceOf(msg.sender, _honeyBatchId) > 0, notAllowedToComment());
+        require(
+            honeyTokenization.balanceOf(msg.sender, _honeyBatchId) > 0,
+            notAllowedToComment()
+        );
         require(_rating <= 5, ratingMustBeBetween0And5());
-        require(commentCount[_honeyBatchId][msg.sender] < MAX_COMMENTS_PER_USER, commentLimitReached());
-        if (bytes(_metadata).length < 5 || bytes(_metadata).length > 500) revert InvalidStringLength();
+        require(
+            commentCount[_honeyBatchId][msg.sender] < MAX_COMMENTS_PER_USER,
+            commentLimitReached()
+        );
+        if (bytes(_metadata).length < 5 || bytes(_metadata).length > 500)
+            revert InvalidStringLength();
 
         honeyBatchesComments[_honeyBatchId].push(
             Comment(msg.sender, _honeyBatchId, _rating, _metadata)
@@ -446,7 +592,9 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @param _address Address of the producer to query
      * @return Producer struct containing all producer information
      */
-    function getProducer(address _address) external view returns (Producer memory) {
+    function getProducer(
+        address _address
+    ) external view returns (Producer memory) {
         return producers[_address];
     }
 
@@ -488,9 +636,11 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     }
 
     /**
-    * @dev Returns the total number of comments for a batch
+     * @dev Returns the total number of comments for a batch
      */
-    function getHoneyBatchCommentsCount(uint _honeyBatchId) external view returns (uint) {
+    function getHoneyBatchCommentsCount(
+        uint _honeyBatchId
+    ) external view returns (uint) {
         return honeyBatchesComments[_honeyBatchId].length;
     }
 
@@ -500,7 +650,10 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @param _secretKey Secret key to check
      * @return True if the key has been claimed, false otherwise
      */
-    function isKeyClaimed(uint256 _honeyBatchId, string memory _secretKey) external view returns (bool) {
+    function isKeyClaimed(
+        uint256 _honeyBatchId,
+        string memory _secretKey
+    ) external view returns (bool) {
         bytes32 leaf = keccak256(abi.encodePacked(_secretKey));
         return claimedKeys[_honeyBatchId][leaf];
     }
@@ -512,5 +665,33 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      */
     function isAdmin(address _address) external view returns (bool) {
         return admins[_address];
+    }
+
+    /**
+     * @dev Checks if a batch has had any tokens claimed (metadata locked)
+     * @param _batchId ID of the batch to check
+     * @return True if at least one token has been claimed, false otherwise
+     */
+    function isBatchLocked(uint256 _batchId) external view returns (bool) {
+        return honeyBatches[_batchId].hasBeenClaimed;
+    }
+
+    /**
+     * @dev Checks if a producer has approved this contract to transfer their tokens
+     * @param _producer Address of the producer to check
+     * @return True if the producer has approved this contract, false otherwise
+     *
+     * @notice Producers must call setApprovalForAll(HoneyTraceStorageAddress, true)
+     * on the HoneyTokenization contract before consumers can claim their tokens.
+     * This function allows checking the approval status.
+     *
+     * Example usage:
+     * - Frontend can warn producers if they haven't approved yet
+     * - Producers can verify their approval status before creating batches
+     */
+    function isProducerApproved(
+        address _producer
+    ) external view returns (bool) {
+        return honeyTokenization.isApprovedForAll(_producer, address(this));
     }
 }

@@ -1,6 +1,6 @@
 import { parseAbiItem } from 'viem';
 
-// Adresses des contrats
+// Contract addresses
 export const HONEY_TRACE_STORAGE_ADDRESS = process.env.NEXT_PUBLIC_HONEY_TRACE_STORAGE_ADDRESS as `0x${string}`;
 export const HONEY_TOKENIZATION_ADDRESS = process.env.NEXT_PUBLIC_HONEY_TOKENIZATION_ADDRESS as `0x${string}`;
 
@@ -820,7 +820,7 @@ export const HONEY_TOKENIZATION_ABI = [
         "stateMutability": "view",
         "type": "function"
     },
-    // 👇 AJOUTEZ CETTE FONCTION
+    // 👇 ADD THIS FUNCTION
     {
         inputs: [{ name: 'operator', type: 'address' }, { name: 'approved', type: 'bool' }],
         name: 'setApprovalForAll',

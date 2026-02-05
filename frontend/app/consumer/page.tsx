@@ -39,7 +39,7 @@ export default function ConsumerPage() {
 
             setIsLoading(true);
             try {
-                // Récupérer tous les événements NewHoneyBatch
+                // Fetch all NewHoneyBatch events
                 const logs = await publicClient.getLogs({
                     address: HONEY_TRACE_STORAGE_ADDRESS,
                     event: parseAbiItem('event NewHoneyBatch(address indexed producer, uint indexed honeyBatchId)'),
@@ -49,12 +49,12 @@ export default function ConsumerPage() {
 
                 const tokensData: OwnedToken[] = [];
 
-                // Pour chaque batch, vérifier si l'utilisateur possède des tokens
+                // For each batch, check if the user owns tokens
                 for (const log of logs) {
                     const tokenId = log.args.honeyBatchId as bigint;
                     const producerAddress = log.args.producer as `0x${string}`;
 
-                    // Vérifier le solde de l'utilisateur
+                    // Check the user's balance
                     const balance = await publicClient.readContract({
                         address: HONEY_TOKENIZATION_ADDRESS,
                         abi: HONEY_TOKENIZATION_ABI,
@@ -63,7 +63,7 @@ export default function ConsumerPage() {
                     }) as bigint;
 
                     if (balance > 0n) {
-                        // Récupérer les infos du batch
+                        // Fetch batch info
                         const batchInfo = await publicClient.readContract({
                             address: HONEY_TRACE_STORAGE_ADDRESS,
                             abi: HONEY_TRACE_STORAGE_ABI,
@@ -71,7 +71,7 @@ export default function ConsumerPage() {
                             args: [tokenId]
                         }) as any;
 
-                        // Récupérer les infos du producteur
+                        // Fetch producer info
                         const producerData = await publicClient.readContract({
                             address: HONEY_TRACE_STORAGE_ADDRESS,
                             abi: HONEY_TRACE_STORAGE_ABI,
@@ -90,12 +90,12 @@ export default function ConsumerPage() {
                     }
                 }
 
-                // Trier par tokenId décroissant
+                // Sort by tokenId descending
                 tokensData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
 
                 setOwnedTokens(tokensData);
             } catch (error) {
-                console.error('Erreur lors du chargement des tokens:', error);
+                console.error('Error loading tokens:', error);
             } finally {
                 setIsLoading(false);
             }
@@ -134,20 +134,20 @@ export default function ConsumerPage() {
                 }
             );
 
-            console.log('Comment transaction hash:', txHash);
+            // Comment transaction hash (internal): txHash
             alert('✅ Avis envoyé avec succès !');
             setSelectedToken(null);
             setRating(5);
             setComment('');
         } catch (error) {
-            console.error('Erreur lors de l\'ajout du commentaire:', error);
+            console.error('Error adding comment:', error);
             alert('❌ Erreur lors de l\'ajout du commentaire');
         } finally {
             setIsCommenting(false);
         }
     };
 
-    // Fonction pour vérifier si l'utilisateur est le producteur du token
+    // Function to check if the user is the token's producer
     const isOwnProducer = (token: OwnedToken) => {
         return address && token.producer.toLowerCase() === address.toLowerCase();
     };
@@ -239,7 +239,7 @@ export default function ConsumerPage() {
                     </div>
                 )}
 
-                {/* Modal de commentaire */}
+                {/* Comment modal */}
                 {selectedToken && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <div className="bg-yellow-bee rounded-lg p-6 max-w-md w-full border border-[#000000]">

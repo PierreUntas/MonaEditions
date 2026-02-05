@@ -120,11 +120,11 @@ export default function ProducerPage() {
                 }
             }
         } catch (error) {
-            console.error('Erreur chargement données IPFS:', error);
+            console.error('Error loading IPFS data:', error);
         } finally {
             setIsLoadingIPFS(false);
         }
-    };
+    }; 
 
     useEffect(() => {
         if (producerData) {
@@ -192,7 +192,7 @@ export default function ProducerPage() {
             };
 
             const cid = await uploadToIPFS(producerData);
-            console.log('CID IPFS:', cid);
+            // IPFS CID for producer (internal): cid
 
             const data = encodeFunctionData({
                 abi: HONEY_TRACE_STORAGE_ABI,
@@ -210,15 +210,15 @@ export default function ProducerPage() {
                 }
             );
             
-            console.log('Transaction hash:', txHash);
+            // Transaction hash (internal): txHash
         } catch (error) {
-            console.error('Erreur lors de l\'enregistrement:', error);
+            console.error('Error saving producer:', error);
         } finally {
             setIsUploading(false);
         }
     };
 
-    // État de chargement pendant la vérification
+    // Loading state while checking permissions
     if (isCheckingAuthorization || isLoadingProducer) {
         return (
             <div className="min-h-screen bg-yellow-bee">

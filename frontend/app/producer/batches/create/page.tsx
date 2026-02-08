@@ -10,6 +10,8 @@ import { MerkleTree } from 'merkletreejs';
 import { keccak256, encodeFunctionData, decodeEventLog, createPublicClient, http } from 'viem';
 import { sepolia } from 'viem/chains';
 import { useSendTransaction } from '@privy-io/react-auth';
+import QRCode from 'qrcode';
+import * as XLSX from 'xlsx';
 
 export default function CreateBatchPage() {
     const { address } = useAccount();
@@ -21,6 +23,7 @@ export default function CreateBatchPage() {
     const [isApproving, setIsApproving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isUploadingLabel, setIsUploadingLabel] = useState(false);
+    const [isGeneratingQR, setIsGeneratingQR] = useState(false);
     const [secretKeys, setSecretKeys] = useState<string[]>([]);
     const [merkleRoot, setMerkleRoot] = useState<string>('');
     const [merkleTree, setMerkleTree] = useState<MerkleTree | null>(null);
@@ -130,43 +133,199 @@ export default function CreateBatchPage() {
         }
     };
 
-    const downloadSecretKeys = () => {
-        if (secretKeys.length === 0 || !merkleTree) return;
+    const generateQRCodeImage = async (text: string): Promise<string> => {
+        try {
+            const qrDataUrl = await QRCode.toDataURL(text, {
+                width: 300,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            });
+            return qrDataUrl;
+        } catch (error) {
+            console.error('Error generating QR code:', error);
+            throw error;
+        }
+    };
 
-        const batchId = createdBatchId || 'BATCH_ID';
+    const downloadBatchPageQRCode = async () => {
+        if (!createdBatchId || createdBatchId === 'pending' || createdBatchId === 'confirmed') return;
 
-        const data = secretKeys.map((key, index) => {
-            const leaf = keccak256(Buffer.from(key));
-            const proof = merkleTree.getHexProof(leaf);
-            const merkleProofParam = proof.join(',');
+        setIsGeneratingQR(true);
 
-            const claimUrl = `https://bee-block.vercel.app/consumer/claim?batchId=${batchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
+        try {
+            const batchPageUrl = `https://www.beeblock.fr/explore/batch/${createdBatchId}`;
+            
+            // Générer un QR code haute résolution pour l'impression
+            const qrCodeDataUrl = await QRCode.toDataURL(batchPageUrl, {
+                width: 1000,
+                margin: 4,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                },
+                errorCorrectionLevel: 'H'
+            });
 
-            return {
-                index: index + 1,
-                secretKey: key,
-                merkleProof: merkleProofParam,
-                claimUrl: claimUrl
-            };
-        });
+            // Télécharger l'image
+            const base64Data = qrCodeDataUrl.split(',')[1];
+            const blob = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'image/png' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `QR_Batch_Page_${createdBatchId}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
 
-        const content = data.map(item =>
-            `${item.index},"${item.secretKey}","${item.merkleProof}","${item.claimUrl}"`
-        ).join('\n');
+            alert(`✅ QR Code de la page du lot téléchargé avec succès !`);
+        } catch (error) {
+            console.error('Error generating batch page QR code:', error);
+            alert('❌ Erreur lors de la génération du QR code de la page');
+        } finally {
+            setIsGeneratingQR(false);
+        }
+    };
 
-        const blob = new Blob(
-            [`Index,SecretKey,MerkleProof,ClaimURL\n${content}`],
-            { type: 'text/csv' }
-        );
+    const downloadExcelWithQRCodes = async () => {
+        if (secretKeys.length === 0 || !merkleTree || !createdBatchId) return;
 
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `secret-keys-batch-${batchId}-${Date.now()}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        setIsGeneratingQR(true);
+
+        try {
+            const batchId = createdBatchId;
+
+            // Préparer les données pour Excel
+            const excelData = [];
+
+            for (let index = 0; index < secretKeys.length; index++) {
+                const key = secretKeys[index];
+                const leaf = keccak256(Buffer.from(key));
+                const proof = merkleTree.getHexProof(leaf);
+                const merkleProofParam = proof.join(',');
+
+                const claimUrl = `https://www.beeblock.fr/consumer/claim?batchId=${batchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
+
+                // Générer le QR code en base64
+                const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
+
+                excelData.push({
+                    'Index': index + 1,
+                    'Secret Key': key,
+                    'Merkle Proof': merkleProofParam,
+                    'Claim URL': claimUrl,
+                    'QR Code': qrCodeDataUrl
+                });
+
+                // Afficher la progression
+                if ((index + 1) % 10 === 0 || index === secretKeys.length - 1) {
+                    console.log(`Génération des QR codes: ${index + 1}/${secretKeys.length}`);
+                }
+            }
+
+            // Créer le workbook
+            const ws = XLSX.utils.json_to_sheet(excelData);
+
+            // Ajuster la largeur des colonnes
+            ws['!cols'] = [
+                { wch: 8 },   // Index
+                { wch: 65 },  // Secret Key
+                { wch: 50 },  // Merkle Proof
+                { wch: 80 },  // Claim URL
+                { wch: 40 }   // QR Code
+            ];
+
+            // Ajuster la hauteur des lignes pour les QR codes
+            const rowHeights = [{ hpx: 20 }]; // Header
+            for (let i = 0; i < excelData.length; i++) {
+                rowHeights.push({ hpx: 150 }); // Hauteur pour chaque ligne avec QR code
+            }
+            ws['!rows'] = rowHeights;
+
+            // Ajouter les images QR code
+            if (!ws['!images']) ws['!images'] = [];
+            
+            for (let i = 0; i < excelData.length; i++) {
+                const qrCodeBase64 = excelData[i]['QR Code'].split(',')[1]; // Enlever le préfixe data:image/png;base64,
+                
+                ws['!images'].push({
+                    name: `qr_${i + 1}.png`,
+                    data: qrCodeBase64,
+                    opts: {
+                        positioning: {
+                            type: 'oneCellAnchor',
+                            from: { col: 4, row: i + 1 } // Colonne E (index 4), ligne i+1
+                        }
+                    }
+                });
+            }
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Secret Keys');
+
+            // Télécharger le fichier
+            XLSX.writeFile(wb, `secret-keys-batch-${batchId}-${Date.now()}.xlsx`);
+
+            alert(`✅ Fichier Excel avec ${secretKeys.length} QR codes généré avec succès !`);
+        } catch (error) {
+            console.error('Error generating Excel with QR codes:', error);
+            alert('❌ Erreur lors de la génération du fichier Excel avec QR codes');
+        } finally {
+            setIsGeneratingQR(false);
+        }
+    };
+
+    const downloadQRCodesZip = async () => {
+        if (secretKeys.length === 0 || !merkleTree || !createdBatchId) return;
+
+        setIsGeneratingQR(true);
+
+        try {
+            const JSZip = (await import('jszip')).default;
+            const zip = new JSZip();
+            const batchId = createdBatchId;
+
+            for (let index = 0; index < secretKeys.length; index++) {
+                const key = secretKeys[index];
+                const leaf = keccak256(Buffer.from(key));
+                const proof = merkleTree.getHexProof(leaf);
+                const merkleProofParam = proof.join(',');
+
+                const claimUrl = `https://www.beeblock.fr/consumer/claim?batchId=${batchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
+
+                // Générer le QR code
+                const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
+                const base64Data = qrCodeDataUrl.split(',')[1];
+
+                // Ajouter au ZIP
+                zip.file(`QR_Claim_${batchId}_${(index + 1).toString().padStart(5, '0')}.png`, base64Data, { base64: true });
+
+                if ((index + 1) % 10 === 0 || index === secretKeys.length - 1) {
+                    console.log(`Génération des QR codes: ${index + 1}/${secretKeys.length}`);
+                }
+            }
+
+            // Générer le ZIP
+            const content = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `qr-codes-claim-batch-${batchId}-${Date.now()}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            alert(`✅ ${secretKeys.length} QR codes téléchargés avec succès !`);
+        } catch (error) {
+            console.error('Error generating QR codes:', error);
+            alert('❌ Erreur lors de la génération des QR codes');
+        } finally {
+            setIsGeneratingQR(false);
+        }
     };
 
     const handleApprove = async () => {
@@ -189,7 +348,6 @@ export default function CreateBatchPage() {
                 }
             );
 
-            // Approval transaction hash (internal): txHash
             alert('⏳ Approbation en cours... La transaction doit être confirmée sur la blockchain (~12 sec). Attendez la confirmation avant de créer votre lot.');
 
             const checkApproval = setInterval(async () => {
@@ -243,7 +401,6 @@ export default function CreateBatchPage() {
             };
 
             const cid = await uploadToIPFS(completeData);
-            // IPFS CID for batch (internal): cid
 
             setIsUploading(false);
             setIsCreating(true);
@@ -264,24 +421,17 @@ export default function CreateBatchPage() {
                 }
             );
 
-            // Batch creation transaction hash (internal): txHash
             alert('⏳ Transaction envoyée ! En attente de confirmation...');
 
-            // Create a public client to read the blockchain
             const publicClient = createPublicClient({
                 chain: sepolia,
                 transport: http(process.env.NEXT_PUBLIC_RPC_URL_SEPOLIA),
             });
 
-            // Wait for the transaction receipt
             const receipt = await publicClient.waitForTransactionReceipt({
                 hash: txHash.hash as `0x${string}`,
             });
 
-            // Receipt received (internal): receipt
-            // Number of logs (internal): receipt.logs.length
-
-            // Find the NewHoneyBatch event in the logs
             const batchCreatedEvent = receipt.logs.find(log => {
                 try {
                     const decoded = decodeEventLog({
@@ -289,15 +439,11 @@ export default function CreateBatchPage() {
                         data: log.data,
                         topics: log.topics,
                     });
-                    // Decoded event (internal): decoded.eventName, decoded
                     return decoded.eventName === 'NewHoneyBatch';
                 } catch (e) {
-                    // Error decoding log (internal): e
                     return false;
                 }
             });
-
-            // NewHoneyBatch event found (internal): batchCreatedEvent
 
             if (batchCreatedEvent) {
                 const decoded = decodeEventLog({
@@ -306,9 +452,7 @@ export default function CreateBatchPage() {
                     topics: batchCreatedEvent.topics,
                 }) as any;
 
-                // Decoded args (internal): decoded.args
                 const batchId = decoded.args.honeyBatchId?.toString();
-                // Extracted batchId (internal): batchId
                 setCreatedBatchId(batchId);
                 alert(`✅ Lot créé avec succès ! ID du lot: ${batchId}`);
             } else {
@@ -392,7 +536,7 @@ export default function CreateBatchPage() {
                     <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
                         <p className="font-bold">✅ Lot créé avec succès !</p>
                         <p className="text-sm">ID du lot: <span className="font-mono">{createdBatchId}</span></p>
-                        <p className="text-sm mt-2">Vous pouvez maintenant télécharger les clés avec les URLs de claim.</p>
+                        <p className="text-sm mt-2">Vous pouvez maintenant télécharger les QR codes.</p>
                     </div>
                 )}
 
@@ -561,14 +705,6 @@ export default function CreateBatchPage() {
 
                     <div className="flex gap-4">
                         <button
-                            type="button"
-                            onClick={downloadSecretKeys}
-                            disabled={!merkleRoot || !createdBatchId || createdBatchId === 'pending' || createdBatchId === 'confirmed'}
-                            className="flex-1 bg-blue-500 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                            📥 Télécharger les clés
-                        </button>
-                        <button
                             type="submit"
                             disabled={isCreating || isUploading || !merkleRoot || !isApproved}
                             className="flex-1 bg-[#666666] text-white font-[Olney_Light] py-3 rounded-lg hover:bg-[#555555] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
@@ -581,6 +717,52 @@ export default function CreateBatchPage() {
                         </button>
                     </div>
                 </form>
+
+                {createdBatchId && createdBatchId !== 'pending' && createdBatchId !== 'confirmed' && (
+                    <div className="mt-6 space-y-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <p className="text-sm font-[Olney_Light] text-blue-800 mb-3">
+                                🏷️ <strong>QR Code pour l'étiquette du pot</strong>
+                            </p>
+                            <p className="text-xs font-[Olney_Light] text-blue-600 mb-3">
+                                Ce QR code pointe vers la page du produit et peut être collé à l'extérieur de votre pot.
+                            </p>
+                            <button
+                                onClick={downloadBatchPageQRCode}
+                                disabled={isGeneratingQR}
+                                className="w-full bg-amber-500 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-amber-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                {isGeneratingQR ? '🔄 Génération...' : '📥 Télécharger QR Code Étiquette'}
+                            </button>
+                        </div>
+
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                            <p className="text-sm font-[Olney_Light] text-purple-800 mb-3">
+                                🎟️ <strong>QR Codes pour les consommateurs</strong>
+                            </p>
+                            <p className="text-xs font-[Olney_Light] text-purple-600 mb-3">
+                                Ces QR codes permettent aux consommateurs de réclamer leur NFT.
+                            </p>
+                            <div className="space-y-2">
+                                <button
+                                    onClick={downloadExcelWithQRCodes}
+                                    disabled={isGeneratingQR}
+                                    className="w-full bg-green-600 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-green-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    {isGeneratingQR ? '🔄 Génération en cours...' : '📊 Télécharger Excel avec QR codes'}
+                                </button>
+                                
+                                <button
+                                    onClick={downloadQRCodesZip}
+                                    disabled={isGeneratingQR}
+                                    className="w-full bg-blue-600 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    {isGeneratingQR ? '🔄 Génération en cours...' : '📦 Télécharger QR codes (ZIP)'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex justify-center mt-8 mb-6">
                     <Image

@@ -150,6 +150,46 @@ export default function CreateBatchPage() {
         }
     };
 
+    const downloadBatchPageQRCode = async () => {
+        if (!createdBatchId || createdBatchId === 'pending' || createdBatchId === 'confirmed') return;
+
+        setIsGeneratingQR(true);
+
+        try {
+            const batchPageUrl = `https://www.beeblock.fr/explore/batch/${createdBatchId}`;
+            
+            // Générer un QR code haute résolution pour l'impression
+            const qrCodeDataUrl = await QRCode.toDataURL(batchPageUrl, {
+                width: 1000,
+                margin: 4,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                },
+                errorCorrectionLevel: 'H'
+            });
+
+            // Télécharger l'image
+            const base64Data = qrCodeDataUrl.split(',')[1];
+            const blob = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'image/png' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `QR_Batch_Page_${createdBatchId}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            alert(`✅ QR Code de la page du lot téléchargé avec succès !`);
+        } catch (error) {
+            console.error('Error generating batch page QR code:', error);
+            alert('❌ Erreur lors de la génération du QR code de la page');
+        } finally {
+            setIsGeneratingQR(false);
+        }
+    };
+
     const downloadExcelWithQRCodes = async () => {
         if (secretKeys.length === 0 || !merkleTree || !createdBatchId) return;
 
@@ -167,7 +207,7 @@ export default function CreateBatchPage() {
                 const proof = merkleTree.getHexProof(leaf);
                 const merkleProofParam = proof.join(',');
 
-                const claimUrl = `https://bee-block.vercel.app/consumer/claim?batchId=${batchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
+                const claimUrl = `https://www.beeblock.fr/consumer/claim?batchId=${batchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
 
                 // Générer le QR code en base64
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
@@ -254,14 +294,14 @@ export default function CreateBatchPage() {
                 const proof = merkleTree.getHexProof(leaf);
                 const merkleProofParam = proof.join(',');
 
-                const claimUrl = `https://bee-block.vercel.app/consumer/claim?batchId=${batchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
+                const claimUrl = `https://www.beeblock.fr/consumer/claim?batchId=${batchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
 
                 // Générer le QR code
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
                 const base64Data = qrCodeDataUrl.split(',')[1];
 
                 // Ajouter au ZIP
-                zip.file(`QR_${batchId}_${(index + 1).toString().padStart(5, '0')}.png`, base64Data, { base64: true });
+                zip.file(`QR_Claim_${batchId}_${(index + 1).toString().padStart(5, '0')}.png`, base64Data, { base64: true });
 
                 if ((index + 1) % 10 === 0 || index === secretKeys.length - 1) {
                     console.log(`Génération des QR codes: ${index + 1}/${secretKeys.length}`);
@@ -273,7 +313,7 @@ export default function CreateBatchPage() {
             const url = URL.createObjectURL(content);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `qr-codes-batch-${batchId}-${Date.now()}.zip`;
+            a.download = `qr-codes-claim-batch-${batchId}-${Date.now()}.zip`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -496,7 +536,7 @@ export default function CreateBatchPage() {
                     <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
                         <p className="font-bold">✅ Lot créé avec succès !</p>
                         <p className="text-sm">ID du lot: <span className="font-mono">{createdBatchId}</span></p>
-                        <p className="text-sm mt-2">Vous pouvez maintenant télécharger le fichier Excel avec les QR codes.</p>
+                        <p className="text-sm mt-2">Vous pouvez maintenant télécharger les QR codes.</p>
                     </div>
                 )}
 
@@ -680,21 +720,47 @@ export default function CreateBatchPage() {
 
                 {createdBatchId && createdBatchId !== 'pending' && createdBatchId !== 'confirmed' && (
                     <div className="mt-6 space-y-4">
-                        <button
-                            onClick={downloadExcelWithQRCodes}
-                            disabled={isGeneratingQR}
-                            className="w-full bg-green-600 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-green-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                            {isGeneratingQR ? '🔄 Génération en cours...' : '📊 Télécharger Excel avec QR codes'}
-                        </button>
-                        
-                        <button
-                            onClick={downloadQRCodesZip}
-                            disabled={isGeneratingQR}
-                            className="w-full bg-blue-600 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                            {isGeneratingQR ? '🔄 Génération en cours...' : '📦 Télécharger QR codes (ZIP)'}
-                        </button>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <p className="text-sm font-[Olney_Light] text-blue-800 mb-3">
+                                🏷️ <strong>QR Code pour l'étiquette du pot</strong>
+                            </p>
+                            <p className="text-xs font-[Olney_Light] text-blue-600 mb-3">
+                                Ce QR code pointe vers la page du produit et peut être collé à l'extérieur de votre pot.
+                            </p>
+                            <button
+                                onClick={downloadBatchPageQRCode}
+                                disabled={isGeneratingQR}
+                                className="w-full bg-amber-500 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-amber-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                {isGeneratingQR ? '🔄 Génération...' : '📥 Télécharger QR Code Étiquette'}
+                            </button>
+                        </div>
+
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                            <p className="text-sm font-[Olney_Light] text-purple-800 mb-3">
+                                🎟️ <strong>QR Codes pour les consommateurs</strong>
+                            </p>
+                            <p className="text-xs font-[Olney_Light] text-purple-600 mb-3">
+                                Ces QR codes permettent aux consommateurs de réclamer leur NFT.
+                            </p>
+                            <div className="space-y-2">
+                                <button
+                                    onClick={downloadExcelWithQRCodes}
+                                    disabled={isGeneratingQR}
+                                    className="w-full bg-green-600 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-green-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    {isGeneratingQR ? '🔄 Génération en cours...' : '📊 Télécharger Excel avec QR codes'}
+                                </button>
+                                
+                                <button
+                                    onClick={downloadQRCodesZip}
+                                    disabled={isGeneratingQR}
+                                    className="w-full bg-blue-600 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    {isGeneratingQR ? '🔄 Génération en cours...' : '📦 Télécharger QR codes (ZIP)'}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
 

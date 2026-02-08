@@ -7,7 +7,8 @@ import { uploadToIPFS, getFromIPFSGateway } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
 import { useSendTransaction } from '@privy-io/react-auth';
-import { encodeFunctionData } from 'viem'; 
+import { encodeFunctionData } from 'viem';
+import QRCode from 'qrcode';
 
 export default function ProducerPage() {
     const { address } = useAccount();
@@ -19,6 +20,7 @@ export default function ProducerPage() {
     const [isRegistered, setIsRegistered] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
+    const [isGeneratingQR, setIsGeneratingQR] = useState(false);
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string>('');
     const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -81,6 +83,46 @@ export default function ProducerPage() {
     const removePhoto = (index: number) => {
         setPhotoFiles(prev => prev.filter((_, i) => i !== index));
         setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const downloadProducerPageQRCode = async () => {
+        if (!address || !isRegistered) return;
+
+        setIsGeneratingQR(true);
+
+        try {
+            const producerPageUrl = `https://www.beeblock.fr/explore/producer/${address}`;
+            
+            // Générer un QR code haute résolution pour l'impression
+            const qrCodeDataUrl = await QRCode.toDataURL(producerPageUrl, {
+                width: 1000,
+                margin: 4,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                },
+                errorCorrectionLevel: 'H'
+            });
+
+            // Télécharger l'image
+            const base64Data = qrCodeDataUrl.split(',')[1];
+            const blob = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'image/png' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `QR_Producer_${name.replace(/\s+/g, '_')}_${address.slice(0, 8)}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            alert(`✅ QR Code de votre page producteur téléchargé avec succès !`);
+        } catch (error) {
+            console.error('Error generating producer page QR code:', error);
+            alert('❌ Erreur lors de la génération du QR code');
+        } finally {
+            setIsGeneratingQR(false);
+        }
     };
 
     const loadIPFSData = async (cid: string) => {
@@ -192,7 +234,6 @@ export default function ProducerPage() {
             };
 
             const cid = await uploadToIPFS(producerData);
-            // IPFS CID for producer (internal): cid
 
             const data = encodeFunctionData({
                 abi: HONEY_TRACE_STORAGE_ABI,
@@ -210,9 +251,10 @@ export default function ProducerPage() {
                 }
             );
             
-            // Transaction hash (internal): txHash
+            alert('✅ Informations enregistrées avec succès !');
         } catch (error) {
             console.error('Error saving producer:', error);
+            alert('❌ Erreur lors de l\'enregistrement');
         } finally {
             setIsUploading(false);
         }
@@ -270,6 +312,27 @@ export default function ProducerPage() {
                 {isLoadingIPFS && (
                     <div className="text-center text-[#000000] font-[Olney_Light] mb-4 opacity-70">
                         Chargement des données IPFS...
+                    </div>
+                )}
+
+                {isRegistered && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <p className="text-sm font-[Olney_Light] text-blue-800 mb-3">
+                            🏷️ <strong>QR Code de votre page producteur</strong>
+                        </p>
+                        <p className="text-xs font-[Olney_Light] text-blue-600 mb-3">
+                            Téléchargez votre QR code pour le partager avec vos clients. Il pointe vers votre page producteur.
+                        </p>
+                        <button
+                            onClick={downloadProducerPageQRCode}
+                            disabled={isGeneratingQR}
+                            className="w-full bg-amber-500 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-amber-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            {isGeneratingQR ? '🔄 Génération...' : '📥 Télécharger mon QR Code'}
+                        </button>
+                        {/* <p className="text-xs font-[Olney_Light] text-blue-600 mt-2">
+                            URL: https://www.beeblock.fr/explore/producer/{address}
+                        </p> */}
                     </div>
                 )}
 

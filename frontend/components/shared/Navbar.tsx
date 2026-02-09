@@ -176,10 +176,18 @@ export default function Navbar() {
                             Accueil
                         </a>
 
-                        <a href="/explore" className="block py-4 px-5 text-black font-[Olney_Light] text-lg hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
-                            Explorer
-                        </a>
-
+                        {/* Explorer section */}
+                        <div className="my-4 border-t border-black/10"></div>
+                        <div className="space-y-2">
+                            <p className="text-xs font-[Olney_Light] text-black/40 px-5 mb-2">EXPLORER</p>
+                            <a href="/explore/batches" className="block py-3 px-5 text-black font-[Olney_Light] hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
+                                Lots de miel
+                            </a>
+                            <a href="/explore/producers" className="block py-3 px-5 text-black font-[Olney_Light] hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
+                                Producteurs
+                            </a>
+                        </div>
+                        <div className="my-4 border-t border-black/10"></div>
                         <a href="/about" className="block py-4 px-5 text-black font-[Olney_Light] text-lg hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
                             À propos
                         </a>

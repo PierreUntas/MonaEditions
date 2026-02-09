@@ -226,7 +226,7 @@ export default function BatchDetailsPage() {
             <Navbar />
             <div className="container mx-auto p-6 max-w-4xl">
                 <Link
-                    href="/explore"
+                    href="/explore/batches"
                     className="inline-flex items-center text-[#000000] font-[Olney_Light] opacity-70 hover:opacity-100 mb-6"
                 >
                     ← Retour à l'exploration

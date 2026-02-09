@@ -131,7 +131,7 @@ import { usePrivy } from '@privy-io/react-auth';
     <p>Connecté en tant que</p>
     <p>{user?.email?.address}</p>
     <p>{walletAddress}</p>
-    <a href="/explore">Explorer BeeBlock</a>
+    <a href="/explore/batches">Explorer BeeBlock</a>
   </div>
 ) : (
   <button onClick={login}>Se connecter</button>
@@ -142,7 +142,7 @@ import { usePrivy } from '@privy-io/react-auth';
 - Affichage structuré des informations utilisateur
 - Email sur une ligne
 - Adresse Ethereum sur une autre ligne
-- Lien vers `/explore` après connexion
+- Lien vers `/explore/batches` après connexion
 
 ---
 

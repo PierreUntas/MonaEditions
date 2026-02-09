@@ -64,12 +64,12 @@ export default function Home() {
                     )}
 
                     <div className="absolute inset-0 flex items-center justify-center z-10">
-                        <button
-                            onClick={handleSkip}
+                        <a
+                            href="/explore/batches"
                             className="px-6 py-3 bg-white/90 hover:bg-white rounded-lg font-[Olney_Light] text-black transition-all duration-300 shadow-lg cursor-pointer"
                         >
                             Explorer BeeBlock
-                        </button>
+                        </a>
                     </div>
 
                     <button
@@ -121,10 +121,10 @@ export default function Home() {
                                     })()}
                                 </div>
                                 <a
-                                    href="/explore"
+                                    href="/explore/batches"
                                     className="px-6 py-3 bg-amber-400 hover:bg-amber-500 text-black font-medium rounded-lg transition-all duration-300 inline-block cursor-pointer"
                                 >
-                                    Déconnexion
+                                    Explorer
                                 </a>
                             </div>
                         ) : (

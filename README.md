@@ -221,7 +221,7 @@ Par défaut configuré sur **Sepolia**. Pour changer de réseau, modifiez :
 
 **Interfaces** :
 - Claim : `/consumer/claim`
-- Explorer : `/explore`
+- Explorer : `/explore/batches`
 
 ## 🔑 Workflow de traçabilité
 

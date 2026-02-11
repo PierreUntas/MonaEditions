@@ -43,7 +43,7 @@ interface IHoneyTokenization {
  * @notice This contract manages producers, honey batches, and token claims using cryptographic proofs
  *
  * The contract implements a three-tier authorization system:
- * 1. Owner can add admins
+ * 1. Owner can add/remove admins
  * 2. Admins can authorize producers
  * 3. Authorized producers can create honey batches
  *
@@ -58,6 +58,9 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     /// @dev Maximum number of comments a user can add per batch
     uint256 public constant MAX_COMMENTS_PER_USER = 2;
 
+    /// @dev Maximum number of comments returned in a single query
+    uint256 public constant MAX_COMMENTS_QUERY = 100;
+
     // ============ STRUCTS ============
 
     /**
@@ -66,7 +69,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @param name Business name of the producer
      * @param location Physical location of production
      * @param companyRegisterNumber Official business registration number
-     * @param metadata IPFS CID link to additional information in JSON format (certifications, etc.)
+     * @param metadata IPFS CID pointing to additional information JSON (certifications, etc.)
      */
     struct Producer {
         bool authorized;
@@ -78,9 +81,8 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
 
     /**
      * @dev Structure representing a honey batch
-     * @param id Unique identifier for the batch
      * @param honeyType Type of honey (e.g., "Acacia", "Lavender")
-     * @param metadata Batch-specific information (origin, harvest date, etc.)
+     * @param metadata IPFS CID pointing to batch metadata JSON (origin, harvest date, etc.)
      * @param merkleRoot Root hash of the Merkle Tree containing all secret keys for this batch
      * @param hasBeenClaimed Flag indicating if at least one token has been claimed (locks metadata)
      */
@@ -96,7 +98,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @param consumer Address of the consumer who left the comment
      * @param honeyBatchId ID of the batch being reviewed
      * @param rating Numerical rating (0-5)
-     * @param metadata IPFS CID link to comment text and additional information in JSON format
+     * @param metadata IPFS CID pointing to comment text in JSON format
      */
     struct Comment {
         address consumer;
@@ -108,19 +110,19 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     // ============ STATE VARIABLES ============
 
     /// @dev Mapping from producer address to their information
-    mapping(address => Producer) producers;
+    mapping(address => Producer) private producers;
 
     /// @dev Mapping from batch ID to batch information
-    mapping(uint => HoneyBatch) honeyBatches;
+    mapping(uint => HoneyBatch) private honeyBatches;
 
     /// @dev Mapping from batch ID to array of comments
-    mapping(uint => Comment[]) honeyBatchesComments;
+    mapping(uint => Comment[]) private honeyBatchesComments;
 
     /// @dev Mapping to track admin addresses
     mapping(address => bool) public admins;
 
     /// @dev Reference to the HoneyTokenization contract
-    IHoneyTokenization public honeyTokenization;
+    IHoneyTokenization public immutable honeyTokenization;
 
     /**
      * @dev Nested mapping to track claimed keys
@@ -162,10 +164,10 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     event AdminRemoved(address indexed admin);
 
     /**
-     * @dev Emitted when a producer registers their information
+     * @dev Emitted when a producer registers or updates their information
      * @param producer Address of the producer
      */
-    event NewProducer(address indexed producer);
+    event ProducerInfoUpdated(address indexed producer);
 
     /**
      * @dev Emitted when a new honey batch is created
@@ -200,7 +202,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @dev Emitted when a producer updates batch metadata
      * @param producer Address of the producer
      * @param batchId ID of the updated batch
-     * @param newMetadata New metadata content
+     * @param newMetadata New IPFS CID
      */
     event BatchMetadataUpdated(
         address indexed producer,
@@ -211,40 +213,43 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     // ============ ERRORS ============
 
     /// @dev Thrown when a non-admin tries to perform an admin-only action
-    error onlyAdminAuthorized();
+    error OnlyAdminAuthorized();
 
     /// @dev Thrown when trying to set an authorization status that's already set
-    error authorizationAlreadyApply();
+    error AuthorizationAlreadyApplied();
 
     /// @dev Thrown when an unauthorized producer tries to perform a producer action
-    error producerNotAuthorized();
+    error ProducerNotAuthorized();
 
     /// @dev Thrown when a non-token-holder tries to comment
-    error notAllowedToComment();
+    error NotAllowedToComment();
 
     /// @dev Thrown when the Merkle proof verification fails
-    error invalidMerkleProof();
+    error InvalidMerkleProof();
 
     /// @dev Thrown when trying to claim with an already used secret key
-    error keyAlreadyClaimed();
+    error KeyAlreadyClaimed();
 
     /// @dev Thrown when trying to claim but no tokens are left
-    error noTokenLeft();
+    error NoTokenLeft();
 
     /// @dev Thrown when the batch size exceeds the maximum allowed
-    error batchSizeTooLarge();
+    error BatchSizeTooLarge();
 
     /// @dev Thrown when the rating provided is not between 0 and 5
-    error ratingOutOfRange();
+    error RatingOutOfRange();
 
     /// @dev Thrown when the comment limit per user per batch is reached
-    error commentLimitReached();
+    error CommentLimitReached();
 
     /// @dev Thrown when a string parameter length is invalid
     error InvalidStringLength();
 
+    /// @dev Thrown when an IPFS CID format is invalid
+    error InvalidIPFSCID();
+
     /// @dev Thrown when trying to update metadata after tokens have been claimed
-    error metadataLocked();
+    error MetadataLocked();
 
     /// @dev Thrown when trying to update metadata for a batch that doesn't exist
     error BatchDoesNotExist();
@@ -261,14 +266,14 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     /// @dev Thrown when a producer hasn't approved the contract to transfer their tokens
     error ProducerMustApproveContract();
 
-    // @dev Thrown when trying to add an admin that already has admin privileges
+    /// @dev Thrown when trying to add an admin that already has admin privileges
     error AlreadyAdmin();
 
     /// @dev Thrown when trying to remove an admin that doesn't have admin privileges
     error NotAnAdmin();
 
-    /// @dev Thrown when a string parameter length is invalid for an IPFS CID
-    error InvalidIPFSCID();
+    /// @dev Thrown when the query limit for comments is too high
+    error QueryLimitTooHigh();
 
     // ============ MODIFIERS ============
 
@@ -276,7 +281,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @dev Modifier to restrict function access to admins only
      */
     modifier onlyAdmin() {
-        require(admins[msg.sender], onlyAdminAuthorized());
+        require(admins[msg.sender], OnlyAdminAuthorized());
         _;
     }
 
@@ -284,7 +289,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @dev Modifier to restrict function access to authorized producers only
      */
     modifier onlyAuthorizedProducer() {
-        require(producers[msg.sender].authorized, producerNotAuthorized());
+        require(producers[msg.sender].authorized, ProducerNotAuthorized());
         _;
     }
 
@@ -299,6 +304,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     constructor(address _honeyTokenizationAddress) Ownable(msg.sender) {
         honeyTokenization = IHoneyTokenization(_honeyTokenizationAddress);
         admins[msg.sender] = true;
+        emit NewAdmin(msg.sender);
     }
 
     // ============ ADMIN FUNCTIONS ============
@@ -309,26 +315,28 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      *
      * Requirements:
      * - Caller must be the contract owner
+     * - Address must not already be an admin
      *
      * Emits a {NewAdmin} event
      */
     function addAdmin(address _newAdmin) external onlyOwner {
-        require(!admins[_newAdmin], AlreadyAdmin());
+        if (admins[_newAdmin]) revert AlreadyAdmin();
         admins[_newAdmin] = true;
         emit NewAdmin(_newAdmin);
     }
 
     /**
-     * @dev Remove an admin to the system
+     * @dev Removes an admin from the system
      * @param _admin Address to be removed from admin privileges
      *
      * Requirements:
      * - Caller must be the contract owner
+     * - Address must currently be an admin
      *
-     * Emits a {AdminRemoved} event
+     * Emits an {AdminRemoved} event
      */
     function removeAdmin(address _admin) external onlyOwner {
-        require(admins[_admin], NotAnAdmin());
+        if (!admins[_admin]) revert NotAnAdmin();
         admins[_admin] = false;
         emit AdminRemoved(_admin);
     }
@@ -350,7 +358,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     ) external onlyAdmin {
         require(
             producers[_producer].authorized != _isAuthorized,
-            authorizationAlreadyApply()
+            AuthorizationAlreadyApplied()
         );
         producers[_producer].authorized = _isAuthorized;
         emit AuthorizationProducer(_producer, _isAuthorized);
@@ -363,11 +371,13 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @param _name Business name
      * @param _location Physical location
      * @param _companyRegisterNumber Official registration number
-     * @param _metadata Additional information in IPFS CID format (certifications, etc.)
-     * Requirements:
-     * - Caller must be an authorized producere
+     * @param _metadata IPFS CID pointing to additional information JSON (certifications, etc.)
      *
-     * Emits a {NewProducer} event
+     * Requirements:
+     * - Caller must be an authorized producer
+     * - All string parameters must have valid lengths
+     *
+     * Emits a {ProducerInfoUpdated} event
      */
     function setProducerInfo(
         string memory _name,
@@ -383,7 +393,11 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
             bytes(_companyRegisterNumber).length == 0 ||
             bytes(_companyRegisterNumber).length > 64
         ) revert InvalidStringLength();
-        if (bytes(_metadata).length > 256) revert InvalidIPFSCID();
+
+        if (bytes(_metadata).length > 0) {
+            if (bytes(_metadata).length < 40 || bytes(_metadata).length > 100)
+                revert InvalidIPFSCID();
+        }
 
         Producer storage producer = producers[msg.sender];
         producer.name = _name;
@@ -391,13 +405,13 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         producer.companyRegisterNumber = _companyRegisterNumber;
         producer.metadata = _metadata;
 
-        emit NewProducer(msg.sender);
+        emit ProducerInfoUpdated(msg.sender);
     }
 
     /**
      * @dev Creates a new honey batch with Merkle Tree root for secure distribution
      * @param _honeyType Type of honey (e.g., "Acacia", "Lavender")
-     * @param _metadata Batch metadata (origin, harvest date, etc.) // TODO: préciser que c'est un hash IPFS
+     * @param _metadata IPFS CID pointing to batch metadata JSON (origin, harvest date, etc.)
      * @param _amount Number of tokens to mint for this batch
      * @param _merkleRoot Root hash of the Merkle Tree containing all secret keys
      *
@@ -406,10 +420,11 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      *
      * Requirements:
      * - Caller must be an authorized producer
+     * - Producer must have called setApprovalForAll on HoneyTokenization
      * - Amount must be greater than 0
      * - Amount must not exceed MAX_BATCH_SIZE
      * - Merkle root must not be empty
-     * - Producer must have called setApprovalForAll on HoneyTokenization
+     * - Metadata must be a valid IPFS CID
      *
      * Emits a {NewHoneyBatch} event
      */
@@ -425,11 +440,12 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         );
         if (bytes(_honeyType).length == 0 || bytes(_honeyType).length > 64)
             revert InvalidStringLength();
-        if (bytes(_metadata).length == 0 || bytes(_metadata).length > 256)
+
+        if (bytes(_metadata).length < 40 || bytes(_metadata).length > 100)
             revert InvalidIPFSCID();
 
         require(_amount > 0, BatchMustHaveTokens());
-        require(_amount <= MAX_BATCH_SIZE, batchSizeTooLarge());
+        require(_amount <= MAX_BATCH_SIZE, BatchSizeTooLarge());
 
         require(_merkleRoot != bytes32(0), EmptyMerkleRoot());
 
@@ -440,7 +456,6 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         );
 
         HoneyBatch storage honeyBatch = honeyBatches[tokenId];
-        honeyBatch.id = tokenId;
         honeyBatch.honeyType = _honeyType;
         honeyBatch.metadata = _metadata;
         honeyBatch.merkleRoot = _merkleRoot;
@@ -451,7 +466,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     /**
      * @dev Allows a producer to update batch metadata ONLY before any token has been claimed
      * @param _batchId ID of the batch to update
-    * @param _newMetadata IPFS CID link to new metadata in JSON format
+     * @param _newMetadata New IPFS CID pointing to updated batch metadata JSON
      *
      * This ensures that once a consumer has purchased and claimed a token,
      * the batch information becomes permanently immutable, maintaining traceability integrity.
@@ -460,11 +475,10 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * - Caller must be an authorized producer
      * - Producer must be the creator of this batch
      * - NO token must have been claimed yet (hasBeenClaimed = false)
-     * - New metadata must be valid length
+     * - New metadata must be a valid IPFS CID
      *
      * Emits a {BatchMetadataUpdated} event
      */
-
     function updateBatchMetadata(
         uint256 _batchId,
         string memory _newMetadata
@@ -473,14 +487,13 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
 
         require(batch.merkleRoot != bytes32(0), BatchDoesNotExist());
 
-        require(!batch.hasBeenClaimed, metadataLocked());
+        require(!batch.hasBeenClaimed, MetadataLocked());
 
         address producer = honeyTokenization.tokenProducer(_batchId);
         require(producer == msg.sender, NotYourBatch());
 
-        if (
-            bytes(_newMetadata).length == 0 || bytes(_newMetadata).length > 256
-        ) revert InvalidIPFSCID();
+        if (bytes(_newMetadata).length < 40 || bytes(_newMetadata).length > 100)
+            revert InvalidIPFSCID();
 
         batch.metadata = _newMetadata;
 
@@ -495,11 +508,14 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @param _secretKey Secret key from the QR code
      * @param _merkleProof Array of hashes proving the key belongs to the Merkle Tree
      *
-     * The function performs four security checks:
+     * The function performs security checks in this order:
      * 1. Verifies the batch exists
      * 2. Verifies tokens are still available (balanceOf > 0)
      * 3. Verifies the secret key hasn't been used before
      * 4. Verifies the Merkle proof is valid
+     * 5. Transfers the token (reverts everything if this fails)
+     * 6. Locks metadata (only after successful transfer)
+     * 7. Emits event (only after all state changes succeed)
      *
      * After a successful claim, the batch metadata becomes permanently locked.
      *
@@ -519,7 +535,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     ) external nonReentrant {
         HoneyBatch storage batch = honeyBatches[_honeyBatchId];
 
-        require(batch.merkleRoot != bytes32(0), "Batch does not exist");
+        require(batch.merkleRoot != bytes32(0), BatchDoesNotExist());
 
         address producer = honeyTokenization.tokenProducer(_honeyBatchId);
 
@@ -527,18 +543,18 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
             producer,
             _honeyBatchId
         );
-        require(remainingTokens > 0, noTokenLeft());
+        require(remainingTokens > 0, NoTokenLeft());
 
         bytes32 leaf = keccak256(abi.encodePacked(_secretKey));
-        require(!claimedKeys[_honeyBatchId][leaf], keyAlreadyClaimed());
+        require(!claimedKeys[_honeyBatchId][leaf], KeyAlreadyClaimed());
 
         require(
             MerkleProof.verify(_merkleProof, batch.merkleRoot, leaf),
-            invalidMerkleProof()
+            InvalidMerkleProof()
         );
 
         claimedKeys[_honeyBatchId][leaf] = true;
-        
+
         honeyTokenization.safeTransferFrom(
             producer,
             msg.sender,
@@ -556,10 +572,13 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @dev Allows a token holder to add a comment/review for a batch
      * @param _honeyBatchId ID of the batch to comment on
      * @param _rating Numerical rating (0-5)
-     * @param _metadata IPFS CID link to comment text and additional info in JSON format
+     * @param _metadata Comment text and additional info in JSON format
      *
      * Requirements:
      * - Caller must own at least one token of the specified batch
+     * - Rating must be between 0 and 5
+     * - User must not have reached the comment limit for this batch
+     * - Comment text must be between 5 and 500 characters
      *
      * Emits a {NewComment} event
      */
@@ -570,14 +589,14 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     ) external {
         require(
             honeyTokenization.balanceOf(msg.sender, _honeyBatchId) > 0,
-            notAllowedToComment()
+            NotAllowedToComment()
         );
-        require(_rating <= 5, ratingOutOfRange());
+        require(_rating <= 5, RatingOutOfRange());
         require(
             commentCount[_honeyBatchId][msg.sender] < MAX_COMMENTS_PER_USER,
-            commentLimitReached()
+            CommentLimitReached()
         );
-        if (bytes(_metadata).length < 5 || bytes(_metadata).length > 500)
+        if (bytes(_metadata).length < 40 || bytes(_metadata).length > 100)
             revert InvalidIPFSCID();
 
         honeyBatchesComments[_honeyBatchId].push(
@@ -615,13 +634,18 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @dev Returns all comments for a specific batch (paginated)
      * @param _honeyBatchId ID of the batch
      * @param offset Starting index for pagination
-     * @param limit Maximum number of comments to return
+     * @param limit Maximum number of comments to return (capped at MAX_COMMENTS_QUERY)
+     * @return Array of comments
+     *
+     * @notice Returns empty array if offset is beyond total comments
      */
     function getHoneyBatchComments(
         uint _honeyBatchId,
         uint offset,
         uint limit
     ) external view returns (Comment[] memory) {
+        require(limit <= MAX_COMMENTS_QUERY, QueryLimitTooHigh());
+
         uint total = honeyBatchesComments[_honeyBatchId].length;
 
         if (offset >= total) {
@@ -641,6 +665,8 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
 
     /**
      * @dev Returns the total number of comments for a batch
+     * @param _honeyBatchId ID of the batch
+     * @return Total number of comments
      */
     function getHoneyBatchCommentsCount(
         uint _honeyBatchId

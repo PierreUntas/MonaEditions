@@ -281,7 +281,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @dev Modifier to restrict function access to admins only
      */
     modifier onlyAdmin() {
-        require(admins[msg.sender], OnlyAdminAuthorized());
+        if (!admins[msg.sender]) revert OnlyAdminAuthorized();
         _;
     }
 
@@ -289,7 +289,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @dev Modifier to restrict function access to authorized producers only
      */
     modifier onlyAuthorizedProducer() {
-        require(producers[msg.sender].authorized, ProducerNotAuthorized());
+        if (!producers[msg.sender].authorized) revert ProducerNotAuthorized();
         _;
     }
 
@@ -321,6 +321,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      */
     function addAdmin(address _newAdmin) external onlyOwner {
         if (admins[_newAdmin]) revert AlreadyAdmin();
+        
         admins[_newAdmin] = true;
         emit NewAdmin(_newAdmin);
     }
@@ -337,6 +338,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      */
     function removeAdmin(address _admin) external onlyOwner {
         if (!admins[_admin]) revert NotAnAdmin();
+        
         admins[_admin] = false;
         emit AdminRemoved(_admin);
     }
@@ -356,10 +358,9 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         address _producer,
         bool _isAuthorized
     ) external onlyAdmin {
-        require(
-            producers[_producer].authorized != _isAuthorized,
-            AuthorizationAlreadyApplied()
-        );
+        if (producers[_producer].authorized == _isAuthorized)
+            revert AuthorizationAlreadyApplied();
+
         producers[_producer].authorized = _isAuthorized;
         emit AuthorizationProducer(_producer, _isAuthorized);
     }
@@ -387,8 +388,10 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     ) external onlyAuthorizedProducer {
         if (bytes(_name).length == 0 || bytes(_name).length > 256)
             revert InvalidStringLength();
+
         if (bytes(_location).length == 0 || bytes(_location).length > 256)
             revert InvalidStringLength();
+
         if (
             bytes(_companyRegisterNumber).length == 0 ||
             bytes(_companyRegisterNumber).length > 64
@@ -434,20 +437,19 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         uint256 _amount,
         bytes32 _merkleRoot
     ) external onlyAuthorizedProducer {
-        require(
-            honeyTokenization.isApprovedForAll(msg.sender, address(this)),
-            ProducerMustApproveContract()
-        );
+        if (!honeyTokenization.isApprovedForAll(msg.sender, address(this)))
+            revert ProducerMustApproveContract();
+
         if (bytes(_honeyType).length == 0 || bytes(_honeyType).length > 64)
             revert InvalidStringLength();
 
         if (bytes(_metadata).length < 40 || bytes(_metadata).length > 100)
             revert InvalidIPFSCID();
 
-        require(_amount > 0, BatchMustHaveTokens());
-        require(_amount <= MAX_BATCH_SIZE, BatchSizeTooLarge());
+        if (_amount == 0) revert BatchMustHaveTokens();
+        if (_amount > MAX_BATCH_SIZE) revert BatchSizeTooLarge();
 
-        require(_merkleRoot != bytes32(0), EmptyMerkleRoot());
+        if (_merkleRoot == bytes32(0)) revert EmptyMerkleRoot();
 
         uint tokenId = honeyTokenization.mintHoneyBatch(
             msg.sender,
@@ -485,12 +487,12 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     ) external onlyAuthorizedProducer {
         HoneyBatch storage batch = honeyBatches[_batchId];
 
-        require(batch.merkleRoot != bytes32(0), BatchDoesNotExist());
+        if (batch.merkleRoot == bytes32(0)) revert BatchDoesNotExist();
 
-        require(!batch.hasBeenClaimed, MetadataLocked());
+        if (batch.hasBeenClaimed) revert MetadataLocked();
 
         address producer = honeyTokenization.tokenProducer(_batchId);
-        require(producer == msg.sender, NotYourBatch());
+        if (producer != msg.sender) revert NotYourBatch();
 
         if (bytes(_newMetadata).length < 40 || bytes(_newMetadata).length > 100)
             revert InvalidIPFSCID();
@@ -535,7 +537,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
     ) external nonReentrant {
         HoneyBatch storage batch = honeyBatches[_honeyBatchId];
 
-        require(batch.merkleRoot != bytes32(0), BatchDoesNotExist());
+        if (batch.merkleRoot == bytes32(0)) revert BatchDoesNotExist();
 
         address producer = honeyTokenization.tokenProducer(_honeyBatchId);
 
@@ -543,15 +545,13 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
             producer,
             _honeyBatchId
         );
-        require(remainingTokens > 0, NoTokenLeft());
+        if (remainingTokens == 0) revert NoTokenLeft();
 
         bytes32 leaf = keccak256(abi.encodePacked(_secretKey));
-        require(!claimedKeys[_honeyBatchId][leaf], KeyAlreadyClaimed());
+        if (claimedKeys[_honeyBatchId][leaf]) revert KeyAlreadyClaimed();
 
-        require(
-            MerkleProof.verify(_merkleProof, batch.merkleRoot, leaf),
-            InvalidMerkleProof()
-        );
+        if (!MerkleProof.verify(_merkleProof, batch.merkleRoot, leaf))
+            revert InvalidMerkleProof();
 
         claimedKeys[_honeyBatchId][leaf] = true;
 
@@ -572,13 +572,13 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
      * @dev Allows a token holder to add a comment/review for a batch
      * @param _honeyBatchId ID of the batch to comment on
      * @param _rating Numerical rating (0-5)
-     * @param _metadata Comment text and additional info in JSON format
+     * @param _metadata IPFS CID pointing to comment text in JSON format
      *
      * Requirements:
      * - Caller must own at least one token of the specified batch
      * - Rating must be between 0 and 5
      * - User must not have reached the comment limit for this batch
-     * - Comment text must be between 5 and 500 characters
+     * - Metadata must be a valid IPFS CID
      *
      * Emits a {NewComment} event
      */
@@ -587,15 +587,14 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         uint8 _rating,
         string memory _metadata
     ) external {
-        require(
-            honeyTokenization.balanceOf(msg.sender, _honeyBatchId) > 0,
-            NotAllowedToComment()
-        );
-        require(_rating <= 5, RatingOutOfRange());
-        require(
-            commentCount[_honeyBatchId][msg.sender] < MAX_COMMENTS_PER_USER,
-            CommentLimitReached()
-        );
+        if (honeyTokenization.balanceOf(msg.sender, _honeyBatchId) == 0)
+            revert NotAllowedToComment();
+
+        if (_rating > 5) revert RatingOutOfRange();
+
+        if (commentCount[_honeyBatchId][msg.sender] >= MAX_COMMENTS_PER_USER)
+            revert CommentLimitReached();
+
         if (bytes(_metadata).length < 40 || bytes(_metadata).length > 100)
             revert InvalidIPFSCID();
 
@@ -644,7 +643,7 @@ contract HoneyTraceStorage is Ownable, ReentrancyGuard {
         uint offset,
         uint limit
     ) external view returns (Comment[] memory) {
-        require(limit <= MAX_COMMENTS_QUERY, QueryLimitTooHigh());
+        if (limit > MAX_COMMENTS_QUERY) revert QueryLimitTooHigh();
 
         uint total = honeyBatchesComments[_honeyBatchId].length;
 

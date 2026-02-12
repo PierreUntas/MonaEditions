@@ -12,6 +12,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * Each token ID represents a unique honey batch from a producer. The contract
  * uses ERC1155 standard to allow multiple tokens of the same batch to be minted.
  * Only the owner (HoneyTraceStorage) can mint new batches.
+*
+ * IMPORTANT FOR PRODUCERS:
+ * Producers must call setApprovalForAll(HoneyTraceStorageAddress, true)
+ * to allow consumers to claim their tokens. Without this approval,
+ * claims will fail with: ERC1155MissingApprovalForAll(operator, owner)
  */
 contract HoneyTokenization is ERC1155, Ownable {
 
@@ -41,6 +46,15 @@ contract HoneyTokenization is ERC1155, Ownable {
     /// @dev Thrown when a string parameter length is invalid
     error InvalidStringLength();
 
+    /// @dev Thrown when an IPFS CID format is invalid
+    error InvalidIPFSCID();
+
+    /// @dev Thrown when trying to mint a batch with zero tokens
+    error InvalidAmount();
+
+    /// @dev Thrown when trying to mint a batch for the zero address
+    error InvalidProducerAddress();
+
     /**
      * @dev Mints a new honey batch and assigns it to a producer
      * @param _producer Address that will receive and own the minted tokens
@@ -51,7 +65,11 @@ contract HoneyTokenization is ERC1155, Ownable {
      * Requirement: Caller must be the contract owner (HoneyTraceStorage)
      */
     function mintHoneyBatch(address _producer, uint _amount, string memory _uri) external onlyOwner returns (uint256) {
-        if (bytes(_uri).length < 10 || bytes(_uri).length > 256) revert InvalidStringLength();
+        if (_producer == address(0)) revert InvalidProducerAddress();
+
+        if (_amount == 0) revert InvalidAmount();
+
+        if (bytes(_uri).length < 40 || bytes(_uri).length > 100) revert InvalidIPFSCID();
 
         _currentTokenId++;
         uint256 newTokenId = _currentTokenId;
@@ -74,16 +92,4 @@ contract HoneyTokenization is ERC1155, Ownable {
     function uri(uint256 tokenId) public view override returns (string memory) {
         return _tokenURIs[tokenId];
     }
-
-    /**
-      * @notice Producers must call setApprovalForAll(HoneyTraceStorageAddress, true)
-     * @dev This approval allows the HoneyTraceStorage contract to transfer tokens
-     * from the producer to consumers during the claim process
-     *
-     * Without this approval, the claim function will revert with:
-     * "ERC1155: caller is not token owner or approved"
-     *
-     * Example usage:
-     * honeyTokenization.setApprovalForAll(honeyTraceStorageAddress, true);
-     */
 }

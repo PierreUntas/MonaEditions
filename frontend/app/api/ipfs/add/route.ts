@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const IPFS_RPC = process.env.IPFS_RPC;
+const PINATA_JWT = process.env.PINATA_JWT;
 
 export async function POST(request: NextRequest) {
-    // Uploading to IPFS RPC (internal). IPFS_RPC may be undefined.
+    // Uploading to Pinata (internal). PINATA_JWT may be undefined.
 
-    if (!IPFS_RPC) {
-        console.error("❌ IPFS_RPC not configured");
+    if (!PINATA_JWT) {
+        console.error("❌ PINATA_JWT not configured");
         return NextResponse.json(
             {
-                error: "Configuration manquante: IPFS_RPC non défini côté serveur.",
-                details: "Définir IPFS_RPC dans .env.local (dev) ou les variables d'environnement de production.",
+                error: "Configuration manquante: PINATA_JWT non défini côté serveur.",
+                details: "Définir PINATA_JWT dans .env (dev) ou les variables d'environnement de production.",
             },
             { status: 500 }
         );
@@ -29,32 +29,32 @@ export async function POST(request: NextRequest) {
         const file = fileEntry as File;
         // Received file (internal): name, size -> file.name, file.size
 
-        // Prepare the FormData to forward to the IPFS RPC
+        // Prepare the FormData for Pinata
         const forward = new FormData();
         forward.append("file", file, file.name);
 
-        const url = `${IPFS_RPC.replace(/\/$/, "")}/api/v0/add?pin=false`;
+        const url = "https://api.pinata.cloud/pinning/pinFileToIPFS";
         const res = await fetch(url, {
             method: "POST",
+            headers: {
+                Authorization: `Bearer ${PINATA_JWT}`,
+            },
             body: forward,
         });
 
-        const text = await res.text();
+        const json = await res.json();
         if (!res.ok) {
-            console.error("IPFS RPC response error:", res.status, text);
+            console.error("Pinata API response error:", res.status, json);
             return NextResponse.json(
-                { error: "Erreur depuis le RPC IPFS", details: text },
+                { error: "Erreur depuis Pinata", details: json },
                 { status: 502 }
             );
         }
 
-        const lines = text.trim().split("\n").filter(Boolean);
-        const last = JSON.parse(lines[lines.length - 1]);
+        const cid = json.IpfsHash;
+        const size = json.PinSize ?? file.size;
 
-        const cid = last.Hash ?? last?.cid?.["/"] ?? last.cid;
-        const size = last.Size ? Number(last.Size) : file.size;
-
-        // IPFS add result (internal): last
+        // Pinata add result (internal): json
 
         return NextResponse.json({
             Hash: cid,

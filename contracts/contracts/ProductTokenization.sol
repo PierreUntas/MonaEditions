@@ -4,21 +4,21 @@ pragma solidity ^0.8.28;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/**
- * @title HoneyTokenization
- * @dev ERC1155 token contract for honey batch tokenization
- * @notice This contract manages the creation and tracking of honey batch tokens
+/**'
+ * @title ProductTokenization
+ * @dev ERC1155 token contract for product batch tokenization
+ * @notice This contract manages the creation and tracking of product batch tokens
  *
- * Each token ID represents a unique honey batch from a producer. The contract
+ * Each token ID represents a unique product batch from a producer. The contract
  * uses ERC1155 standard to allow multiple tokens of the same batch to be minted.
- * Only the owner (HoneyTraceStorage) can mint new batches.
+ * Only the owner (ProductTraceStorage) can mint new batches.
 *
  * IMPORTANT FOR PRODUCERS:
- * Producers must call setApprovalForAll(HoneyTraceStorageAddress, true)
+ * Producers must call setApprovalForAll(ProductTraceStorageAddress, true)
  * to allow consumers to claim their tokens. Without this approval,
  * claims will fail with: ERC1155MissingApprovalForAll(operator, owner)
  */
-contract HoneyTokenization is ERC1155, Ownable {
+contract ProductTokenization is ERC1155, Ownable {
 
     /// @dev Counter for generating unique token IDs
     uint256 private _currentTokenId;
@@ -30,12 +30,12 @@ contract HoneyTokenization is ERC1155, Ownable {
     mapping(uint256 => address) public tokenProducer;
 
     /**
-     * @dev Emitted when a new honey batch is minted
+     * @dev Emitted when a new product batch is minted
      * @param producer Address of the producer who owns the batch
-     * @param tokenId Unique identifier for the honey batch
+     * @param tokenId Unique identifier for the product batch
      * @param amount Number of tokens minted for this batch
      */
-    event HoneyBatchMinted(address indexed producer, uint256 indexed tokenId, uint256 amount);
+    event ProductBatchMinted(address indexed producer, uint256 indexed tokenId, uint256 amount);
 
     /**
      * @dev Constructor that sets the base URI and initializes Ownable
@@ -56,15 +56,15 @@ contract HoneyTokenization is ERC1155, Ownable {
     error InvalidProducerAddress();
 
     /**
-     * @dev Mints a new honey batch and assigns it to a producer
+     * @dev Mints a new product batch and assigns it to a producer
      * @param _producer Address that will receive and own the minted tokens
      * @param _amount Number of tokens to mint for this batch
      * @param _uri Metadata URI specific to this batch
      * @return newTokenId The ID of the newly created token
      *
-     * Requirement: Caller must be the contract owner (HoneyTraceStorage)
+     * Requirement: Caller must be the contract owner (ProductTraceStorage)
      */
-    function mintHoneyBatch(address _producer, uint _amount, string memory _uri) external onlyOwner returns (uint256) {
+    function mintProductBatch(address _producer, uint _amount, string memory _uri) external onlyOwner returns (uint256) {
         if (_producer == address(0)) revert InvalidProducerAddress();
 
         if (_amount == 0) revert InvalidAmount();
@@ -78,7 +78,7 @@ contract HoneyTokenization is ERC1155, Ownable {
         _tokenURIs[newTokenId] = _uri;
         _mint(_producer, newTokenId, _amount, "");
 
-        emit HoneyBatchMinted(_producer, newTokenId, _amount);
+        emit ProductBatchMinted(_producer, newTokenId, _amount);
         return newTokenId;
     }
 

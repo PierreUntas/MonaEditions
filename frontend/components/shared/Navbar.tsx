@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAccount, useReadContract } from "wagmi";
-import { HONEY_TRACE_STORAGE_ADDRESS, HONEY_TRACE_STORAGE_ABI } from '@/config/contracts';
+import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI } from '@/config/contracts';
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
@@ -22,23 +22,23 @@ export default function Navbar() {
 
     // Check if the user is the owner
     const { data: ownerAddress } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
+        address: PRODUCT_TRACE_STORAGE_ADDRESS,
+        abi: PRODUCT_TRACE_STORAGE_ABI,
         functionName: 'owner',
     });
 
     // Check if the user is admin
     const { data: isAdminResult } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
+        address: PRODUCT_TRACE_STORAGE_ADDRESS,
+        abi: PRODUCT_TRACE_STORAGE_ABI,
         functionName: 'isAdmin',
         args: address ? [address] : undefined,
     });
 
     // Check if the user is an authorized producer
     const { data: producerData } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
+        address: PRODUCT_TRACE_STORAGE_ADDRESS,
+        abi: PRODUCT_TRACE_STORAGE_ABI,
         functionName: 'getProducer',
         args: address ? [address] : undefined,
     });
@@ -181,7 +181,7 @@ export default function Navbar() {
                         <div className="space-y-2">
                             <p className="text-xs font-[Olney_Light] text-black/40 px-5 mb-2">EXPLORER</p>
                             <a href="/explore/batches" className="block py-3 px-5 text-black font-[Olney_Light] hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
-                                Lots de miel
+                                Lots de produits
                             </a>
                             <a href="/explore/producers" className="block py-3 px-5 text-black font-[Olney_Light] hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
                                 Producteurs

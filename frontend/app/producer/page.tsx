@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAccount, useWriteContract, useReadContract } from 'wagmi';
-import { HONEY_TRACE_STORAGE_ADDRESS, HONEY_TRACE_STORAGE_ABI } from '@/config/contracts';
+import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI } from '@/config/contracts';
 import { uploadToIPFS, getFromIPFSGateway } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
@@ -47,8 +47,8 @@ export default function ProducerPage() {
     const { sendTransaction } = useSendTransaction();
 
     const { data: producerData, isLoading: isLoadingProducer } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
+        address: PRODUCT_TRACE_STORAGE_ADDRESS,
+        abi: PRODUCT_TRACE_STORAGE_ABI,
         functionName: 'getProducer',
         args: address ? [address] : undefined,
     });
@@ -236,14 +236,14 @@ export default function ProducerPage() {
             const cid = await uploadToIPFS(producerData);
 
             const data = encodeFunctionData({
-                abi: HONEY_TRACE_STORAGE_ABI,
-                functionName: 'addProducer',
+                abi: PRODUCT_TRACE_STORAGE_ABI,
+                functionName: 'setProducerInfo',
                 args: [name, location, companyRegisterNumber, cid],
             });
 
             const txHash = await sendTransaction(
                 {
-                    to: HONEY_TRACE_STORAGE_ADDRESS,
+                    to: PRODUCT_TRACE_STORAGE_ADDRESS,
                     data: data,
                 },
                 {

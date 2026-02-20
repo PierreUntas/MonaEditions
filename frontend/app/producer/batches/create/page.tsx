@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
-import { HONEY_TRACE_STORAGE_ADDRESS, HONEY_TRACE_STORAGE_ABI, HONEY_TOKENIZATION_ADDRESS, HONEY_TOKENIZATION_ABI } from '@/config/contracts';
+import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI, PRODUCT_TOKENIZATION_ADDRESS, PRODUCT_TOKENIZATION_ABI } from '@/config/contracts';
 import { uploadToIPFS, uploadFileToIPFS } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
@@ -15,7 +15,7 @@ import * as XLSX from 'xlsx';
 
 export default function CreateBatchPage() {
     const { address } = useAccount();
-    const [honeyType, setHoneyType] = useState('');
+    const [productType, setProductType] = useState('');
     const [amount, setAmount] = useState('');
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isCheckingAuthorization, setIsCheckingAuthorization] = useState(true);
@@ -35,29 +35,27 @@ export default function CreateBatchPage() {
     const { sendTransaction } = useSendTransaction();
 
     const [batchData, setBatchData] = useState({
-        identifiant: '',
-        typeMiel: '',
-        periodeRecolte: '',
-        dateMiseEnPot: '',
-        lieuMiseEnPot: '',
+        identifier: '',
+        productType: '',
+        description: '',
+        origin: '',
+        productionDate: '',
         certifications: [] as string[],
-        composition: '',
-        formatPot: '',
-        etiquetage: ''
+        labelUri: ''
     });
 
     const { data: producerData, isLoading: isLoadingProducer } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
+        address: PRODUCT_TRACE_STORAGE_ADDRESS,
+        abi: PRODUCT_TRACE_STORAGE_ABI,
         functionName: 'getProducer',
         args: address ? [address] : undefined,
     });
 
     const { data: approvalStatus, refetch: refetchApproval } = useReadContract({
-        address: HONEY_TOKENIZATION_ADDRESS,
-        abi: HONEY_TOKENIZATION_ABI,
+        address: PRODUCT_TOKENIZATION_ADDRESS,
+        abi: PRODUCT_TOKENIZATION_ABI,
         functionName: 'isApprovedForAll',
-        args: address ? [address, HONEY_TRACE_STORAGE_ADDRESS] : undefined,
+        args: address ? [address, PRODUCT_TRACE_STORAGE_ADDRESS] : undefined,
     });
 
     useEffect(() => {
@@ -122,7 +120,7 @@ export default function CreateBatchPage() {
 
         try {
             const cid = await uploadFileToIPFS(file);
-            setBatchData({ ...batchData, etiquetage: `ipfs://${cid}` });
+            setBatchData({ ...batchData, labelUri: `ipfs://${cid}` });
             alert('✅ Étiquette uploadée sur IPFS !');
         } catch (error) {
             console.error('Error uploading label:', error);
@@ -333,14 +331,14 @@ export default function CreateBatchPage() {
             setIsApproving(true);
             
             const data = encodeFunctionData({
-                abi: HONEY_TOKENIZATION_ABI,
+                abi: PRODUCT_TOKENIZATION_ABI,
                 functionName: 'setApprovalForAll',
-                args: [HONEY_TRACE_STORAGE_ADDRESS, true]
+                args: [PRODUCT_TRACE_STORAGE_ADDRESS, true]
             });
 
             const txHash = await sendTransaction(
                 {
-                    to: HONEY_TOKENIZATION_ADDRESS,
+                    to: PRODUCT_TOKENIZATION_ADDRESS,
                     data: data,
                 },
                 {
@@ -375,29 +373,27 @@ export default function CreateBatchPage() {
         e.preventDefault();
         setIsUploading(true);
 
-        if (!honeyType || !amount || !merkleRoot) {
+        if (!productType || !amount || !merkleRoot) {
             alert('Veuillez remplir tous les champs obligatoires');
             setIsUploading(false);
             return;
         }
 
         if (!isApproved) {
-            alert('⚠️ Vous devez d\'abord approuver le contrat HoneyTraceStorage');
+            alert('⚠️ Vous devez d\'abord approuver le contrat ProductTraceStorage');
             setIsUploading(false);
             return;
         }
 
         try {
             const completeData = {
-                identifiant: batchData.identifiant,
-                typeMiel: honeyType,
-                periodeRecolte: batchData.periodeRecolte,
-                dateMiseEnPot: batchData.dateMiseEnPot,
-                lieuMiseEnPot: batchData.lieuMiseEnPot,
+                identifier: batchData.identifier,
+                productType: productType,
+                description: batchData.description,
+                origin: batchData.origin,
+                productionDate: batchData.productionDate,
                 certifications: batchData.certifications,
-                composition: batchData.composition,
-                formatPot: batchData.formatPot,
-                etiquetage: batchData.etiquetage
+                labelUri: batchData.labelUri
             };
 
             const cid = await uploadToIPFS(completeData);
@@ -406,14 +402,14 @@ export default function CreateBatchPage() {
             setIsCreating(true);
 
             const data = encodeFunctionData({
-                abi: HONEY_TRACE_STORAGE_ABI,
-                functionName: 'addHoneyBatch',
-                args: [honeyType, cid, BigInt(amount), merkleRoot as `0x${string}`]
+                abi: PRODUCT_TRACE_STORAGE_ABI,
+                functionName: 'addProductBatch',
+                args: [productType, cid, BigInt(amount), merkleRoot as `0x${string}`]
             });
 
             const txHash = await sendTransaction(
                 {
-                    to: HONEY_TRACE_STORAGE_ADDRESS,
+                    to: PRODUCT_TRACE_STORAGE_ADDRESS,
                     data: data,
                 },
                 {
@@ -435,11 +431,11 @@ export default function CreateBatchPage() {
             const batchCreatedEvent = receipt.logs.find(log => {
                 try {
                     const decoded = decodeEventLog({
-                        abi: HONEY_TRACE_STORAGE_ABI,
+                        abi: PRODUCT_TRACE_STORAGE_ABI,
                         data: log.data,
                         topics: log.topics,
                     });
-                    return decoded.eventName === 'NewHoneyBatch';
+                    return decoded.eventName === 'NewProductBatch';
                 } catch (e) {
                     return false;
                 }
@@ -447,16 +443,16 @@ export default function CreateBatchPage() {
 
             if (batchCreatedEvent) {
                 const decoded = decodeEventLog({
-                    abi: HONEY_TRACE_STORAGE_ABI,
+                    abi: PRODUCT_TRACE_STORAGE_ABI,
                     data: batchCreatedEvent.data,
                     topics: batchCreatedEvent.topics,
                 }) as any;
 
-                const batchId = decoded.args.honeyBatchId?.toString();
+                const batchId = decoded.args.productBatchId?.toString();
                 setCreatedBatchId(batchId);
                 alert(`✅ Lot créé avec succès ! ID du lot: ${batchId}`);
             } else {
-                console.error('❌ NewHoneyBatch event not found in logs');
+                console.error('❌ NewProductBatch event not found in logs');
                 alert('⚠️ Transaction confirmée mais impossible de récupérer l\'ID du lot. Vérifiez la console.');
                 setCreatedBatchId('confirmed');
             }
@@ -519,7 +515,7 @@ export default function CreateBatchPage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="font-bold">⚠️ Action requise</p>
-                                <p className="text-sm">Vous devez approuver le contrat HoneyTraceStorage avant de créer des lots.</p>
+                                <p className="text-sm">Vous devez approuver le contrat ProductTraceStorage avant de créer des lots.</p>
                             </div>
                             <button
                                 onClick={handleApprove}
@@ -541,7 +537,7 @@ export default function CreateBatchPage() {
                 )}
 
                 <h1 className="text-4xl font-[Carbon_Phyber] text-[#000000] mb-6">
-                    Créer un nouveau lot de miel
+                    Créer un nouveau lot de produit
                 </h1>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -551,92 +547,66 @@ export default function CreateBatchPage() {
                         </label>
                         <input
                             type="text"
-                            value={batchData.identifiant}
-                            onChange={(e) => setBatchData({...batchData, identifiant: e.target.value})}
+                            value={batchData.identifier}
+                            onChange={(e) => setBatchData({...batchData, identifier: e.target.value})}
                             className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                            placeholder="LOT20251118-001"
+                            placeholder="BATCH-2026-001"
                             required
                         />
                     </div>
 
                     <div>
                         <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Type de miel *
+                            Type de produit *
                         </label>
                         <input
                             type="text"
-                            value={honeyType}
+                            value={productType}
                             onChange={(e) => {
-                                setHoneyType(e.target.value);
-                                setBatchData({...batchData, typeMiel: e.target.value});
+                                setProductType(e.target.value);
+                                setBatchData({...batchData, productType: e.target.value});
                             }}
                             className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                            placeholder="Ex: Acacia, Lavande..."
+                            placeholder="Ex: Huile d'olive, Miel, Vin..."
                             required
                         />
                     </div>
 
                     <div>
                         <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Période de récolte
+                            Description du produit
                         </label>
-                        <input
-                            type="text"
-                            value={batchData.periodeRecolte}
-                            onChange={(e) => setBatchData({...batchData, periodeRecolte: e.target.value})}
+                        <textarea
+                            value={batchData.description}
+                            onChange={(e) => setBatchData({...batchData, description: e.target.value})}
                             className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                            placeholder="Mai-Juin 2025"
+                            placeholder="Décrivez votre produit, sa composition, ses caractéristiques..."
+                            rows={4}
                         />
                     </div>
 
                     <div>
                         <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Date de mise en pot
+                            Origine / Lieu de production
+                        </label>
+                        <input
+                            type="text"
+                            value={batchData.origin}
+                            onChange={(e) => setBatchData({...batchData, origin: e.target.value})}
+                            className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
+                            placeholder="Ex: Bordeaux, France"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
+                            Date de production
                         </label>
                         <input
                             type="date"
-                            value={batchData.dateMiseEnPot}
-                            onChange={(e) => setBatchData({...batchData, dateMiseEnPot: e.target.value})}
+                            value={batchData.productionDate}
+                            onChange={(e) => setBatchData({...batchData, productionDate: e.target.value})}
                             className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Lieu de mise en pot
-                        </label>
-                        <input
-                            type="text"
-                            value={batchData.lieuMiseEnPot}
-                            onChange={(e) => setBatchData({...batchData, lieuMiseEnPot: e.target.value})}
-                            className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                            placeholder="Bordeaux, Nouvelle-Aquitaine, France"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Composition
-                        </label>
-                        <textarea
-                            value={batchData.composition}
-                            onChange={(e) => setBatchData({...batchData, composition: e.target.value})}
-                            className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                            placeholder="Miel 100% Acacia issu de ruchers locaux"
-                            rows={3}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Format du pot
-                        </label>
-                        <input
-                            type="text"
-                            value={batchData.formatPot}
-                            onChange={(e) => setBatchData({...batchData, formatPot: e.target.value})}
-                            className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                            placeholder="250g"
                         />
                     </div>
 
@@ -666,9 +636,9 @@ export default function CreateBatchPage() {
                                 ✅ {labelFileName}
                             </p>
                         )}
-                        {batchData.etiquetage && (
+                        {batchData.labelUri && (
                             <p className="text-xs font-mono text-gray-500 mt-1 break-all">
-                                {batchData.etiquetage}
+                                {batchData.labelUri}
                             </p>
                         )}
                     </div>
@@ -718,23 +688,25 @@ export default function CreateBatchPage() {
                     </div>
                 </form>
 
-                {createdBatchId && createdBatchId !== 'pending' && createdBatchId !== 'confirmed' && (
+                {createdBatchId && secretKeys.length > 0 && merkleTree && (
                     <div className="mt-6 space-y-4">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <p className="text-sm font-[Olney_Light] text-blue-800 mb-3">
-                                🏷️ <strong>QR Code pour l'étiquette du pot</strong>
-                            </p>
-                            <p className="text-xs font-[Olney_Light] text-blue-600 mb-3">
-                                Ce QR code pointe vers la page du produit et peut être collé à l'extérieur de votre pot.
-                            </p>
-                            <button
-                                onClick={downloadBatchPageQRCode}
-                                disabled={isGeneratingQR}
-                                className="w-full bg-amber-500 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-amber-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                            >
-                                {isGeneratingQR ? '🔄 Génération...' : '📥 Télécharger QR Code Étiquette'}
-                            </button>
-                        </div>
+                        {createdBatchId !== 'pending' && createdBatchId !== 'confirmed' && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <p className="text-sm font-[Olney_Light] text-blue-800 mb-3">
+                                    🏷️ <strong>QR Code pour l'étiquette du produit</strong>
+                                </p>
+                                <p className="text-xs font-[Olney_Light] text-blue-600 mb-3">
+                                    Ce QR code pointe vers la page du produit et peut être collé sur votre emballage.
+                                </p>
+                                <button
+                                    onClick={downloadBatchPageQRCode}
+                                    disabled={isGeneratingQR}
+                                    className="w-full bg-amber-500 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-amber-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    {isGeneratingQR ? '🔄 Génération...' : '📥 Télécharger QR Code Étiquette'}
+                                </button>
+                            </div>
+                        )}
 
                         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                             <p className="text-sm font-[Olney_Light] text-purple-800 mb-3">

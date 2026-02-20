@@ -39,11 +39,12 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
         <PrivyProviderCore
             appId={appId}
             config={{
-                loginMethods: ["email", "wallet", "google", "twitter", "discord"],
+                // loginMethods: ["email", "wallet", "google", "twitter", "discord"],
+                loginMethods: ["email"],
                 appearance: {
                     theme: "light",
                     accentColor: "#fbbf24",
-                    logo: "/logo-png-noir.png",
+                    logo: "/originlink-logo.png",
                 },
                 // embeddedWallets: {
                 //     createOnLogin: "users-without-wallets",

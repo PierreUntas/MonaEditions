@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { HONEY_TRACE_STORAGE_ADDRESS, HONEY_TRACE_STORAGE_ABI, HONEY_TOKENIZATION_ADDRESS, HONEY_TOKENIZATION_ABI } from '@/config/contracts';
+import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI, PRODUCT_TOKENIZATION_ADDRESS, PRODUCT_TOKENIZATION_ABI } from '@/config/contracts';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -13,7 +13,7 @@ import { useSendTransaction } from '@privy-io/react-auth';
 interface OwnedToken {
     tokenId: bigint;
     balance: bigint;
-    honeyType: string;
+    productType: string;
     metadata: string;
     producer: string;
     producerName: string;
@@ -39,10 +39,10 @@ export default function ConsumerPage() {
 
             setIsLoading(true);
             try {
-                // Fetch all NewHoneyBatch events
+                // Fetch all NewProductBatch events
                 const logs = await publicClient.getLogs({
-                    address: HONEY_TRACE_STORAGE_ADDRESS,
-                    event: parseAbiItem('event NewHoneyBatch(address indexed producer, uint indexed honeyBatchId)'),
+                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                    event: parseAbiItem('event NewProductBatch(address indexed producer, uint indexed productBatchId)'),
                     fromBlock: 9753823n,
                     toBlock: 'latest'
                 });
@@ -51,13 +51,13 @@ export default function ConsumerPage() {
 
                 // For each batch, check if the user owns tokens
                 for (const log of logs) {
-                    const tokenId = log.args.honeyBatchId as bigint;
+                    const tokenId = log.args.productBatchId as bigint;
                     const producerAddress = log.args.producer as `0x${string}`;
 
                     // Check the user's balance
                     const balance = await publicClient.readContract({
-                        address: HONEY_TOKENIZATION_ADDRESS,
-                        abi: HONEY_TOKENIZATION_ABI,
+                        address: PRODUCT_TOKENIZATION_ADDRESS,
+                        abi: PRODUCT_TOKENIZATION_ABI,
                         functionName: 'balanceOf',
                         args: [address, tokenId]
                     }) as bigint;
@@ -65,16 +65,16 @@ export default function ConsumerPage() {
                     if (balance > 0n) {
                         // Fetch batch info
                         const batchInfo = await publicClient.readContract({
-                            address: HONEY_TRACE_STORAGE_ADDRESS,
-                            abi: HONEY_TRACE_STORAGE_ABI,
-                            functionName: 'getHoneyBatch',
+                            address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                            abi: PRODUCT_TRACE_STORAGE_ABI,
+                            functionName: 'getProductBatch',
                             args: [tokenId]
                         }) as any;
 
                         // Fetch producer info
                         const producerData = await publicClient.readContract({
-                            address: HONEY_TRACE_STORAGE_ADDRESS,
-                            abi: HONEY_TRACE_STORAGE_ABI,
+                            address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                            abi: PRODUCT_TRACE_STORAGE_ABI,
                             functionName: 'getProducer',
                             args: [producerAddress]
                         }) as any;
@@ -82,7 +82,7 @@ export default function ConsumerPage() {
                         tokensData.push({
                             tokenId,
                             balance,
-                            honeyType: batchInfo.honeyType,
+                            productType: batchInfo.productType,
                             metadata: batchInfo.metadata,
                             producer: producerAddress,
                             producerName: producerData.name || 'Producteur anonyme'
@@ -119,14 +119,14 @@ export default function ConsumerPage() {
         setIsCommenting(true);
         try {
             const data = encodeFunctionData({
-                abi: HONEY_TRACE_STORAGE_ABI,
+                abi: PRODUCT_TRACE_STORAGE_ABI,
                 functionName: 'addComment',
                 args: [selectedToken, rating, comment]
             });
 
             const txHash = await sendTransaction(
                 {
-                    to: HONEY_TRACE_STORAGE_ADDRESS,
+                    to: PRODUCT_TRACE_STORAGE_ADDRESS,
                     data: data,
                 },
                 {
@@ -158,7 +158,7 @@ export default function ConsumerPage() {
             <div className="container mx-auto p-6 max-w-4xl">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-4xl font-[Carbon_Phyber] text-[#000000]">
-                        Mes Tokens de Miel
+                        Mes Tokens de Produits
                     </h1>
                     <Link
                         href="/consumer/claim"
@@ -194,7 +194,7 @@ export default function ConsumerPage() {
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
                                         <h2 className="text-2xl font-[Carbon_bl] text-[#000000] mb-2">
-                                            {token.honeyType}
+                                            {token.productType}
                                         </h2>
                                         <p className="text-sm font-[Olney_Light] text-[#000000]/60">
                                             Lot #{token.tokenId.toString()}
@@ -298,7 +298,7 @@ export default function ConsumerPage() {
 
                 <div className="flex justify-center mt-8 mb-6">
                     <Image
-                        src="/logo-png-noir.png"
+                        src="/originlink-logo.png"
                         alt="Logo"
                         width={120}
                         height={120}

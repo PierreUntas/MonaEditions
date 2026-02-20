@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
-import { HONEY_TRACE_STORAGE_ADDRESS, HONEY_TRACE_STORAGE_ABI, HONEY_TOKENIZATION_ADDRESS, HONEY_TOKENIZATION_ABI } from '@/config/contracts';
+import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI, PRODUCT_TOKENIZATION_ADDRESS, PRODUCT_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
@@ -11,20 +11,18 @@ import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
 
 interface BatchIPFSData {
-    identifiant: string;
-    typeMiel: string;
-    periodeRecolte: string;
-    dateMiseEnPot: string;
-    lieuMiseEnPot: string;
+    identifier: string;
+    productType: string;
+    description: string;
+    origin: string;
+    productionDate: string;
     certifications: string[];
-    composition: string;
-    formatPot: string;
-    etiquetage: string;
+    labelUri: string;
 }
 
 interface BatchInfo {
     tokenId: bigint;
-    honeyType: string;
+    productType: string;
     metadata: string;
     merkleRoot: string;
     remainingTokens: bigint;
@@ -40,8 +38,8 @@ export default function ProducerBatchesPage() {
     const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
 
     const { data: producerData, isLoading: isLoadingProducer } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
+        address: PRODUCT_TRACE_STORAGE_ADDRESS,
+        abi: PRODUCT_TRACE_STORAGE_ABI,
         functionName: 'getProducer',
         args: address ? [address] : undefined,
     });
@@ -65,8 +63,8 @@ export default function ProducerBatchesPage() {
             setIsLoading(true);
             try {
                 const logs = await publicClient.getLogs({
-                    address: HONEY_TRACE_STORAGE_ADDRESS,
-                    event: parseAbiItem('event NewHoneyBatch(address indexed producer, uint indexed honeyBatchId)'),
+                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                    event: parseAbiItem('event NewProductBatch(address indexed producer, uint indexed productBatchId)'),
                     args: {
                         producer: address
                     },
@@ -77,25 +75,25 @@ export default function ProducerBatchesPage() {
                 const batchesData: BatchInfo[] = [];
 
                 for (const log of logs) {
-                    const tokenId = log.args.honeyBatchId as bigint;
+                    const tokenId = log.args.productBatchId as bigint;
 
                     const batchInfo = await publicClient.readContract({
-                        address: HONEY_TRACE_STORAGE_ADDRESS,
-                        abi: HONEY_TRACE_STORAGE_ABI,
-                        functionName: 'getHoneyBatch',
+                        address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                        abi: PRODUCT_TRACE_STORAGE_ABI,
+                        functionName: 'getProductBatch',
                         args: [tokenId]
                     }) as any;
 
                     const balance = await publicClient.readContract({
-                        address: HONEY_TOKENIZATION_ADDRESS,
-                        abi: HONEY_TOKENIZATION_ABI,
+                        address: PRODUCT_TOKENIZATION_ADDRESS,
+                        abi: PRODUCT_TOKENIZATION_ABI,
                         functionName: 'balanceOf',
                         args: [address, tokenId]
                     }) as bigint;
 
                     batchesData.push({
                         tokenId,
-                        honeyType: batchInfo.honeyType,
+                        productType: batchInfo.productType,
                         metadata: batchInfo.metadata,
                         merkleRoot: batchInfo.merkleRoot,
                         remainingTokens: balance
@@ -180,7 +178,7 @@ export default function ProducerBatchesPage() {
             <div className="container mx-auto p-6 max-w-4xl">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-4xl font-[Carbon_Phyber] text-[#000000]">
-                        Mes lots de miel
+                        Mes lots de produits
                     </h1>
                     <Link
                         href="/producer/batches/create"
@@ -218,25 +216,25 @@ export default function ProducerBatchesPage() {
                                     <div className="flex justify-between items-start">
                                         <div className="flex-1">
                                             <h2 className="text-2xl font-[Carbon_Phyber] text-[#000000] mb-2">
-                                                {batch.honeyType}
+                                                {batch.productType}
                                             </h2>
                                             <div className="space-y-1">
                                                 <p className="text-sm font-[Olney_Light] text-[#000000]/60">
                                                     Lot #{batch.tokenId.toString()}
                                                 </p>
-                                                {batch.ipfsData?.identifiant && (
+                                                {batch.ipfsData?.identifier && (
                                                     <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                                        Identifiant: {batch.ipfsData.identifiant}
+                                                        Identifiant: {batch.ipfsData.identifier}
                                                     </p>
                                                 )}
-                                                {batch.ipfsData?.periodeRecolte && (
+                                                {batch.ipfsData?.origin && (
                                                     <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                                        Récolte: {batch.ipfsData.periodeRecolte}
+                                                        Origine: {batch.ipfsData.origin}
                                                     </p>
                                                 )}
-                                                {batch.ipfsData?.formatPot && (
+                                                {batch.ipfsData?.productionDate && (
                                                     <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                                        Format: {batch.ipfsData.formatPot}
+                                                        Production: {batch.ipfsData.productionDate}
                                                     </p>
                                                 )}
                                                 {batch.ipfsData?.certifications && batch.ipfsData.certifications.length > 0 && (
@@ -270,7 +268,7 @@ export default function ProducerBatchesPage() {
 
                 <div className="flex justify-center mt-8 mb-6">
                     <Image
-                        src="/logo-png-noir.png"
+                        src="/originlink-logo.png"
                         alt="Logo"
                         width={120}
                         height={120}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { HONEY_TRACE_STORAGE_ADDRESS, HONEY_TRACE_STORAGE_ABI, HONEY_TOKENIZATION_ADDRESS, HONEY_TOKENIZATION_ABI } from '@/config/contracts';
+import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI, PRODUCT_TOKENIZATION_ADDRESS, PRODUCT_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway, getIPFSUrl } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
@@ -32,20 +32,18 @@ interface ProducerIPFSData {
 }
 
 interface BatchIPFSData {
-    identifiant: string;
-    typeMiel: string;
-    periodeRecolte: string;
-    dateMiseEnPot: string;
-    lieuMiseEnPot: string;
+    identifier: string;
+    productType: string;
+    description: string;
+    origin: string;
+    productionDate: string;
     certifications: string[];
-    composition: string;
-    formatPot: string;
-    etiquetage: string;
+    labelUri: string;
 }
 
 interface BatchInfo {
     tokenId: bigint;
-    honeyType: string;
+    productType: string;
     metadata: string;
     remainingTokens: bigint;
     ipfsData?: BatchIPFSData;
@@ -72,8 +70,8 @@ export default function ProducerDetailsPage() {
 
             try {
                 const producerData = await publicClient.readContract({
-                    address: HONEY_TRACE_STORAGE_ADDRESS,
-                    abi: HONEY_TRACE_STORAGE_ABI,
+                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                    abi: PRODUCT_TRACE_STORAGE_ABI,
                     functionName: 'getProducer',
                     args: [producerAddress as `0x${string}`]
                 }) as any;
@@ -100,8 +98,8 @@ export default function ProducerDetailsPage() {
                 }
 
                 const logs = await publicClient.getLogs({
-                    address: HONEY_TRACE_STORAGE_ADDRESS,
-                    event: parseAbiItem('event NewHoneyBatch(address indexed producer, uint indexed honeyBatchId)'),
+                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                    event: parseAbiItem('event NewProductBatch(address indexed producer, uint indexed productBatchId)'),
                     args: {
                         producer: producerAddress as `0x${string}`
                     },
@@ -112,25 +110,25 @@ export default function ProducerDetailsPage() {
                 const batchesData: BatchInfo[] = [];
 
                 for (const log of logs) {
-                    const tokenId = log.args.honeyBatchId as bigint;
+                    const tokenId = log.args.productBatchId as bigint;
 
                     const batchInfo = await publicClient.readContract({
-                        address: HONEY_TRACE_STORAGE_ADDRESS,
-                        abi: HONEY_TRACE_STORAGE_ABI,
-                        functionName: 'getHoneyBatch',
+                        address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                        abi: PRODUCT_TRACE_STORAGE_ABI,
+                        functionName: 'getProductBatch',
                         args: [tokenId]
                     }) as any;
 
                     const balance = await publicClient.readContract({
-                        address: HONEY_TOKENIZATION_ADDRESS,
-                        abi: HONEY_TOKENIZATION_ABI,
+                        address: PRODUCT_TOKENIZATION_ADDRESS,
+                        abi: PRODUCT_TOKENIZATION_ABI,
                         functionName: 'balanceOf',
                         args: [producerAddress as `0x${string}`, tokenId]
                     }) as bigint;
 
                     batchesData.push({
                         tokenId,
-                        honeyType: batchInfo.honeyType,
+                        productType: batchInfo.productType,
                         metadata: batchInfo.metadata,
                         remainingTokens: balance
                     });
@@ -145,18 +143,18 @@ export default function ProducerDetailsPage() {
                     
                     // Fetch comments to compute the average rating
                     const commentsCount = await publicClient.readContract({
-                        address: HONEY_TRACE_STORAGE_ADDRESS,
-                        abi: HONEY_TRACE_STORAGE_ABI,
-                        functionName: 'getHoneyBatchCommentsCount',
+                        address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                        abi: PRODUCT_TRACE_STORAGE_ABI,
+                        functionName: 'getProductBatchCommentsCount',
                         args: [tokenId]
                     }) as bigint;
 
                     let averageRating = 0;
                     if (commentsCount > 0n) {
                         const comments = await publicClient.readContract({
-                            address: HONEY_TRACE_STORAGE_ADDRESS,
-                            abi: HONEY_TRACE_STORAGE_ABI,
-                            functionName: 'getHoneyBatchComments',
+                            address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                            abi: PRODUCT_TRACE_STORAGE_ABI,
+                            functionName: 'getProductBatchComments',
                             args: [tokenId, 0n, commentsCount]
                         }) as any[];
 
@@ -390,7 +388,7 @@ export default function ProducerDetailsPage() {
                 )}
 
                 <h2 className="text-3xl font-[Carbon_Phyber] text-[#000000] mb-4">
-                    Lots de miel ({batches.length})
+                    Lots de produits ({batches.length})
                 </h2>
 
                 {batches.length === 0 ? (
@@ -405,32 +403,32 @@ export default function ProducerDetailsPage() {
                                 href={`/explore/batch/${batch.tokenId}`}
                                 className="bg-yellow-bee rounded-lg p-4 opacity-70 border border-[#000000] hover:opacity-100 transition-opacity"
                             >
-                                {batch.ipfsData?.etiquetage && (
+                                {batch.ipfsData?.labelUri && (
                                     <div className="mb-3 rounded-lg overflow-hidden">
                                         <img
-                                            src={getIPFSUrl(batch.ipfsData.etiquetage)}
-                                            alt={`Étiquette ${batch.honeyType}`}
+                                            src={getIPFSUrl(batch.ipfsData.labelUri)}
+                                            alt={`Étiquette ${batch.productType}`}
                                             className="w-full h-32 object-cover"
                                         />
                                     </div>
                                 )}
                                 
                                 <h3 className="text-xl font-[Carbon_bl] text-[#000000] mb-2">
-                                    {batch.honeyType}
+                                    {batch.productType}
                                 </h3>
-                                {batch.ipfsData?.identifiant && (
+                                {batch.ipfsData?.identifier && (
                                     <p className="text-xs font-[Olney_Light] text-[#000000]/60 mb-2">
-                                        {batch.ipfsData.identifiant}
+                                        {batch.ipfsData.identifier}
                                     </p>
                                 )}
-                                {batch.ipfsData?.periodeRecolte && (
+                                {batch.ipfsData?.origin && (
                                     <p className="text-sm font-[Olney_Light] text-[#000000]/80 mb-2">
-                                        📅 {batch.ipfsData.periodeRecolte}
+                                        📍 {batch.ipfsData.origin}
                                     </p>
                                 )}
-                                {batch.ipfsData?.formatPot && (
+                                {batch.ipfsData?.productionDate && (
                                     <p className="text-sm font-[Olney_Light] text-[#000000]/80 mb-2">
-                                        📦 {batch.ipfsData.formatPot}
+                                        📅 {new Date(batch.ipfsData.productionDate).toLocaleDateString('fr-FR')}
                                     </p>
                                 )}
                                 {batch.ipfsData?.certifications && batch.ipfsData.certifications.length > 0 && (
@@ -468,7 +466,7 @@ export default function ProducerDetailsPage() {
 
                 <div className="flex justify-center mt-8 mb-6">
                     <Image
-                        src="/logo-png-noir.png"
+                        src="/originlink-logo.png"
                         alt="Logo"
                         width={120}
                         height={120}

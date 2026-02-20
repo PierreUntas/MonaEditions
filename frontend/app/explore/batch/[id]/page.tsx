@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { HONEY_TRACE_STORAGE_ADDRESS, HONEY_TRACE_STORAGE_ABI, HONEY_TOKENIZATION_ADDRESS, HONEY_TOKENIZATION_ABI } from '@/config/contracts';
+import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI, PRODUCT_TOKENIZATION_ADDRESS, PRODUCT_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway, getIPFSUrl } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
@@ -12,22 +12,20 @@ import { publicClient } from '@/lib/client';
 interface BatchDetails {
     tokenId: bigint;
     producer: string;
-    honeyType: string;
+    productType: string;
     metadata: string;
     merkleRoot: string;
     remainingTokens: bigint;
 }
 
 interface BatchIPFSData {
-    identifiant: string;
-    typeMiel: string;
-    periodeRecolte: string;
-    dateMiseEnPot: string;
-    lieuMiseEnPot: string;
+    identifier: string;
+    productType: string;
+    description: string;
+    origin: string;
+    productionDate: string;
     certifications: string[];
-    composition: string;
-    formatPot: string;
-    etiquetage: string;
+    labelUri: string;
 }
 
 interface ProducerInfo {
@@ -53,7 +51,7 @@ interface ProducerIPFSData {
 
 interface Comment {
     consumer: string;
-    honeyBatchId: bigint;
+    productBatchId: bigint;
     rating: number;
     metadata: string;
 }
@@ -82,22 +80,22 @@ export default function BatchDetailsPage() {
                 const tokenId = BigInt(batchId);
 
                 const batchInfo = await publicClient.readContract({
-                    address: HONEY_TRACE_STORAGE_ADDRESS,
-                    abi: HONEY_TRACE_STORAGE_ABI,
-                    functionName: 'getHoneyBatch',
+                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                    abi: PRODUCT_TRACE_STORAGE_ABI,
+                    functionName: 'getProductBatch',
                     args: [tokenId]
                 }) as any;
 
                 const producerAddress = await publicClient.readContract({
-                    address: HONEY_TOKENIZATION_ADDRESS,
-                    abi: HONEY_TOKENIZATION_ABI,
+                    address: PRODUCT_TOKENIZATION_ADDRESS,
+                    abi: PRODUCT_TOKENIZATION_ABI,
                     functionName: 'tokenProducer',
                     args: [tokenId]
                 }) as `0x${string}`;
 
                 const balance = await publicClient.readContract({
-                    address: HONEY_TOKENIZATION_ADDRESS,
-                    abi: HONEY_TOKENIZATION_ABI,
+                    address: PRODUCT_TOKENIZATION_ADDRESS,
+                    abi: PRODUCT_TOKENIZATION_ABI,
                     functionName: 'balanceOf',
                     args: [producerAddress, tokenId]
                 }) as bigint;
@@ -105,7 +103,7 @@ export default function BatchDetailsPage() {
                 const batchData = {
                     tokenId,
                     producer: producerAddress,
-                    honeyType: batchInfo.honeyType,
+                    productType: batchInfo.productType,
                     metadata: batchInfo.metadata,
                     merkleRoot: batchInfo.merkleRoot,
                     remainingTokens: balance
@@ -126,8 +124,8 @@ export default function BatchDetailsPage() {
                 }
 
                 const producerData = await publicClient.readContract({
-                    address: HONEY_TRACE_STORAGE_ADDRESS,
-                    abi: HONEY_TRACE_STORAGE_ABI,
+                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                    abi: PRODUCT_TRACE_STORAGE_ABI,
                     functionName: 'getProducer',
                     args: [producerAddress]
                 }) as any;
@@ -151,17 +149,17 @@ export default function BatchDetailsPage() {
                 }
 
                 const commentsCount = await publicClient.readContract({
-                    address: HONEY_TRACE_STORAGE_ADDRESS,
-                    abi: HONEY_TRACE_STORAGE_ABI,
-                    functionName: 'getHoneyBatchCommentsCount',
+                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                    abi: PRODUCT_TRACE_STORAGE_ABI,
+                    functionName: 'getProductBatchCommentsCount',
                     args: [tokenId]
                 }) as bigint;
 
                 if (commentsCount > 0n) {
                     const commentsData = await publicClient.readContract({
-                        address: HONEY_TRACE_STORAGE_ADDRESS,
-                        abi: HONEY_TRACE_STORAGE_ABI,
-                        functionName: 'getHoneyBatchComments',
+                        address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                        abi: PRODUCT_TRACE_STORAGE_ABI,
+                        functionName: 'getProductBatchComments',
                         args: [tokenId, 0n, 10n]
                     }) as any[];
 
@@ -242,14 +240,14 @@ export default function BatchDetailsPage() {
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <h1 className="text-4xl font-[Carbon_Phyber] text-[#000000] mb-2">
-                                {batch.honeyType}
+                                {batch.productType}
                             </h1>
                             <p className="text-sm font-[Olney_Light] text-[#000000]/60">
                                 Lot #{batch.tokenId.toString()}
                             </p>
-                            {batchIPFSData?.identifiant && (
+                            {batchIPFSData?.identifier && (
                                 <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                    Identifiant: {batchIPFSData.identifiant}
+                                    Identifiant: {batchIPFSData.identifier}
                                 </p>
                             )}
                         </div>
@@ -277,24 +275,24 @@ export default function BatchDetailsPage() {
                 </div>
 
                 {/* Label section */}
-                {batchIPFSData?.etiquetage && (
+                {batchIPFSData?.labelUri && (
                     <div className="bg-yellow-bee rounded-lg p-6 opacity-70 border border-[#000000] mb-6">
                         <h2 className="text-2xl font-[Carbon_bl] text-[#000000] mb-4">
                             Étiquette
                         </h2>
                         <div className="flex justify-center">
-                            {isImageFile(batchIPFSData.etiquetage) && !labelImageError ? (
+                            {isImageFile(batchIPFSData.labelUri) && !labelImageError ? (
                                 <div className="relative">
                                     <img
-                                        src={getIPFSUrl(batchIPFSData.etiquetage)}
-                                        alt="Étiquette du lot"
+                                        src={getIPFSUrl(batchIPFSData.labelUri)}
+                                        alt="Étiquette du produit"
                                         className="max-w-full max-h-96 rounded-lg shadow-lg"
                                         onError={() => setLabelImageError(true)}
                                     />
                                 </div>
                             ) : (
                                 <a
-                                    href={getIPFSUrl(batchIPFSData.etiquetage)}
+                                    href={getIPFSUrl(batchIPFSData.labelUri)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-2 px-4 py-3 bg-[#000000]/10 rounded-lg hover:bg-[#000000]/20 transition-colors"
@@ -307,63 +305,43 @@ export default function BatchDetailsPage() {
                             )}
                         </div>
                         <p className="text-xs font-mono text-[#000000]/50 mt-3 text-center break-all">
-                            {batchIPFSData.etiquetage}
+                            {batchIPFSData.labelUri}
                         </p>
                     </div>
                 )}
 
                 <div className="bg-yellow-bee rounded-lg p-6 opacity-70 border border-[#000000] mb-6">
                     <h2 className="text-2xl font-[Carbon_bl] text-[#000000] mb-4">
-                        Informations du lot
+                        Informations du produit
                     </h2>
                     <div className="space-y-3">
-                        {batchIPFSData?.periodeRecolte && (
+                        {batchIPFSData?.description && (
                             <div>
                                 <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                    Période de récolte
+                                    Description
                                 </p>
                                 <p className="text-base font-[Olney_Light] text-[#000000]">
-                                    {batchIPFSData.periodeRecolte}
+                                    {batchIPFSData.description}
                                 </p>
                             </div>
                         )}
-                        {batchIPFSData?.dateMiseEnPot && (
+                        {batchIPFSData?.origin && (
                             <div>
                                 <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                    Date de mise en pot
+                                    Origine
                                 </p>
                                 <p className="text-base font-[Olney_Light] text-[#000000]">
-                                    {new Date(batchIPFSData.dateMiseEnPot).toLocaleDateString('fr-FR')}
+                                    {batchIPFSData.origin}
                                 </p>
                             </div>
                         )}
-                        {batchIPFSData?.lieuMiseEnPot && (
+                        {batchIPFSData?.productionDate && (
                             <div>
                                 <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                    Lieu de mise en pot
+                                    Date de production
                                 </p>
                                 <p className="text-base font-[Olney_Light] text-[#000000]">
-                                    {batchIPFSData.lieuMiseEnPot}
-                                </p>
-                            </div>
-                        )}
-                        {batchIPFSData?.composition && (
-                            <div>
-                                <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                    Composition
-                                </p>
-                                <p className="text-base font-[Olney_Light] text-[#000000]">
-                                    {batchIPFSData.composition}
-                                </p>
-                            </div>
-                        )}
-                        {batchIPFSData?.formatPot && (
-                            <div>
-                                <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                    Format
-                                </p>
-                                <p className="text-base font-[Olney_Light] text-[#000000]">
-                                    {batchIPFSData.formatPot}
+                                    {new Date(batchIPFSData.productionDate).toLocaleDateString('fr-FR')}
                                 </p>
                             </div>
                         )}
@@ -505,7 +483,7 @@ export default function BatchDetailsPage() {
 
                 <div className="flex justify-center mt-8 mb-6">
                     <Image
-                        src="/logo-png-noir.png"
+                        src="/originlink-logo.png"
                         alt="Logo"
                         width={120}
                         height={120}

@@ -41,7 +41,7 @@ Nouveau provider principal remplaçant RainbowKit.
 - Intégration Wagmi pour la compatibilité blockchain
 - Support Sepolia (testnet)
 - Thème personnalisé (accent : `#fbbf24` - jaune BeeBlock)
-- Logo personnalisé : `/logo-png-noir.png`
+- Logo personnalisé : `/originlink-logo.png`
 
 **Méthodes de connexion :**
 - ✅ Email (code OTP)
@@ -168,7 +168,7 @@ import { usePrivy } from '@privy-io/react-auth';
 ### Personnalisation
 - **Thème :** Light
 - **Couleur d'accent :** `#fbbf24` (jaune/amber BeeBlock)
-- **Logo :** `/logo-png-noir.png`
+- **Logo :** `/originlink-logo.png`
 - **Réseau :** Sepolia (testnet Ethereum)
 
 ---
@@ -265,7 +265,7 @@ loginMethods: ["email", "wallet", "google", "twitter", "discord"]
 appearance: {
   theme: "light",
   accentColor: "#fbbf24",
-  logo: "/logo-png-noir.png",
+  logo: "/originlink-logo.png",
   landingHeader: "Bienvenue sur BeeBlock",
   loginMessage: "Connectez-vous pour suivre votre miel",
 }

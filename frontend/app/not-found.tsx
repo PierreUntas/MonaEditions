@@ -10,7 +10,7 @@ export default function NotFound() {
                 <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
                     <div className="mb-8">
                         <Image
-                            src="/logo-png-noir.png"
+                            src="/originlink-logo.png"
                             alt="Logo"
                             width={150}
                             height={150}

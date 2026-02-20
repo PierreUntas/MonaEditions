@@ -371,7 +371,7 @@ export default function ExplorePage() {
 
                 <div className="flex justify-center mt-12 mb-6">
                     <Image
-                        src="/logo-png-noir.png"
+                        src="/originlink-logo.png"
                         alt="Logo"
                         width={120}
                         height={120}

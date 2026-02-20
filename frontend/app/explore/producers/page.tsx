@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { HONEY_TRACE_STORAGE_ADDRESS, HONEY_TRACE_STORAGE_ABI } from '@/config/contracts';
+import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
@@ -47,10 +47,10 @@ export default function ProducersPage() {
             }
 
             try {
-                // Récupérer tous les événements NewProducer
+                // Récupérer tous les événements ProducerInfoUpdated
                 const logs = await publicClient.getLogs({
-                    address: HONEY_TRACE_STORAGE_ADDRESS,
-                    event: parseAbiItem('event NewProducer(address indexed producer)'),
+                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                    event: parseAbiItem('event ProducerInfoUpdated(address indexed producer)'),
                     fromBlock: 9753823n,
                     toBlock: 'latest'
                 });
@@ -62,14 +62,14 @@ export default function ProducersPage() {
                 const producersPromises = uniqueAddresses.map(async (producerAddress) => {
                     const [producerData, batchLogs] = await Promise.all([
                         publicClient.readContract({
-                            address: HONEY_TRACE_STORAGE_ADDRESS,
-                            abi: HONEY_TRACE_STORAGE_ABI,
+                            address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                            abi: PRODUCT_TRACE_STORAGE_ABI,
                             functionName: 'getProducer',
                             args: [producerAddress as `0x${string}`]
                         }) as Promise<any>,
                         publicClient.getLogs({
-                            address: HONEY_TRACE_STORAGE_ADDRESS,
-                            event: parseAbiItem('event NewHoneyBatch(address indexed producer, uint indexed honeyBatchId)'),
+                            address: PRODUCT_TRACE_STORAGE_ADDRESS,
+                            event: parseAbiItem('event NewProductBatch(address indexed producer, uint indexed productBatchId)'),
                             args: {
                                 producer: producerAddress as `0x${string}`
                             },
@@ -153,7 +153,7 @@ export default function ProducersPage() {
                         Explorer les Producteurs
                     </h1>
                     <p className="text-lg font-[Olney_Light] text-[#000000] opacity-70">
-                        Découvrez tous les producteurs de miel traçables sur la blockchain
+                        Découvrez tous les producteurs traçables sur la blockchain
                     </p>
                 </div>
 
@@ -308,7 +308,7 @@ export default function ProducersPage() {
                                 <div className="border-t border-[#000000]/20 pt-3 mt-3">
                                     <div className="flex justify-between items-center">
                                         <p className="text-sm font-[Olney_Light] text-[#000000]">
-                                            🍯 {producer.batchCount} lot{producer.batchCount > 1 ? 's' : ''} de miel
+                                            📦 {producer.batchCount} lot{producer.batchCount > 1 ? 's' : ''} de produits
                                         </p>
                                         {producer.ipfsData?.photos && producer.ipfsData.photos.length > 1 && (
                                             <p className="text-xs font-[Olney_Light] text-[#000000]/60">
@@ -324,7 +324,7 @@ export default function ProducersPage() {
 
                 <div className="flex justify-center mt-12 mb-6">
                     <Image
-                        src="/logo-png-noir.png"
+                        src="/originlink-logopng"
                         alt="Logo"
                         width={120}
                         height={120}

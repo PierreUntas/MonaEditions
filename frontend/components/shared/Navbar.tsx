@@ -75,7 +75,7 @@ export default function Navbar() {
             {/* Logo */}
             <a href="/" className="fixed top-6 left-6 z-50 cursor-pointer">
                 <img
-                    src="/logo-png-noir.png"
+                    src="/originlink-logo.png"
                     alt="Logo"
                     className="h-10 w-auto opacity-70 hover:opacity-100 transition-opacity"
                 />

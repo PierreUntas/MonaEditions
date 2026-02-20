@@ -738,7 +738,7 @@ export default function CreateBatchPage() {
 
                 <div className="flex justify-center mt-8 mb-6">
                     <Image
-                        src="/logo-png-noir.png"
+                        src="/originlink-logo.png"
                         alt="Logo"
                         width={120}
                         height={120}

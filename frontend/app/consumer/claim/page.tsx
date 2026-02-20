@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useAccount } from 'wagmi';
 import { useSearchParams } from 'next/navigation';
-import { HONEY_TRACE_STORAGE_ADDRESS, HONEY_TRACE_STORAGE_ABI } from '@/config/contracts';
+import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI } from '@/config/contracts';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
 import { useSendTransaction } from '@privy-io/react-auth';
@@ -54,14 +54,14 @@ function ClaimTokenForm() {
                 .map(hash => hash.trim() as `0x${string}`);
 
             const data = encodeFunctionData({
-                abi: HONEY_TRACE_STORAGE_ABI,
-                functionName: 'claimHoneyToken',
+                abi: PRODUCT_TRACE_STORAGE_ABI,
+                functionName: 'claimProductToken',
                 args: [BigInt(batchId), secretKey, merkleProof],
             });
 
             const txHash = await sendTransaction(
                 {
-                    to: HONEY_TRACE_STORAGE_ADDRESS,
+                    to: PRODUCT_TRACE_STORAGE_ADDRESS,
                     data: data,
                 },
                 {
@@ -96,12 +96,12 @@ function ClaimTokenForm() {
     return (
         <div className="container mx-auto p-6 max-w-2xl">
             <h1 className="text-4xl font-[Carbon_Phyber] text-[#000000] mb-6">
-                Réclamer un Token de Miel
+                Réclamer un Token de Produit
             </h1>
 
             <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 rounded">
                 <p className="font-[Olney_Light] text-sm">
-                    💡 Scannez le QR code caché à l'intérieur du pot de miel afin que les champs se remplissent automatiquement. Ce token vous permettra d'émettre un avis sur le lot de miel.
+                    💡 Scannez le QR code du produit afin que les champs se remplissent automatiquement. Ce token vous permettra d'émettre un avis sur le lot.
                 </p>
             </div>
 
@@ -174,7 +174,7 @@ function ClaimTokenForm() {
 
             <div className="flex justify-center mt-8 mb-6">
                 <Image
-                    src="/logo-png-noir.png"
+                    src="/originlink-logo.png"
                     alt="Logo"
                     width={120}
                     height={120}

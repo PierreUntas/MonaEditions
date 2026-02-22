@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image";
 import Navbar from "../components/shared/Navbar";
 import { usePrivy } from '@privy-io/react-auth';
 
@@ -8,93 +7,124 @@ export default function Home() {
     const { login, authenticated, user } = usePrivy();
 
     return (
-        <div className="min-h-screen flex flex-col" style={{ background: '#07080B', color: '#F2F4F8' }}>
+        <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
-            <div className="flex flex-col items-center justify-center min-h-screen">
-                <div className="flex flex-col items-center">
-                    <div
-                        className="w-24 h-24 rounded-2xl flex items-center justify-center text-5xl mb-4"
-                        style={{
-                            background: 'linear-gradient(145deg, #1C1608, #28200A)',
-                            border: '1px solid rgba(201,165,90,0.25)',
-                            boxShadow: '0 0 32px rgba(201,165,90,0.12)',
-                            fontFamily: 'Georgia, serif',
-                            color: '#C9A55A',
-                        }}
-                    >
+
+            <div className="max-width-[860px] mx-auto px-6 pt-28 pb-20">
+                {/* Header */}
+                <div className="text-center mb-[72px]">
+                    <div className="w-[52px] h-[52px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[22px] text-[#a8a29e] mx-auto mb-6">
                         起
                     </div>
-                    <div 
-                        className="text-6xl font-bold mt-4"
-                        style={{
-                            fontFamily: "'Playfair Display', Georgia, serif",
-                            color: '#F2F4F8'
-                        }}
-                    >
-                        Kigen
+                    <div className="text-[11px] font-normal tracking-[0.18em] uppercase text-[#a8a29e] mb-5">
+                        Plateforme de certification
+                    </div>
+                    <h1 className="font-serif text-[clamp(40px,6vw,64px)] font-normal tracking-[-1.5px] leading-[1.1] mb-5">
+                        L'authenticité.<br />
+                        <em className="italic text-[#78716c]">Vérifiable.</em>
+                    </h1>
+                    <p className="text-[15px] font-light leading-[1.8] text-[#78716c] max-w-[520px] mx-auto">
+                        Certifiez l'authenticité et la provenance de vos œuvres d'art sur la blockchain.
+                        Pour les artistes qui créent, et les collectionneurs qui font confiance.
+                    </p>
+                </div>
+
+                {/* Hero CTA */}
+                <div className="border border-[#d6d0c8] bg-[#1c1917] mb-px py-16 px-10 text-center">
+                    <div className="text-[10px] font-normal tracking-[0.15em] uppercase text-white/30 mb-6">
+                        Bienvenue sur Kigen
+                    </div>
+                    <div className="font-serif text-[clamp(32px,5vw,48px)] font-normal text-white leading-[1.3] mb-5 tracking-[-1px]">
+                        Donnez à vos œuvres<br />
+                        une <em className="italic text-white/40">histoire permanente</em>
+                    </div>
+                    <div className="text-[14px] font-light text-white/50 max-w-[480px] mx-auto mb-8 leading-[1.75]">
+                        Enregistrez, certifiez et tracez vos créations artistiques de manière infalsifiable.
+                        Chaque œuvre devient un actif numérique vérifié, protégé par la blockchain.
+                    </div>
+                    <div className="font-serif text-[96px] text-white/[0.04] leading-none mt-6">
+                        起
                     </div>
                 </div>
 
-                <div className="flex flex-col items-center mt-16 text-center px-6">
-                    <h1 
-                        className="text-4xl font-bold mb-3"
-                        style={{
-                            fontFamily: "'Playfair Display', Georgia, serif",
-                            color: '#F2F4F8'
-                        }}
-                    >
-                        Bienvenue sur <em style={{ fontStyle: 'italic', color: '#C9A55A' }}>Kigen</em>
-                    </h1>
-                    <h2 style={{ fontSize: '17px', color: '#8C95AA', fontWeight: 300, lineHeight: 1.75 }}>
-                        Traçabilité complète de vos produits, de l'origine à la consommation.
-                    </h2>
-                </div>
-
-                <div className="mt-20">
-                    {authenticated ? (
-                        <div className="text-center">
-                            <div className="mb-6 space-y-2">
-                                <p style={{ fontSize: '15px', color: '#8C95AA' }}>Connecté en tant que</p>
-                                {user?.email?.address && (
-                                    <p style={{ fontSize: '15px', color: '#F2F4F8' }}>{user.email.address}</p>
-                                )}
-                                {(() => {
-                                    const wallet = user?.wallet || user?.linkedAccounts?.find((account: any) => account.type === 'wallet');
-                                    const walletAddress = (wallet as any)?.address;
-                                    return walletAddress ? (
-                                        <p className="font-mono" style={{ fontSize: '13px', color: '#8C95AA' }}>
-                                            {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-                                        </p>
-                                    ) : null;
-                                })()}
+                {/* Authentication section */}
+                {authenticated ? (
+                    <>
+                        <div className="border border-[#d6d0c8] bg-[#fafaf8] p-6 mb-px text-center">
+                            <div className="text-[11px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-3">
+                                Connecté
                             </div>
+                            {user?.email?.address && (
+                                <div className="text-[14px] font-normal text-[#1c1917] mb-1.5">
+                                    {user.email.address}
+                                </div>
+                            )}
+                            {(() => {
+                                const wallet = user?.wallet || user?.linkedAccounts?.find((account: any) => account.type === 'wallet');
+                                const walletAddress = (wallet as any)?.address;
+                                return walletAddress ? (
+                                    <div className="text-[12px] font-mono text-[#78716c]">
+                                        {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                                    </div>
+                                ) : null;
+                            })()}
+                        </div>
+                        <div className="mb-px text-center">
                             <a
                                 href="/explore/batches"
-                                className="px-8 py-3 rounded-xl font-semibold transition-all duration-200 inline-block cursor-pointer"
-                                style={{
-                                    background: 'linear-gradient(145deg, #C9A55A, #B89449)',
-                                    color: '#07080B',
-                                    border: '1px solid rgba(201,165,90,0.3)',
-                                    boxShadow: '0 4px 16px rgba(201,165,90,0.2)',
-                                }}
+                                className="text-[12px] font-medium tracking-[0.06em] text-[#fafaf8] no-underline border border-[#1c1917] bg-[#1c1917] py-3.5 px-8 inline-block transition-all duration-200 cursor-pointer hover:bg-[#292524] hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(28,25,23,0.25)]"
                             >
-                                Explorer
+                                Explorer les œuvres
                             </a>
                         </div>
-                    ) : (
+                    </>
+                ) : (
+                    <div className="mb-px text-center">
                         <button
                             onClick={login}
-                            className="px-8 py-3 rounded-xl font-semibold transition-all duration-200 cursor-pointer"
-                            style={{
-                                background: 'linear-gradient(145deg, #C9A55A, #B89449)',
-                                color: '#07080B',
-                                border: '1px solid rgba(201,165,90,0.3)',
-                                boxShadow: '0 4px 16px rgba(201,165,90,0.2)',
-                            }}
+                            className="text-[12px] font-medium tracking-[0.06em] text-[#fafaf8] border border-[#1c1917] bg-[#1c1917] py-3.5 px-8 inline-block transition-all duration-200 cursor-pointer hover:bg-[#292524] hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(28,25,23,0.25)]"
                         >
                             Se connecter
                         </button>
-                    )}
+                    </div>
+                )}
+
+                {/* Features */}
+                <div className="grid md:grid-cols-2 gap-px bg-[#d6d0c8] border border-[#d6d0c8] mb-px">
+                    <div className="bg-[#fafaf8] p-8">
+                        <div className="w-10 h-10 border border-[#d6d0c8] bg-[#f5f3ef] flex items-center justify-center text-[18px] mb-5">
+                            🎨
+                        </div>
+                        <h3 className="font-serif text-[17px] font-normal mb-2.5 text-[#1c1917]">
+                            Pour les artistes
+                        </h3>
+                        <p className="text-[13px] font-light leading-[1.75] text-[#78716c]">
+                            Enregistrez vos œuvres, générez un certificat d'authenticité permanent,
+                            et protégez votre paternité artistique. Votre signature devient infalsifiable.
+                        </p>
+                    </div>
+                    <div className="bg-[#fafaf8] p-8">
+                        <div className="w-10 h-10 border border-[#d6d0c8] bg-[#f5f3ef] flex items-center justify-center text-[18px] mb-5">
+                            🖼️
+                        </div>
+                        <h3 className="font-serif text-[17px] font-normal mb-2.5 text-[#1c1917]">
+                            Pour les collectionneurs
+                        </h3>
+                        <p className="text-[13px] font-light leading-[1.75] text-[#78716c]">
+                            Vérifiez l'authenticité d'une œuvre, consultez son histoire complète,
+                            et transférez votre certificat de propriété en toute confiance.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="text-center mt-10">
+                    <a
+                        href="/about"
+                        className="text-[12px] font-normal tracking-[0.06em] text-[#78716c] no-underline border border-[#d6d0c8] py-3 px-7 inline-block transition-all duration-200 hover:border-[#1c1917] hover:text-[#1c1917]"
+                    >
+                        En savoir plus →
+                    </a>
                 </div>
             </div>
         </div>

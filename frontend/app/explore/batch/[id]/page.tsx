@@ -194,16 +194,11 @@ export default function BatchDetailsPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen" style={{ background: '#07080B' }}>
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
-                <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <div className="text-center">
-                        <div 
-                            className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 mb-4"
-                            style={{ borderColor: '#C9A55A' }}
-                        ></div>
-                        <p style={{ color: '#8C95AA', fontSize: '15px' }}>Chargement des détails du lot...</p>
-                    </div>
+                <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
+                    <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
+                    <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement des détails de l'œuvre…</p>
                 </div>
             </div>
         );
@@ -211,11 +206,11 @@ export default function BatchDetailsPage() {
 
     if (!batch || !producer) {
         return (
-            <div className="min-h-screen" style={{ background: '#07080B' }}>
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p style={{ color: '#8C95AA', fontSize: '15px' }}>
-                        Lot introuvable
+                    <p className="font-serif italic text-[22px] text-[#a8a29e]">
+                        Œuvre introuvable
                     </p>
                 </div>
             </div>
@@ -223,83 +218,57 @@ export default function BatchDetailsPage() {
     }
 
     return (
-        <div className="min-h-screen" style={{ background: '#07080B', color: '#F2F4F8' }}>
+        <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
-            <div className="container mx-auto p-6 max-w-4xl pt-28">
+            <div className="max-w-4xl mx-auto px-6 pt-28 pb-20">
                 <Link
                     href="/explore/batches"
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 mb-8"
-                    style={{
-                        color: '#8C95AA',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        background: 'transparent',
-                    }}
+                    className="inline-flex items-center gap-2 text-[11px] font-medium tracking-[0.06em] text-[#78716c]
+                        border border-[#d6d0c8] px-4 py-2 mb-12 no-underline
+                        hover:border-[#1c1917] hover:text-[#1c1917] transition-all duration-200"
                 >
                     ← Retour à l'exploration
                 </Link>
 
                 {isLoadingIPFS && (
-                    <div className="text-center mb-6" style={{ color: '#8C95AA', fontSize: '14px' }}>
-                        Chargement des données IPFS...
-                    </div>
+                    <p className="text-[12px] font-light text-[#a8a29e] tracking-[0.06em] mb-6 text-center">
+                        Chargement des données IPFS…
+                    </p>
                 )}
 
-                <div 
-                    className="rounded-2xl p-8 mb-8"
-                    style={{ background: '#0F1219', border: '1px solid rgba(255,255,255,0.06)' }}
+                <div className="border border-[#d6d0c8] bg-[#fafaf8] mb-px p-8"
                 >
                     <div className="flex justify-between items-start mb-4">
                         <div>
-                            <h1 
-                                className="text-4xl font-bold mb-2"
-                                style={{
-                                    fontFamily: "'Playfair Display', Georgia, serif",
-                                    color: '#F2F4F8'
-                                }}
-                            >
+                            <h1 className="font-serif text-[clamp(32px,5vw,42px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-2">
                                 {batch.productType}
                             </h1>
-                            <p style={{ fontSize: '14px', color: '#8C95AA' }}>
-                                Lot #{batch.tokenId.toString()}
+                            <p className="text-[14px] text-[#78716c]">
+                                Œuvre #{batch.tokenId.toString()}
                             </p>
                             {batchIPFSData?.identifier && (
-                                <p style={{ fontSize: '14px', color: '#8C95AA' }}>
+                                <p className="text-[14px] text-[#78716c]">
                                     Identifiant: {batchIPFSData.identifier}
                                 </p>
                             )}
                         </div>
                         <div className="text-right">
-                            <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
-                                Tokens disponibles
+                            <p className="mb-1 text-[12px] text-[#a8a29e]">
+                                Exemplaires disponibles
                             </p>
-                            <p 
-                                className="text-4xl font-bold"
-                                style={{
-                                    fontFamily: "'Playfair Display', Georgia, serif",
-                                    color: '#C9A55A'
-                                }}
-                            >
+                            <p className="font-serif text-4xl font-normal text-[#1c1917]">
                                 {batch.remainingTokens.toString()}
                             </p>
                         </div>
                     </div>
 
                     {comments.length > 0 && (
-                        <div 
-                            className="flex items-center gap-2 pt-3"
-                            style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-                        >
-                            <span 
-                                className="text-2xl font-bold"
-                                style={{
-                                    fontFamily: "'Playfair Display', Georgia, serif",
-                                    color: '#C9A55A'
-                                }}
-                            >
+                        <div className="flex items-center gap-2 pt-3 border-t border-[#e7e3dc]">
+                            <span className="font-serif text-2xl font-normal text-[#1c1917]">
                                 {calculateAverageRating()}
                             </span>
-                            <span style={{ color: '#C9A55A' }}>★★★★★</span>
-                            <span style={{ fontSize: '14px', color: '#8C95AA' }}>
+                            <span className="text-[#1c1917]">★★★★★</span>
+                            <span className="text-[14px] text-[#78716c]">
                                 ({comments.length} avis)
                             </span>
                         </div>
@@ -308,23 +277,17 @@ export default function BatchDetailsPage() {
 
                 {/* Label section */}
                 {batchIPFSData?.labelUri && (
-                    <div 
-                        className="rounded-2xl p-8 mb-8"
-                        style={{ background: '#0F1219', border: '1px solid rgba(255,255,255,0.06)' }}
-                    >
-                        <h2 
-                            className="text-2xl font-bold mb-5"
-                            style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#F2F4F8' }}
-                        >
-                            Étiquette
+                    <div className="border border-[#d6d0c8] bg-[#fafaf8] mb-px p-8">
+                        <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                            Visuel de l'<em className="italic text-[#78716c]">œuvre</em>
                         </h2>
                         <div className="flex justify-center">
                             {isImageFile(batchIPFSData.labelUri) && !labelImageError ? (
-                                <div className="relative">
+                                <div className="relative border border-[#d6d0c8] bg-[#e7e3dc] overflow-hidden">
                                     <img
                                         src={getIPFSUrl(batchIPFSData.labelUri)}
-                                        alt="Étiquette du produit"
-                                        className="max-w-full max-h-96 rounded-xl shadow-lg"
+                                        alt="Visuel de l'œuvre"
+                                        className="max-w-full max-h-96"
                                         onError={() => setLabelImageError(true)}
                                     />
                                 </div>
@@ -333,78 +296,66 @@ export default function BatchDetailsPage() {
                                     href={getIPFSUrl(batchIPFSData.labelUri)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-2 px-4 py-3 rounded-xl transition-colors"
-                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                                    className="flex items-center gap-2 px-4 py-3 border border-[#d6d0c8] bg-[#f5f3ef] transition-colors hover:bg-[#e7e3dc] no-underline"
                                 >
                                     <span className="text-2xl">📄</span>
-                                    <span style={{ color: '#F2F4F8' }}>
-                                        Voir l'étiquette (PDF)
+                                    <span className="text-[#1c1917]">
+                                        Voir le document (PDF)
                                     </span>
                                 </a>
                             )}
                         </div>
-                        <p className="font-mono text-center break-all mt-3" style={{ fontSize: '12px', color: '#8C95AA' }}>
+                        <p className="font-mono text-center break-all mt-3 text-[12px] text-[#a8a29e]">
                             {batchIPFSData.labelUri}
                         </p>
                     </div>
                 )}
 
-                <div 
-                    className="rounded-2xl p-8 mb-8"
-                    style={{ background: '#0F1219', border: '1px solid rgba(255,255,255,0.06)' }}
-                >
-                    <h2 
-                        className="text-2xl font-bold mb-5"
-                        style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#F2F4F8' }}
-                    >
-                        Informations du produit
+                <div className="border border-[#d6d0c8] bg-[#fafaf8] mb-px p-8">
+                    <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                        Informations de l'<em className="italic text-[#78716c]">œuvre</em>
                     </h2>
                     <div className="space-y-4">
                         {batchIPFSData?.description && (
-                            <div>
-                                <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
+                            <div className="pb-4 border-b border-[#e7e3dc]">
+                                <p className="mb-1 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">
                                     Description
                                 </p>
-                                <p style={{ fontSize: '15px', color: '#F2F4F8', lineHeight: 1.75 }}>
+                                <p className="text-[15px] text-[#1c1917] leading-[1.75]">
                                     {batchIPFSData.description}
                                 </p>
                             </div>
                         )}
                         {batchIPFSData?.origin && (
-                            <div>
-                                <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
+                            <div className="pb-4 border-b border-[#e7e3dc]">
+                                <p className="mb-1 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">
                                     Origine
                                 </p>
-                                <p style={{ fontSize: '15px', color: '#F2F4F8' }}>
+                                <p className="text-[15px] text-[#1c1917]">
                                     {batchIPFSData.origin}
                                 </p>
                             </div>
                         )}
                         {batchIPFSData?.productionDate && (
-                            <div>
-                                <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
-                                    Date de production
+                            <div className="pb-4 border-b border-[#e7e3dc]">
+                                <p className="mb-1 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">
+                                    Date de création
                                 </p>
-                                <p style={{ fontSize: '15px', color: '#F2F4F8' }}>
+                                <p className="text-[15px] text-[#1c1917]">
                                     {new Date(batchIPFSData.productionDate).toLocaleDateString('fr-FR')}
                                 </p>
                             </div>
                         )}
                         {batchIPFSData?.certifications && batchIPFSData.certifications.length > 0 && (
-                            <div>
-                                <p className="mb-2" style={{ fontSize: '12px', color: '#8C95AA' }}>
+                            <div className="pb-4 border-b border-[#e7e3dc]">
+                                <p className="mb-2 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">
                                     Certifications
                                 </p>
                                 <div className="flex flex-wrap gap-2 mt-1">
                                     {batchIPFSData.certifications.map((cert, index) => (
                                         <span
                                             key={index}
-                                            className="px-3 py-1.5 text-xs font-mono rounded-full"
-                                            style={{
-                                                background: 'rgba(201,165,90,0.07)',
-                                                color: '#C9A55A',
-                                                border: '1px solid rgba(201,165,90,0.15)',
-                                            }}
+                                            className="px-3 py-1 text-[11px] font-mono border border-[#d6d0c8] bg-[#f5f3ef] text-[#78716c]"
                                         >
                                             {cert}
                                         </span>
@@ -412,36 +363,30 @@ export default function BatchDetailsPage() {
                                 </div>
                             </div>
                         )}
-                        <div>
-                            <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
+                        <div className="pb-4 border-b border-[#e7e3dc]">
+                            <p className="mb-1 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">
                                 CID Metadata (IPFS)
                             </p>
-                            <p className="text-xs font-mono break-all" style={{ color: '#8C95AA' }}>
+                            <p className="text-[11px] font-mono break-all text-[#a8a29e]">
                                 {batch.metadata}
                             </p>
                         </div>
                         <div>
-                            <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
+                            <p className="mb-1 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">
                                 Merkle Root
                             </p>
-                            <p className="text-xs font-mono break-all" style={{ color: '#8C95AA' }}>
+                            <p className="text-[11px] font-mono break-all text-[#a8a29e]">
                                 {batch.merkleRoot}
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div 
-                    className="rounded-2xl p-8 mb-8"
-                    style={{ background: '#0F1219', border: '1px solid rgba(255,255,255,0.06)' }}
-                >
-                    <div className="flex items-start gap-6 mb-4">
+                <div className="border border-[#d6d0c8] bg-[#fafaf8] mb-px p-8">
+                    <div className="flex items-start gap-6 mb-6 pb-6 border-b border-[#e7e3dc]">
                         <div className="flex-1">
-                            <h2 
-                                className="text-2xl font-bold"
-                                style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#F2F4F8' }}
-                            >
-                                Producteur
+                            <h2 className="font-serif text-[22px] font-normal text-[#1c1917]">
+                                L'<em className="italic text-[#78716c]">artiste</em>
                             </h2>
                         </div>
                         {producerIPFSData?.logo && (
@@ -451,55 +396,54 @@ export default function BatchDetailsPage() {
                                         ? `https://ipfs.io/ipfs/${producerIPFSData.logo.replace('ipfs://', '')}`
                                         : producerIPFSData.logo}
                                     alt={`Logo ${producer.name}`}
-                                    className="w-24 h-24 object-contain rounded-xl"
-                                    style={{ border: '1px solid rgba(255,255,255,0.06)', background: '#07080B' }}
+                                    className="w-24 h-24 object-contain border border-[#d6d0c8] bg-[#f5f3ef]"
                                 />
                             </div>
                         )}
                     </div>
 
                     <div className="space-y-4">
-                        <div>
-                            <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
+                        <div className="pb-4 border-b border-[#e7e3dc]">
+                            <p className="mb-1 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">
                                 Nom
                             </p>
-                            <p style={{ fontSize: '15px', color: '#F2F4F8' }}>
+                            <p className="text-[15px] text-[#1c1917]">
                                 {producer.name}
                             </p>
                         </div>
-                        <div>
-                            <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
+                        <div className="pb-4 border-b border-[#e7e3dc]">
+                            <p className="mb-1 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">
                                 Localisation
                             </p>
-                            <p style={{ fontSize: '15px', color: '#F2F4F8' }}>
+                            <p className="text-[15px] text-[#1c1917]">
                                 {producer.location}
                             </p>
                         </div>
                         {producerIPFSData?.description && (
-                            <div>
-                                <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
+                            <div className="pb-4 border-b border-[#e7e3dc]">
+                                <p className="mb-1 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">
                                     Description
                                 </p>
-                                <p style={{ fontSize: '15px', color: '#F2F4F8', lineHeight: 1.75 }}>
+                                <p className="text-[15px] text-[#1c1917] leading-[1.75]">
                                     {producerIPFSData.description}
                                 </p>
                             </div>
                         )}
                         {producerIPFSData?.contact?.email && (
-                            <div>
-                                <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
+                            <div className="pb-4 border-b border-[#e7e3dc]">
+                                <p className="mb-1 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">
                                     Contact
                                 </p>
-                                <p style={{ fontSize: '15px', color: '#F2F4F8' }}>
+                                <p className="text-[15px] text-[#1c1917]">
                                     {producerIPFSData.contact.email}
                                 </p>
                             </div>
                         )}
                         <div>
-                            <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
-                                Adresse
+                            <p className="mb-1 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">
+                                Adresse Ethereum
                             </p>
-                            <p className="text-xs font-mono break-all" style={{ color: '#8C95AA' }}>
+                            <p className="text-[11px] font-mono break-all text-[#a8a29e]">
                                 {batch.producer}
                             </p>
                         </div>
@@ -507,40 +451,33 @@ export default function BatchDetailsPage() {
 
                     <Link
                         href={`/explore/producer/${batch.producer}`}
-                        className="text-right block mt-4 transition-colors"
-                        style={{ fontSize: '13px', color: '#C9A55A' }}
+                        className="text-right block mt-6 transition-colors text-[13px] text-[#4a5240] hover:text-[#1c1917] underline underline-offset-2"
                     >
-                        Voir tous ses lots →
+                        Voir toutes ses œuvres →
                     </Link>
                 </div>
 
                 {comments.length > 0 && (
-                    <div 
-                        className="rounded-2xl p-8 mb-8"
-                        style={{ background: '#0F1219', border: '1px solid rgba(255,255,255,0.06)' }}
-                    >
-                        <h2 
-                            className="text-2xl font-bold mb-5"
-                            style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#F2F4F8' }}
-                        >
-                            Avis des consommateurs
+                    <div className="border border-[#d6d0c8] bg-[#fafaf8] mb-px p-8">
+                        <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                            Avis des <em className="italic text-[#78716c]">collectionneurs</em>
                         </h2>
                         <div className="space-y-4">
                             {comments.map((comment, index) => (
                                 <div 
                                     key={index} 
                                     className="pb-4 last:border-0"
-                                    style={{ borderBottom: index < comments.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}
+                                    style={{ borderBottom: index < comments.length - 1 ? '1px solid #e7e3dc' : 'none' }}
                                 >
                                     <div className="flex items-center gap-2 mb-2">
-                                        <span style={{ color: '#C9A55A' }}>
+                                        <span className="text-[#1c1917]">
                                             {'★'.repeat(comment.rating)}
                                         </span>
-                                        <span className="font-mono" style={{ fontSize: '12px', color: '#8C95AA' }}>
+                                        <span className="font-mono text-[12px] text-[#a8a29e]">
                                             {comment.consumer.slice(0, 6)}...{comment.consumer.slice(-4)}
                                         </span>
                                     </div>
-                                    <p style={{ fontSize: '14px', color: '#F2F4F8' }}>
+                                    <p className="text-[14px] text-[#1c1917] leading-[1.75]">
                                         {comment.metadata}
                                     </p>
                                 </div>
@@ -549,18 +486,10 @@ export default function BatchDetailsPage() {
                     </div>
                 )}
 
-                <div className="flex justify-center mt-16 mb-8">
-                    <div
-                        className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-                        style={{
-                            background: 'linear-gradient(145deg, #1C1608, #28200A)',
-                            border: '1px solid rgba(201,165,90,0.25)',
-                            boxShadow: '0 0 32px rgba(201,165,90,0.12)',
-                            fontFamily: 'Georgia, serif',
-                            color: '#C9A55A',
-                        }}
-                    >
-                        起
+                <div className="flex justify-center mt-20">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-px h-12 bg-[#d6d0c8]" />
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
                     </div>
                 </div>
             </div>

@@ -263,13 +263,11 @@ export default function ProducerPage() {
     // Loading state while checking permissions
     if (isCheckingAuthorization || isLoadingProducer) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
-                <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <div className="text-center">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black/70 mb-4"></div>
-                        <p className="text-[#000000] font-[Olney_Light] text-xl opacity-70">Vérification des permissions...</p>
-                    </div>
+                <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
+                    <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
+                    <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Vérification des permissions…</p>
                 </div>
             </div>
         );
@@ -277,10 +275,10 @@ export default function ProducerPage() {
 
     if (!address) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="text-center text-[#000000] font-[Olney_Light] text-xl opacity-70">
+                    <p className="font-serif italic text-[22px] text-[#a8a29e]">
                         Veuillez connecter votre wallet
                     </p>
                 </div>
@@ -290,11 +288,11 @@ export default function ProducerPage() {
 
     if (!isAuthorized) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="text-center text-[#000000] font-[Olney_Light] text-xl opacity-70">
-                        Accès refusé : vous n'êtes pas autorisé comme producteur
+                    <p className="font-serif italic text-[22px] text-[#a8a29e] text-center max-w-md px-6">
+                        Accès refusé : vous n'êtes pas autorisé comme artiste
                     </p>
                 </div>
             </div>
@@ -302,102 +300,108 @@ export default function ProducerPage() {
     }
 
     return (
-        <div className="min-h-screen bg-yellow-bee pt-14">
+        <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
-            <div className="container mx-auto p-6 max-w-xl">
-                <h1 className="text-4xl font-[Carbon_Phyber] mb-6 text-center text-[#000000]">
-                    {isRegistered ? 'Modifier mes informations' : 'Enregistrement Producteur'}
-                </h1>
+            <div className="max-w-2xl mx-auto px-6 pt-28 pb-20">
+                <div className="text-center mb-12">
+                    <div className="w-[52px] h-[52px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[22px] text-[#a8a29e] mx-auto mb-6">
+                        起
+                    </div>
+                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
+                        {isRegistered ? (
+                            <>Modifier mes <em className="italic text-[#78716c]">informations</em></>
+                        ) : (
+                            <>Enregistrement <em className="italic text-[#78716c]">Artiste</em></>
+                        )}
+                    </h1>
+                </div>
 
                 {isLoadingIPFS && (
-                    <div className="text-center text-[#000000] font-[Olney_Light] mb-4 opacity-70">
-                        Chargement des données IPFS...
-                    </div>
+                    <p className="text-[12px] font-light text-[#a8a29e] tracking-[0.06em] mb-6 text-center">
+                        Chargement des données IPFS…
+                    </p>
                 )}
 
                 {isRegistered && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                        <p className="text-sm font-[Olney_Light] text-blue-800 mb-3">
-                            🏷️ <strong>QR Code de votre page producteur</strong>
+                    <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6 mb-px">
+                        <p className="text-[14px] font-medium text-[#1c1917] mb-2">
+                            🏷️ QR Code de votre page artiste
                         </p>
-                        <p className="text-xs font-[Olney_Light] text-blue-600 mb-3">
-                            Téléchargez votre QR code pour le partager avec vos clients. Il pointe vers votre page producteur.
+                        <p className="text-[13px] font-light text-[#78716c] mb-4 leading-[1.7]">
+                            Téléchargez votre QR code pour le partager avec vos collectionneurs. Il pointe vers votre page artiste.
                         </p>
                         <button
                             onClick={downloadProducerPageQRCode}
                             disabled={isGeneratingQR}
-                            className="w-full bg-amber-500 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-amber-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
-                            {isGeneratingQR ? '🔄 Génération...' : '📥 Télécharger mon QR Code'}
+                            {isGeneratingQR ? '🔄 Génération…' : '📥 Télécharger mon QR Code'}
                         </button>
-                        {/* <p className="text-xs font-[Olney_Light] text-blue-600 mt-2">
-                            URL: https://www.beeblock.fr/explore/producer/{address}
-                        </p> */}
                     </div>
                 )}
 
-                <div className="bg-yellow-bee rounded-lg p-4 opacity-70">
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">
-                                Nom de l'entreprise *
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Nom de l'artiste / atelier *
                             </label>
                             <input
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                placeholder="Les Ruchers de Bordeaux"
-                                className="w-full px-3 py-2 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                placeholder="Atelier Claire Dubois"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 maxLength={256}
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Localisation *
                             </label>
                             <input
                                 type="text"
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
-                                placeholder="33 Bordeaux, Nouvelle-Aquitaine, France"
-                                className="w-full px-3 py-2 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                placeholder="Paris, Île-de-France, France"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 maxLength={256}
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Numéro d'immatriculation *
                             </label>
                             <input
                                 type="text"
                                 value={companyRegisterNumber}
                                 onChange={(e) => setCompanyRegisterNumber(e.target.value)}
-                                placeholder="FR-AB123456"
-                                className="w-full px-3 py-2 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                placeholder="SIRET ou numéro d'identification"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 maxLength={64}
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Description
                             </label>
                             <textarea
                                 value={additionalData.description}
                                 onChange={(e) => setAdditionalData({...additionalData, description: e.target.value})}
-                                placeholder="Producteur de miel bio renommé dans la région..."
-                                className="w-full px-3 py-2 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50 min-h-[100px]"
+                                placeholder="Présentez votre démarche artistique, votre style, vos inspirations..."
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors min-h-[120px]"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">
-                                Logo de l'entreprise
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Logo / Portrait
                             </label>
                             <input
                                 ref={logoInputRef}
@@ -409,24 +413,24 @@ export default function ProducerPage() {
                             <button
                                 type="button"
                                 onClick={() => logoInputRef.current?.click()}
-                                className="w-full px-4 py-2 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] hover:bg-[#F5E5A8] transition-all duration-300 cursor-pointer text-left"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] hover:bg-[#e7e3dc] transition-colors text-left"
                             >
                                 {logoFile ? `📎 ${logoFile.name}` : '🖼️ Choisir un logo'}
                             </button>
                             {logoPreview && (
-                                <div className="mt-2">
+                                <div className="mt-3">
                                     <img
                                         src={logoPreview}
                                         alt="Aperçu du logo"
-                                        className="w-24 h-24 object-contain rounded-lg border border-[#000000]"
+                                        className="w-24 h-24 object-contain border border-[#d6d0c8] bg-[#f5f3ef]"
                                     />
                                 </div>
                             )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">
-                                Photos de l'entreprise
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Photos de l'atelier / œuvres
                             </label>
                             <input
                                 ref={photosInputRef}
@@ -439,23 +443,23 @@ export default function ProducerPage() {
                             <button
                                 type="button"
                                 onClick={() => photosInputRef.current?.click()}
-                                className="w-full px-4 py-2 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] hover:bg-[#F5E5A8] transition-all duration-300 cursor-pointer text-left"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] hover:bg-[#e7e3dc] transition-colors text-left"
                             >
                                 {photoFiles.length > 0 ? `📷 ${photoFiles.length} photo${photoFiles.length > 1 ? 's' : ''} sélectionnée${photoFiles.length > 1 ? 's' : ''}` : '📷 Sélectionner des photos'}
                             </button>
                             {photoPreviews.length > 0 && (
-                                <div className="mt-2 grid grid-cols-3 gap-2">
+                                <div className="mt-3 grid grid-cols-3 gap-2">
                                     {photoPreviews.map((preview, index) => (
                                         <div key={index} className="relative">
                                             <img
                                                 src={preview}
                                                 alt={`Photo ${index + 1}`}
-                                                className="w-full h-24 object-cover rounded-lg border border-[#000000]"
+                                                className="w-full h-24 object-cover border border-[#d6d0c8] bg-[#e7e3dc]"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => removePhoto(index)}
-                                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 cursor-pointer transition-all duration-300"
+                                                className="absolute top-1 right-1 bg-[#1c1917] text-[#fafaf8] w-5 h-5 flex items-center justify-center text-xs hover:bg-[#292524] transition-colors"
                                             >
                                                 ×
                                             </button>
@@ -466,7 +470,7 @@ export default function ProducerPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Année de création
                             </label>
                             <input
@@ -474,25 +478,25 @@ export default function ProducerPage() {
                                 value={additionalData.anneeCreation}
                                 onChange={(e) => setAdditionalData({...additionalData, anneeCreation: parseInt(e.target.value)})}
                                 placeholder="2010"
-                                className="w-full px-3 py-2 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Site web
                             </label>
                             <input
                                 type="url"
                                 value={additionalData.siteWeb}
                                 onChange={(e) => setAdditionalData({...additionalData, siteWeb: e.target.value})}
-                                placeholder="https://ruchers-bordeaux.fr"
-                                className="w-full px-3 py-2 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                placeholder="https://mon-atelier.fr"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Email
                             </label>
                             <input
@@ -502,13 +506,13 @@ export default function ProducerPage() {
                                     ...additionalData,
                                     contact: {...additionalData.contact, email: e.target.value}
                                 })}
-                                placeholder="contact@ruchers-bordeaux.fr"
-                                className="w-full px-3 py-2 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                placeholder="contact@mon-atelier.fr"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Téléphone
                             </label>
                             <input
@@ -518,13 +522,13 @@ export default function ProducerPage() {
                                     ...additionalData,
                                     contact: {...additionalData.contact, telephone: e.target.value}
                                 })}
-                                placeholder="+33 5 56 00 00 00"
-                                className="w-full px-3 py-2 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                placeholder="+33 1 23 45 67 89"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Adresse courrier
                             </label>
                             <input
@@ -534,20 +538,20 @@ export default function ProducerPage() {
                                     ...additionalData,
                                     contact: {...additionalData.contact, adresseCourrier: e.target.value}
                                 })}
-                                placeholder="12 rue des abeilles, 33000 Bordeaux"
-                                className="w-full px-3 py-2 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                placeholder="12 rue de l'Art, 75001 Paris"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                             />
                         </div>
 
                         <button
                             type="submit"
                             disabled={isRegistering || isUploading || isLoadingIPFS}
-                            className="w-full bg-[#666666] text-white font-[Olney_Light] py-2 px-4 rounded-lg disabled:opacity-50 hover:bg-[#555555] transition-all duration-300 border border-[#000000] cursor-pointer disabled:cursor-not-allowed"
+                            className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
                             {isUploading
-                                ? 'Upload IPFS en cours...'
+                                ? 'Upload IPFS en cours…'
                                 : isRegistering
-                                    ? 'Enregistrement en cours...'
+                                    ? 'Enregistrement en cours…'
                                     : isRegistered
                                         ? 'Mettre à jour'
                                         : 'Enregistrer'}
@@ -555,14 +559,12 @@ export default function ProducerPage() {
                     </form>
                 </div>
 
-                <div className="flex justify-center mt-8 mb-6">
-                    <Image
-                        src="/originlink-logo.png"
-                        alt="Logo"
-                        width={120}
-                        height={120}
-                        className="opacity-70"
-                    />
+                {/* Footer mark */}
+                <div className="flex justify-center mt-20">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-px h-12 bg-[#d6d0c8]" />
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
+                    </div>
                 </div>
             </div>
         </div>

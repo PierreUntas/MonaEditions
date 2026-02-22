@@ -468,13 +468,11 @@ export default function CreateBatchPage() {
     // Loading state while checking permissions
     if (isCheckingAuthorization || isLoadingProducer) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
-                <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <div className="text-center">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black/70 mb-4"></div>
-                        <p className="text-[#000000] font-[Olney_Light] text-xl opacity-70">Vérification des permissions...</p>
-                    </div>
+                <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
+                    <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
+                    <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Vérification des permissions…</p>
                 </div>
             </div>
         );
@@ -482,10 +480,10 @@ export default function CreateBatchPage() {
 
     if (!address) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="text-center text-[#000000] font-[Olney_Light] text-xl opacity-70">
+                    <p className="font-serif italic text-[22px] text-[#a8a29e]">
                         Veuillez connecter votre wallet
                     </p>
                 </div>
@@ -495,11 +493,11 @@ export default function CreateBatchPage() {
 
     if (!isAuthorized) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="text-center text-[#000000] font-[Olney_Light] text-xl opacity-70">
-                        Accès refusé : vous n'êtes pas autorisé comme producteur
+                    <p className="font-serif italic text-[22px] text-[#a8a29e] text-center max-w-md px-6">
+                        Accès refusé : vous n'êtes pas autorisé comme artiste
                     </p>
                 </div>
             </div>
@@ -507,243 +505,243 @@ export default function CreateBatchPage() {
     }
 
     return (
-        <div className="min-h-screen bg-yellow-bee pt-14">
+        <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
-            <div className="container mx-auto p-6 max-w-2xl">
+            <div className="max-w-3xl mx-auto px-6 pt-28 pb-20">
                 {isAuthorized && !isApproved && (
-                    <div className="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4 mb-6 rounded">
-                        <div className="flex items-center justify-between">
+                    <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6 mb-px">
+                        <div className="flex items-center justify-between gap-4">
                             <div>
-                                <p className="font-bold">⚠️ Action requise</p>
-                                <p className="text-sm">Vous devez approuver le contrat ProductTraceStorage avant de créer des lots.</p>
+                                <p className="text-[14px] font-medium text-[#1c1917] mb-1">⚠️ Action requise</p>
+                                <p className="text-[13px] font-light text-[#78716c]">Vous devez approuver le contrat ProductTraceStorage avant de créer des œuvres.</p>
                             </div>
                             <button
                                 onClick={handleApprove}
                                 disabled={isApproving}
-                                className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all duration-300"
+                                className="bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-6 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200 whitespace-nowrap"
                             >
-                                {isApproving ? '⏳ En cours...' : '✅ Approuver maintenant'}
+                                {isApproving ? '⏳ En cours…' : '✅ Approuver'}
                             </button>
                         </div>
                     </div>
                 )}
 
                 {createdBatchId && (
-                    <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
-                        <p className="font-bold">✅ Lot créé avec succès !</p>
-                        <p className="text-sm">ID du lot: <span className="font-mono">{createdBatchId}</span></p>
-                        <p className="text-sm mt-2">Vous pouvez maintenant télécharger les QR codes.</p>
+                    <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6 mb-px">
+                        <p className="text-[14px] font-medium text-[#1c1917] mb-1">✅ Œuvre créée avec succès !</p>
+                        <p className="text-[13px] font-light text-[#78716c]">ID de l'œuvre: <span className="font-mono">{createdBatchId}</span></p>
+                        <p className="text-[13px] font-light text-[#78716c] mt-2">Vous pouvez maintenant télécharger les QR codes.</p>
                     </div>
                 )}
 
-                <h1 className="text-4xl font-[Carbon_Phyber] text-[#000000] mb-6">
-                    Créer un nouveau lot de produit
-                </h1>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Identifiant du lot *
-                        </label>
-                        <input
-                            type="text"
-                            value={batchData.identifier}
-                            onChange={(e) => setBatchData({...batchData, identifier: e.target.value})}
-                            className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                            placeholder="BATCH-2026-001"
-                            required
-                        />
+                <div className="text-center mb-12">
+                    <div className="w-[52px] h-[52px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[22px] text-[#a8a29e] mx-auto mb-6">
+                        起
                     </div>
+                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
+                        Créer une nouvelle <em className="italic text-[#78716c]">œuvre</em>
+                    </h1>
+                </div>
 
-                    <div>
-                        <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Type de produit *
-                        </label>
-                        <input
-                            type="text"
-                            value={productType}
-                            onChange={(e) => {
-                                setProductType(e.target.value);
-                                setBatchData({...batchData, productType: e.target.value});
-                            }}
-                            className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                            placeholder="Ex: Huile d'olive, Miel, Vin..."
-                            required
-                        />
-                    </div>
+                <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Identifiant de l'œuvre *
+                            </label>
+                            <input
+                                type="text"
+                                value={batchData.identifier}
+                                onChange={(e) => setBatchData({...batchData, identifier: e.target.value})}
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                placeholder="OEUVRE-2026-001"
+                                required
+                            />
+                        </div>
 
-                    <div>
-                        <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Description du produit
-                        </label>
-                        <textarea
-                            value={batchData.description}
-                            onChange={(e) => setBatchData({...batchData, description: e.target.value})}
-                            className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                            placeholder="Décrivez votre produit, sa composition, ses caractéristiques..."
-                            rows={4}
-                        />
-                    </div>
+                        <div>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Titre de l'œuvre *
+                            </label>
+                            <input
+                                type="text"
+                                value={productType}
+                                onChange={(e) => {
+                                    setProductType(e.target.value);
+                                    setBatchData({...batchData, productType: e.target.value});
+                                }}
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                placeholder="Ex: Paysage d'automne, Portrait abstrait..."
+                                required
+                            />
+                        </div>
 
-                    <div>
-                        <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Origine / Lieu de production
-                        </label>
-                        <input
-                            type="text"
-                            value={batchData.origin}
-                            onChange={(e) => setBatchData({...batchData, origin: e.target.value})}
-                            className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                            placeholder="Ex: Bordeaux, France"
-                        />
-                    </div>
+                        <div>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Description de l'œuvre
+                            </label>
+                            <textarea
+                                value={batchData.description}
+                                onChange={(e) => setBatchData({...batchData, description: e.target.value})}
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors min-h-[120px]"
+                                placeholder="Décrivez votre œuvre, la technique utilisée, les matériaux..."
+                            />
+                        </div>
 
-                    <div>
-                        <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Date de production
-                        </label>
-                        <input
-                            type="date"
-                            value={batchData.productionDate}
-                            onChange={(e) => setBatchData({...batchData, productionDate: e.target.value})}
-                            className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                        />
-                    </div>
+                        <div>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Lieu de création
+                            </label>
+                            <input
+                                type="text"
+                                value={batchData.origin}
+                                onChange={(e) => setBatchData({...batchData, origin: e.target.value})}
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                placeholder="Ex: Paris, France"
+                            />
+                        </div>
 
-                    <div>
-                        <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Étiquette (PDF, Image)
-                        </label>
-                        <input
-                            type="file"
-                            ref={labelInputRef}
-                            onChange={handleLabelUpload}
-                            accept=".pdf,.png,.jpg,.jpeg"
-                            className="hidden"
-                        />
-                        <div className="flex gap-2">
+                        <div>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Date de création
+                            </label>
+                            <input
+                                type="date"
+                                value={batchData.productionDate}
+                                onChange={(e) => setBatchData({...batchData, productionDate: e.target.value})}
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Visuel de l'œuvre (PDF, Image)
+                            </label>
+                            <input
+                                type="file"
+                                ref={labelInputRef}
+                                onChange={handleLabelUpload}
+                                accept=".pdf,.png,.jpg,.jpeg"
+                                className="hidden"
+                            />
                             <button
                                 type="button"
                                 onClick={() => labelInputRef.current?.click()}
                                 disabled={isUploadingLabel}
-                                className="flex-1 px-4 py-2 border border-[#000000] rounded-lg font-[Olney_Light] hover:bg-gray-100 transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] hover:bg-[#e7e3dc] transition-colors disabled:opacity-50 text-left"
                             >
-                                {isUploadingLabel ? '📤 Upload en cours...' : '📎 Choisir un fichier'}
+                                {isUploadingLabel ? '📤 Upload en cours…' : '📎 Choisir un fichier'}
                             </button>
+                            {labelFileName && (
+                                <p className="text-[12px] font-light text-[#1c1917] mt-2">
+                                    ✅ {labelFileName}
+                                </p>
+                            )}
+                            {batchData.labelUri && (
+                                <p className="text-[11px] font-mono text-[#a8a29e] mt-1 break-all">
+                                    {batchData.labelUri}
+                                </p>
+                            )}
                         </div>
-                        {labelFileName && (
-                            <p className="text-xs font-[Olney_Light] text-green-600 mt-2">
-                                ✅ {labelFileName}
-                            </p>
-                        )}
-                        {batchData.labelUri && (
-                            <p className="text-xs font-mono text-gray-500 mt-1 break-all">
-                                {batchData.labelUri}
-                            </p>
-                        )}
-                    </div>
 
-                    <div>
-                        <label className="block text-sm font-[Olney_Light] text-[#000000] mb-2">
-                            Quantité de tokens *
-                        </label>
-                        <input
-                            type="number"
-                            value={amount}
-                            onChange={(e) => handleAmountChange(e.target.value)}
-                            className="w-full px-4 py-2 border border-[#000000] rounded-lg focus:ring-2 focus:ring-[#666666] font-[Olney_Light]"
-                            placeholder="Ex: 100"
-                            min="1"
-                            max="100000"
-                            required
-                        />
-                    </div>
-
-                    {merkleRoot && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                            <p className="text-sm font-[Olney_Light] text-green-800 mb-2">
-                                ✅ Merkle Root généré
-                            </p>
-                            <p className="text-xs font-mono text-green-600 break-all">
-                                {merkleRoot}
-                            </p>
-                            <p className="text-xs font-[Olney_Light] text-green-600 mt-2">
-                                {secretKeys.length} clés secrètes générées
-                            </p>
+                        <div>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Nombre d'exemplaires *
+                            </label>
+                            <input
+                                type="number"
+                                value={amount}
+                                onChange={(e) => handleAmountChange(e.target.value)}
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                placeholder="Ex: 100"
+                                min="1"
+                                max="100000"
+                                required
+                            />
                         </div>
-                    )}
 
-                    <div className="flex gap-4">
+                        {merkleRoot && (
+                            <div className="border border-[#d6d0c8] bg-[#ede9e3] p-4">
+                                <p className="text-[13px] font-medium text-[#1c1917] mb-2">
+                                    ✅ Merkle Root généré
+                                </p>
+                                <p className="text-[11px] font-mono text-[#78716c] break-all">
+                                    {merkleRoot}
+                                </p>
+                                <p className="text-[12px] font-light text-[#78716c] mt-2">
+                                    {secretKeys.length} clés secrètes générées
+                                </p>
+                            </div>
+                        )}
+
                         <button
                             type="submit"
                             disabled={isCreating || isUploading || !merkleRoot || !isApproved}
-                            className="flex-1 bg-[#666666] text-white font-[Olney_Light] py-3 rounded-lg hover:bg-[#555555] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
                             {isUploading
-                                ? '📤 Upload IPFS...'
+                                ? '📤 Upload IPFS…'
                                 : isCreating
-                                    ? '⏳ Création en cours...'
-                                    : '✨ Créer le lot'}
+                                    ? '⏳ Création en cours…'
+                                    : '✨ Créer l\'œuvre'}
                         </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
 
                 {createdBatchId && secretKeys.length > 0 && merkleTree && (
-                    <div className="mt-6 space-y-4">
+                    <div className="space-y-px">
                         {createdBatchId !== 'pending' && createdBatchId !== 'confirmed' && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <p className="text-sm font-[Olney_Light] text-blue-800 mb-3">
-                                    🏷️ <strong>QR Code pour l'étiquette du produit</strong>
+                            <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6">
+                                <p className="text-[14px] font-medium text-[#1c1917] mb-2">
+                                    🏷️ QR Code pour l'étiquette de l'œuvre
                                 </p>
-                                <p className="text-xs font-[Olney_Light] text-blue-600 mb-3">
-                                    Ce QR code pointe vers la page du produit et peut être collé sur votre emballage.
+                                <p className="text-[13px] font-light text-[#78716c] mb-4 leading-[1.7]">
+                                    Ce QR code pointe vers la page de l'œuvre et peut être apposé au dos.
                                 </p>
                                 <button
                                     onClick={downloadBatchPageQRCode}
                                     disabled={isGeneratingQR}
-                                    className="w-full bg-amber-500 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-amber-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                    className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                                 >
-                                    {isGeneratingQR ? '🔄 Génération...' : '📥 Télécharger QR Code Étiquette'}
+                                    {isGeneratingQR ? '🔄 Génération…' : '📥 Télécharger QR Code Œuvre'}
                                 </button>
                             </div>
                         )}
 
-                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                            <p className="text-sm font-[Olney_Light] text-purple-800 mb-3">
-                                🎟️ <strong>QR Codes pour les consommateurs</strong>
+                        <div className="border border-[#d6d0c8] bg-[#fafaf8] p-6">
+                            <p className="text-[14px] font-medium text-[#1c1917] mb-2">
+                                🎟️ QR Codes pour les collectionneurs
                             </p>
-                            <p className="text-xs font-[Olney_Light] text-purple-600 mb-3">
-                                Ces QR codes permettent aux consommateurs de réclamer leur NFT.
+                            <p className="text-[13px] font-light text-[#78716c] mb-4 leading-[1.7]">
+                                Ces QR codes permettent aux collectionneurs de réclamer leur certificat numérique.
                             </p>
                             <div className="space-y-2">
                                 <button
                                     onClick={downloadExcelWithQRCodes}
                                     disabled={isGeneratingQR}
-                                    className="w-full bg-green-600 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-green-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                    className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                                 >
-                                    {isGeneratingQR ? '🔄 Génération en cours...' : '📊 Télécharger Excel avec QR codes'}
+                                    {isGeneratingQR ? '🔄 Génération en cours…' : '📊 Télécharger Excel avec QR codes'}
                                 </button>
                                 
                                 <button
                                     onClick={downloadQRCodesZip}
                                     disabled={isGeneratingQR}
-                                    className="w-full bg-blue-600 text-white font-[Olney_Light] py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                    className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                                 >
-                                    {isGeneratingQR ? '🔄 Génération en cours...' : '📦 Télécharger QR codes (ZIP)'}
+                                    {isGeneratingQR ? '🔄 Génération en cours…' : '📦 Télécharger QR codes (ZIP)'}
                                 </button>
                             </div>
                         </div>
                     </div>
                 )}
 
-                <div className="flex justify-center mt-8 mb-6">
-                    <Image
-                        src="/originlink-logo.png"
-                        alt="Logo"
-                        width={120}
-                        height={120}
-                        className="opacity-70"
-                    />
+                {/* Footer mark */}
+                <div className="flex justify-center mt-20">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-px h-12 bg-[#d6d0c8]" />
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
+                    </div>
                 </div>
             </div>
         </div>

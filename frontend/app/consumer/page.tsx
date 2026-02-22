@@ -153,66 +153,67 @@ export default function ConsumerPage() {
     };
 
     return (
-        <div className="min-h-screen bg-yellow-bee pt-14">
+        <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
-            <div className="container mx-auto p-6 max-w-4xl">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-4xl font-[Carbon_Phyber] text-[#000000]">
-                        Mes Tokens de Produits
+            <div className="max-w-[860px] mx-auto px-6 pt-28 pb-20">
+                <div className="text-center mb-12">
+                    <div className="w-[52px] h-[52px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[22px] text-[#a8a29e] mx-auto mb-6">
+                        起
+                    </div>
+                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-8">
+                        Mes <em className="italic text-[#78716c]">Certificats</em>
                     </h1>
                     <Link
                         href="/consumer/claim"
-                        className="bg-[#666666] text-white font-[Olney_Light] py-2 px-6 rounded-lg hover:bg-[#555555] transition-all duration-300 border border-[#000000]"
+                        className="inline-block bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-8 border border-[#1c1917] hover:bg-[#292524] transition-all duration-200"
                     >
-                        Réclamer un token
+                        Réclamer un certificat
                     </Link>
                 </div>
 
                 {isLoading || !address ? (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="text-center">
-                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black/70 mb-4"></div>
-                            <p className="text-[#000000] font-[Olney_Light] text-xl opacity-70">Chargement de vos tokens...</p>
-                        </div>
+                    <div className="flex flex-col items-center justify-center py-12 gap-4">
+                        <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
+                        <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement de vos certificats…</p>
                     </div>
                 ) : ownedTokens.length === 0 ? (
-                    <div className="bg-yellow-bee rounded-lg p-8 opacity-70 text-center border border-[#000000]">
-                        <p className="text-[#000000] font-[Olney_Light] mb-4">
-                            Vous ne possédez pas encore de tokens
+                    <div className="border border-[#d6d0c8] bg-[#fafaf8] p-12 text-center">
+                        <p className="font-serif italic text-[18px] text-[#78716c] mb-6">
+                            Vous ne possédez pas encore de certificat
                         </p>
                         <Link
                             href="/consumer/claim"
-                            className="inline-block bg-[#666666] text-white font-[Olney_Light] py-2 px-6 rounded-lg hover:bg-[#555555] transition-colors border border-[#000000]"
+                            className="inline-block bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-8 border border-[#1c1917] hover:bg-[#292524] transition-all duration-200"
                         >
-                            Réclamer mon premier token
+                            Réclamer mon premier certificat
                         </Link>
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-px">
                         {ownedTokens.map((token) => (
-                            <div key={token.tokenId.toString()} className="bg-yellow-bee rounded-lg p-6 opacity-70 border border-[#000000]">
-                                <div className="flex justify-between items-start mb-4">
+                            <div key={token.tokenId.toString()} className="border border-[#d6d0c8] bg-[#fafaf8] p-8">
+                                <div className="flex justify-between items-start mb-6">
                                     <div>
-                                        <h2 className="text-2xl font-[Carbon_bl] text-[#000000] mb-2">
+                                        <h2 className="font-serif text-[28px] font-normal text-[#1c1917] mb-2 leading-tight">
                                             {token.productType}
                                         </h2>
-                                        <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                            Lot #{token.tokenId.toString()}
+                                        <p className="text-[12px] font-light tracking-[0.06em] text-[#a8a29e] mb-1">
+                                            ŒUVRE #{token.tokenId.toString()}
                                         </p>
-                                        <p className="text-sm font-[Olney_Light] text-[#000000]/60 mt-1">
+                                        <p className="text-[13px] font-light text-[#78716c] mb-2">
                                             Par: {token.producerName}
                                         </p>
                                         {isOwnProducer(token) && (
-                                            <p className="text-xs font-[Olney_Light] text-orange-600 mt-2 bg-orange-100 px-2 py-1 rounded inline-block">
-                                                👨‍🌾 Votre production
+                                            <p className="text-[11px] font-medium text-[#1c1917] bg-[#ede9e3] px-3 py-1.5 border border-[#d6d0c8] inline-block tracking-[0.06em]">
+                                                🎨 Votre création
                                             </p>
                                         )}
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                            Quantité
+                                        <p className="text-[11px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                            Exemplaires
                                         </p>
-                                        <p className="text-3xl font-[Carbon_Phyber] text-[#000000]">
+                                        <p className="font-serif text-[36px] font-normal text-[#1c1917] leading-none">
                                             {token.balance.toString()}
                                         </p>
                                     </div>
@@ -221,14 +222,14 @@ export default function ConsumerPage() {
                                 <div className="flex gap-2">
                                     <Link
                                         href={`/explore/batch/${token.tokenId}`}
-                                        className="flex-1 bg-[#666666] text-white font-[Olney_Light] py-2 px-4 rounded-lg hover:bg-[#555555] transition-all duration-300 border border-[#000000] text-center text-sm"
+                                        className="flex-1 bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-6 border border-[#1c1917] hover:bg-[#292524] transition-all duration-200 text-center"
                                     >
                                         Voir les détails
                                     </Link>
                                     {!isOwnProducer(token) && (
                                         <button
                                             onClick={() => setSelectedToken(token.tokenId)}
-                                            className="flex-1 bg-yellow-bee text-[#000000] font-[Olney_Light] py-2 px-4 rounded-lg hover:text-[#666666] hover:border-[#666666] transition-all duration-300 cursor-pointer border border-[#000000] text-sm"
+                                            className="flex-1 bg-[#f5f3ef] text-[#1c1917] font-medium text-[12px] tracking-[0.06em] py-3 px-6 border border-[#d6d0c8] hover:border-[#1c1917] transition-all duration-200"
                                         >
                                             Laisser un avis
                                         </button>
@@ -241,14 +242,14 @@ export default function ConsumerPage() {
 
                 {/* Comment modal */}
                 {selectedToken && (
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                        <div className="bg-yellow-bee rounded-lg p-6 max-w-md w-full border border-[#000000]">
-                            <h3 className="text-2xl font-[Carbon_bl] text-[#000000] mb-4">
+                    <div className="fixed inset-0 bg-[#1c1917]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 max-w-md w-full">
+                            <h3 className="font-serif text-[28px] font-normal text-[#1c1917] mb-6 leading-tight">
                                 Laisser un avis
                             </h3>
-                            <form onSubmit={handleAddComment} className="space-y-4">
+                            <form onSubmit={handleAddComment} className="space-y-5">
                                 <div>
-                                    <label className="block text-sm font-[Olney_Light] mb-2 text-[#000000]">
+                                    <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                         Note (0-5)
                                     </label>
                                     <input
@@ -257,12 +258,12 @@ export default function ConsumerPage() {
                                         max="5"
                                         value={rating}
                                         onChange={(e) => setRating(Number(e.target.value))}
-                                        className="w-full p-3 rounded-lg border border-[#000000] bg-yellow-bee/50 font-[Olney_Light]"
+                                        className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-[Olney_Light] mb-2 text-[#000000]">
+                                    <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                         Commentaire (5-500 caractères)
                                     </label>
                                     <textarea
@@ -271,24 +272,24 @@ export default function ConsumerPage() {
                                         minLength={5}
                                         maxLength={500}
                                         rows={4}
-                                        className="w-full p-3 rounded-lg border border-[#000000] bg-yellow-bee/50 font-[Olney_Light]"
+                                        className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors min-h-[100px]"
                                         required
                                     />
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 pt-2">
                                     <button
                                         type="button"
                                         onClick={() => setSelectedToken(null)}
-                                        className="flex-1 bg-yellow-bee text-[#000000] font-[Olney_Light] py-2 px-4 rounded-lg hover:text-[#666666] hover:border-[#666666] transition-all duration-300 cursor-pointer border border-[#000000]"
+                                        className="flex-1 bg-[#f5f3ef] text-[#1c1917] font-medium text-[12px] tracking-[0.06em] py-3 px-6 border border-[#d6d0c8] hover:border-[#1c1917] transition-all duration-200"
                                     >
                                         Annuler
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={isCommenting}
-                                        className="flex-1 bg-[#666666] text-white font-[Olney_Light] py-2 px-4 rounded-lg hover:bg-[#555555] transition-all duration-300 cursor-pointer border border-[#000000] disabled:opacity-50"
+                                        className="flex-1 bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-6 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                                     >
-                                        {isCommenting ? 'Envoi...' : 'Envoyer'}
+                                        {isCommenting ? 'Envoi…' : 'Envoyer'}
                                     </button>
                                 </div>
                             </form>
@@ -296,14 +297,12 @@ export default function ConsumerPage() {
                     </div>
                 )}
 
-                <div className="flex justify-center mt-8 mb-6">
-                    <Image
-                        src="/originlink-logo.png"
-                        alt="Logo"
-                        width={120}
-                        height={120}
-                        className="opacity-70"
-                    />
+                {/* Footer mark */}
+                <div className="flex justify-center mt-20">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-px h-12 bg-[#d6d0c8]" />
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
+                    </div>
                 </div>
             </div>
         </div>

@@ -4,12 +4,9 @@ import { useState, useEffect } from 'react';
 import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI, PRODUCT_TOKENIZATION_ADDRESS, PRODUCT_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway, getIPFSUrl } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
-import Image from 'next/image';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
-import dynamic from 'next/dynamic';
-import { useTheme } from '@/app/context/ThemeContext';
 
 interface BatchIPFSData {
     identifier: string;
@@ -39,7 +36,6 @@ interface ProducerInfo {
 }
 
 export default function ExplorePage() {
-    const { theme } = useTheme();
     const [batches, setBatches] = useState<BatchInfo[]>([]);
     const [producers, setProducers] = useState<Map<string, ProducerInfo>>(new Map());
     const [isLoading, setIsLoading] = useState(true);
@@ -48,11 +44,7 @@ export default function ExplorePage() {
 
     useEffect(() => {
         const fetchAllBatches = async () => {
-            if (!publicClient) {
-                setIsLoading(false);
-                return;
-            }
-
+            if (!publicClient) { setIsLoading(false); return; }
             try {
                 const logs = await publicClient.getLogs({
                     address: PRODUCT_TRACE_STORAGE_ADDRESS,
@@ -61,62 +53,25 @@ export default function ExplorePage() {
                     toBlock: 'latest'
                 });
 
-                // Récupérer toutes les données blockchain en parallèle
                 const batchesPromises = logs.map(async (log) => {
                     const tokenId = log.args.productBatchId as bigint;
                     const producerAddress = log.args.producer as `0x${string}`;
-
-                    // Execute the 3 calls in parallel for each batch
                     const [batchInfo, balance, producerData] = await Promise.all([
-                        publicClient.readContract({
-                            address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                            abi: PRODUCT_TRACE_STORAGE_ABI,
-                            functionName: 'getProductBatch',
-                            args: [tokenId]
-                        }) as Promise<any>,
-                        publicClient.readContract({
-                            address: PRODUCT_TOKENIZATION_ADDRESS,
-                            abi: PRODUCT_TOKENIZATION_ABI,
-                            functionName: 'balanceOf',
-                            args: [producerAddress, tokenId]
-                        }) as Promise<bigint>,
-                        publicClient.readContract({
-                            address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                            abi: PRODUCT_TRACE_STORAGE_ABI,
-                            functionName: 'getProducer',
-                            args: [producerAddress]
-                        }) as Promise<any>
+                        publicClient.readContract({ address: PRODUCT_TRACE_STORAGE_ADDRESS, abi: PRODUCT_TRACE_STORAGE_ABI, functionName: 'getProductBatch', args: [tokenId] }) as Promise<any>,
+                        publicClient.readContract({ address: PRODUCT_TOKENIZATION_ADDRESS, abi: PRODUCT_TOKENIZATION_ABI, functionName: 'balanceOf', args: [producerAddress, tokenId] }) as Promise<bigint>,
+                        publicClient.readContract({ address: PRODUCT_TRACE_STORAGE_ADDRESS, abi: PRODUCT_TRACE_STORAGE_ABI, functionName: 'getProducer', args: [producerAddress] }) as Promise<any>
                     ]);
-
                     return {
-                        batch: {
-                            tokenId,
-                            producer: producerAddress,
-                            productType: batchInfo.productType,
-                            metadata: batchInfo.metadata,
-                            totalSupply: balance,
-                            remainingTokens: balance
-                        },
-                        producerInfo: {
-                            address: producerAddress,
-                            name: producerData.name || 'Producteur anonyme',
-                            location: producerData.location || 'Non spécifié'
-                        }
+                        batch: { tokenId, producer: producerAddress, productType: batchInfo.productType, metadata: batchInfo.metadata, totalSupply: balance, remainingTokens: balance },
+                        producerInfo: { address: producerAddress, name: producerData.name || 'Artiste anonyme', location: producerData.location || 'Non spécifié' }
                     };
                 });
 
-                // Wait for all blockchain requests
                 const results = await Promise.all(batchesPromises);
-
-                // Build the producers map
                 const producersMap = new Map<string, ProducerInfo>();
                 const batchesData = results.map(({ batch, producerInfo }) => {
-                    if (!producersMap.has(producerInfo.address)) {
-                        producersMap.set(producerInfo.address, {
-                            name: producerInfo.name,
-                            location: producerInfo.location
-                        });
-                    }
+                    if (!producersMap.has(producerInfo.address))
+                        producersMap.set(producerInfo.address, { name: producerInfo.name, location: producerInfo.location });
                     return batch;
                 });
 
@@ -125,351 +80,201 @@ export default function ExplorePage() {
                 setProducers(producersMap);
                 setIsLoading(false);
 
-                // Load IPFS data in parallel
                 setIsLoadingIPFS(true);
-                const ipfsPromises = batchesData.map(async (batch) => {
+                const ipfsResults = await Promise.all(batchesData.map(async (batch) => {
                     if (!batch.metadata) return null;
+                    try { return { tokenId: batch.tokenId, ipfsData: await getFromIPFSGateway(batch.metadata) }; }
+                    catch { return null; }
+                }));
 
-                    try {
-                        const ipfsData = await getFromIPFSGateway(batch.metadata);
-                        return { tokenId: batch.tokenId, ipfsData };
-                    } catch (error) {
-                        console.error(`Error loading IPFS data for batch ${batch.tokenId}:`, error);
-                        return null;
-                    }
-                });
-
-                const ipfsResults = await Promise.all(ipfsPromises);
-
-                // Update all batches with their IPFS data
                 setBatches(prev => {
                     const updated = [...prev];
-                    ipfsResults.forEach(result => {
-                        if (result) {
-                            const index = updated.findIndex(b => b.tokenId === result.tokenId);
-                            if (index !== -1) {
-                                updated[index] = { ...updated[index], ipfsData: result.ipfsData };
-                            }
-                        }
+                    ipfsResults.forEach(r => {
+                        if (r) { const i = updated.findIndex(b => b.tokenId === r.tokenId); if (i !== -1) updated[i] = { ...updated[i], ipfsData: r.ipfsData }; }
                     });
                     return updated;
                 });
 
-                // Load ratings and comments for each batch
-                const ratingsPromises = batchesData.map(async (batch) => {
+                const ratingsResults = await Promise.all(batchesData.map(async (batch) => {
                     try {
-                        const commentsCount = await publicClient.readContract({
-                            address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                            abi: PRODUCT_TRACE_STORAGE_ABI,
-                            functionName: 'getProductBatchCommentsCount',
-                            args: [batch.tokenId]
-                        }) as bigint;
-
-                        if (commentsCount > 0n) {
-                            const comments = await publicClient.readContract({
-                                address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                                abi: PRODUCT_TRACE_STORAGE_ABI,
-                                functionName: 'getProductBatchComments',
-                                args: [batch.tokenId, 0n, commentsCount]
-                            }) as any[];
-
-                            const totalRating = comments.reduce((sum, comment) => sum + Number(comment.rating), 0);
-                            const averageRating = totalRating / comments.length;
-
-                            return {
-                                tokenId: batch.tokenId,
-                                averageRating,
-                                commentsCount: Number(commentsCount)
-                            };
+                        const count = await publicClient.readContract({ address: PRODUCT_TRACE_STORAGE_ADDRESS, abi: PRODUCT_TRACE_STORAGE_ABI, functionName: 'getProductBatchCommentsCount', args: [batch.tokenId] }) as bigint;
+                        if (count > 0n) {
+                            const comments = await publicClient.readContract({ address: PRODUCT_TRACE_STORAGE_ADDRESS, abi: PRODUCT_TRACE_STORAGE_ABI, functionName: 'getProductBatchComments', args: [batch.tokenId, 0n, count] }) as any[];
+                            return { tokenId: batch.tokenId, averageRating: comments.reduce((s, c) => s + Number(c.rating), 0) / comments.length, commentsCount: Number(count) };
                         }
                         return null;
-                    } catch (error) {
-                        console.error(`Error loading comments for batch ${batch.tokenId}:`, error);
-                        return null;
-                    }
-                });
+                    } catch { return null; }
+                }));
 
-                const ratingsResults = await Promise.all(ratingsPromises);
-
-                // Update batches with ratings
                 setBatches(prev => {
                     const updated = [...prev];
-                    ratingsResults.forEach(result => {
-                        if (result) {
-                            const index = updated.findIndex(b => b.tokenId === result.tokenId);
-                            if (index !== -1) {
-                                updated[index] = {
-                                    ...updated[index],
-                                    averageRating: result.averageRating,
-                                    commentsCount: result.commentsCount
-                                };
-                            }
-                        }
+                    ratingsResults.forEach(r => {
+                        if (r) { const i = updated.findIndex(b => b.tokenId === r.tokenId); if (i !== -1) updated[i] = { ...updated[i], averageRating: r.averageRating, commentsCount: r.commentsCount }; }
                     });
                     return updated;
                 });
-
                 setIsLoadingIPFS(false);
-
-            } catch (error) {
-                console.error('Error loading batches:', error);
+            } catch (e) {
+                console.error('Error loading batches:', e);
                 setIsLoading(false);
             }
         };
-
         fetchAllBatches();
     }, []);
 
-
-    const filteredBatches = filterType === 'all'
-        ? batches
-        : batches.filter(b => b.productType.toLowerCase().includes(filterType.toLowerCase()));
-
-    const uniqueProductTypes = Array.from(new Set(batches.map(b => b.productType)));
+    const filteredBatches = filterType === 'all' ? batches : batches.filter(b => b.productType.toLowerCase().includes(filterType.toLowerCase()));
+    const uniqueTypes = Array.from(new Set(batches.map(b => b.productType)));
 
     return (
-        <div className="min-h-screen" style={{
-            background: theme === 'light'
-                ? 'linear-gradient(to bottom right, #FDF6E3, #F0E6C8)'
-                : 'linear-gradient(to bottom right, #0d0805, #1a1008)'
-        }}>
+        <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
-            <div className="container mx-auto p-6 max-w-6xl pt-28">
+
+            <div className="max-w-6xl mx-auto px-6 pt-28 pb-20">
+
                 {/* Header */}
-                <div className="text-center mb-12">
-                    <p
-                        className="text-xs tracking-[5px] uppercase mb-4"
-                        style={{ color: '#c0392b' }}
-                    >
-                        Explorer
-                    </p>
-                    <h1
-                        className="text-5xl font-bold mb-4"
-                        style={{
-                            fontFamily: "'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                            letterSpacing: '-2.5px',
-                            lineHeight: 1,
-                            color: theme === 'light' ? '#1a1008' : '#fdf6e3',
-                            fontWeight: 800
-                        }}
-                    >
-                        Les produits
-                    </h1>
-                    <div className="flex justify-center mb-4">
-                        <svg width="240" height="8" viewBox="0 0 240 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="4" cy="4" r="3.5" fill="#c0392b" stroke="#c0392b" strokeWidth="0.5"/>
-                            <line x1="12" y1="4" x2="228" y2="4" stroke={theme === 'light' ? '#c8b89a' : '#5a4a2a'} strokeWidth="1"/>
-                            <circle cx="236" cy="4" r="3.5" fill="#c0392b" stroke="#c0392b" strokeWidth="0.5"/>
-                        </svg>
+                <div className="mb-16">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-8 h-px bg-[#d6d0c8]" />
+                        <span className="text-[11px] font-medium tracking-[0.15em] uppercase text-[#a8a29e]">
+                            Explorer
+                        </span>
                     </div>
-                    <p style={{ 
-                        color: theme === 'light' ? '#5a4a2a' : '#c8b89a', 
-                        fontSize: '17px', 
-                        fontWeight: 300, 
-                        lineHeight: 1.75 
-                    }}>
-                        Découvrez tous les produits traçables sur la blockchain
-                    </p>
+                    <div className="flex items-end justify-between border-b border-[#d6d0c8] pb-8">
+                        <div>
+                            <h1 className="font-serif text-[clamp(40px,6vw,64px)] font-normal leading-[1.05] tracking-[-1.5px] text-[#1c1917] mb-3">
+                                La <em className="italic text-[#78716c]">galerie</em>
+                            </h1>
+                            <p className="text-[14px] font-light text-[#78716c] leading-relaxed max-w-md">
+                                Découvrez toutes les œuvres certifiées sur la blockchain.
+                                Chaque fiche est un certificat d'authenticité permanent.
+                            </p>
+                        </div>
+                        <div className="text-right hidden md:block">
+                            <span className="font-serif italic text-[48px] text-[#e7e3dc] leading-none">
+                                {batches.length}
+                            </span>
+                            <span className="block text-[11px] font-light tracking-[0.08em] text-[#a8a29e] mt-1">
+                                œuvres certifiées
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Filters */}
-                <div className="mb-8 flex gap-2 flex-wrap justify-center">
-                    <button
-                        onClick={() => setFilterType('all')}
-                        className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
-                        style={
-                            filterType === 'all'
-                                ? {
-                                    background: '#c0392b',
-                                    color: '#fdf6e3',
-                                    border: '1px solid #c0392b',
-                                }
-                                : {
-                                    background: theme === 'light' ? 'rgba(255,255,255,0.5)' : 'rgba(40,30,18,0.5)',
-                                    color: theme === 'light' ? '#5a4a2a' : '#c8b89a',
-                                    border: theme === 'light' ? '1px solid #c8b89a' : '1px solid #5a4a2a',
-                                }
-                        }
-                    >
-                        Tous ({batches.length})
-                    </button>
-                    {uniqueProductTypes.map(type => (
-                        <button
-                            key={type}
-                            onClick={() => setFilterType(type)}
-                            className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
-                            style={
-                                filterType === type
-                                    ? {
-                                        background: '#c0392b',
-                                        color: '#fdf6e3',
-                                        border: '1px solid #c0392b',
-                                    }
-                                    : {
-                                        background: theme === 'light' ? 'rgba(255,255,255,0.5)' : 'rgba(40,30,18,0.5)',
-                                        color: theme === 'light' ? '#5a4a2a' : '#c8b89a',
-                                        border: theme === 'light' ? '1px solid #c8b89a' : '1px solid #5a4a2a',
-                                    }
-                            }
-                        >
+                <div className="flex gap-2 flex-wrap mb-10">
+                    <FilterBtn active={filterType === 'all'} onClick={() => setFilterType('all')}>
+                        Toutes ({batches.length})
+                    </FilterBtn>
+                    {uniqueTypes.map(type => (
+                        <FilterBtn key={type} active={filterType === type} onClick={() => setFilterType(type)}>
                             {type} ({batches.filter(b => b.productType === type).length})
-                        </button>
+                        </FilterBtn>
                     ))}
                 </div>
 
+                {/* IPFS loading hint */}
                 {isLoadingIPFS && (
-                    <div className="text-center mb-6" style={{ color: '#5a4a2a', fontSize: '14px' }}>
-                        Chargement des données IPFS...
-                    </div>
+                    <p className="text-[12px] font-light text-[#a8a29e] tracking-[0.06em] mb-6">
+                        Chargement des données IPFS…
+                    </p>
                 )}
 
+                {/* States */}
                 {isLoading ? (
-                    <div className="flex items-center justify-center py-20">
-                        <div className="text-center">
-                            <div 
-                                className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 mb-4"
-                                style={{ borderColor: '#c0392b' }}
-                            ></div>
-                            <p style={{ 
-                                color: theme === 'light' ? '#5a4a2a' : '#c8b89a', 
-                                fontSize: '15px' 
-                            }}>
-                                Chargement des lots...
-                            </p>
-                        </div>
-                    </div>
-                ) : filteredBatches.length === 0 ? (
-                    <div
-                        className="rounded-2xl p-10 text-center"
-                        style={{ 
-                            background: theme === 'light' ? 'rgba(255,255,255,0.6)' : 'rgba(40,30,18,0.6)', 
-                            border: theme === 'light' ? '1px solid #c8b89a' : '1px solid #5a4a2a' 
-                        }}
-                    >
-                        <p style={{ 
-                            color: theme === 'light' ? '#5a4a2a' : '#c8b89a', 
-                            fontSize: '15px' 
-                        }}>
-                            Aucun lot trouvé
+                    <div className="flex flex-col items-center justify-center py-32 gap-4">
+                        <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
+                        <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">
+                            Chargement des œuvres…
                         </p>
                     </div>
+                ) : filteredBatches.length === 0 ? (
+                    <div className="border border-[#d6d0c8] bg-[#fafaf8] p-12 text-center">
+                        <p className="font-serif italic text-[22px] text-[#a8a29e]">Aucune œuvre trouvée</p>
+                    </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#d6d0c8] border border-[#d6d0c8]">
                         {filteredBatches.map((batch) => (
                             <Link
                                 key={batch.tokenId.toString()}
                                 href={`/explore/batch/${batch.tokenId}`}
-                                className="rounded-2xl p-5 transition-all duration-200 hover:shadow-lg"
-                                style={{ 
-                                    background: theme === 'light' ? '#f5ead0' : 'rgba(40,30,18,0.8)', 
-                                    border: '2px solid #c0392b' 
-                                }}
+                                className="bg-[#fafaf8] p-6 flex flex-col gap-4 hover:bg-[#f5f3ef] transition-colors duration-200 no-underline group"
                             >
-                                {batch.ipfsData?.labelUri && (
-                                    <div className="mb-4 rounded-xl overflow-hidden" style={{ 
-                                        border: theme === 'light' ? '1px solid #c8b89a' : '1px solid #5a4a2a' 
-                                    }}>
+                                {/* Image */}
+                                {batch.ipfsData?.labelUri ? (
+                                    <div className="w-full aspect-[4/3] overflow-hidden bg-[#e7e3dc]">
                                         <img
                                             src={getIPFSUrl(batch.ipfsData.labelUri)}
-                                            alt={`Étiquette ${batch.productType}`}
-                                            className="w-full h-40 object-cover"
+                                            alt={batch.productType}
+                                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
                                         />
                                     </div>
+                                ) : (
+                                    <div className="w-full aspect-[4/3] bg-[#e7e3dc] flex items-center justify-center">
+                                        <span className="font-serif italic text-[40px] text-[#d6d0c8]">起</span>
+                                    </div>
                                 )}
-                                
-                                <div className="mb-3">
-                                    <h3 
-                                        className="text-2xl font-bold mb-1"
-                                        style={{ 
-                                            fontFamily: "'Playfair Display', Georgia, serif",
-                                            color: theme === 'light' ? '#1a1008' : '#fdf6e3' 
-                                        }}
-                                    >
-                                        {batch.productType}
-                                    </h3>
-                                    {batch.ipfsData?.identifier && (
-                                        <p style={{ 
-                                            fontSize: '12px', 
-                                            color: theme === 'light' ? '#5a4a2a' : '#c8b89a' 
-                                        }}>
-                                            {batch.ipfsData.identifier}
+
+                                {/* Info */}
+                                <div className="flex flex-col gap-2 flex-1">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                            <p className="text-[10px] font-medium tracking-[0.12em] uppercase text-[#a8a29e] mb-1">
+                                                {batch.ipfsData?.identifier || `Œuvre #${batch.tokenId.toString()}`}
+                                            </p>
+                                            <h3 className="font-serif text-[18px] font-normal text-[#1c1917] leading-tight">
+                                                {batch.productType}
+                                            </h3>
+                                        </div>
+                                        <span className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#4a5240] border border-[#4a5240] px-1.5 py-0.5 flex-shrink-0 mt-1">
+                                            Certifié
+                                        </span>
+                                    </div>
+
+                                    {batch.ipfsData?.origin && (
+                                        <p className="text-[12px] font-light text-[#78716c]">
+                                            {batch.ipfsData.origin}
+                                        </p>
+                                    )}
+
+                                    {batch.ipfsData?.productionDate && (
+                                        <p className="text-[11px] font-light text-[#a8a29e]">
+                                            {new Date(batch.ipfsData.productionDate).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })}
+                                        </p>
+                                    )}
+
+                                    {batch.ipfsData?.certifications && batch.ipfsData.certifications.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {batch.ipfsData.certifications.map((cert, i) => (
+                                                <span key={i} className="text-[10px] font-mono text-[#78716c] border border-[#d6d0c8] px-2 py-0.5 bg-[#f5f3ef]">
+                                                    {cert}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {batch.commentsCount !== undefined && batch.commentsCount > 0 && (
+                                        <p className="text-[12px] font-light text-[#78716c]">
+                                            {batch.averageRating?.toFixed(1)} · {batch.commentsCount} avis vérifié{batch.commentsCount > 1 ? 's' : ''}
                                         </p>
                                     )}
                                 </div>
 
-                                {batch.ipfsData?.origin && (
-                                    <p className="mb-2" style={{ 
-                                        fontSize: '14px', 
-                                        color: theme === 'light' ? '#5a4a2a' : '#c8b89a' 
-                                    }}>
-                                        📍 {batch.ipfsData.origin}
-                                    </p>
-                                )}
-
-                                {batch.ipfsData?.productionDate && (
-                                    <p className="mb-2" style={{ 
-                                        fontSize: '14px', 
-                                        color: theme === 'light' ? '#5a4a2a' : '#c8b89a' 
-                                    }}>
-                                        📅 {new Date(batch.ipfsData.productionDate).toLocaleDateString('fr-FR')}
-                                    </p>
-                                )}
-
-                                {batch.ipfsData?.certifications && batch.ipfsData.certifications.length > 0 && (
-                                    <div className="flex flex-wrap gap-1.5 mb-3">
-                                        {batch.ipfsData.certifications.map((cert, index) => (
-                                            <span
-                                                key={index}
-                                                className="text-xs px-2.5 py-1 rounded-full font-mono"
-                                                style={{
-                                                    background: 'rgba(192,57,43,0.2)',
-                                                    color: '#ff9999',
-                                                    border: '1px solid rgba(192,57,43,0.5)',
-                                                }}
-                                            >
-                                                {cert}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {batch.commentsCount !== undefined && batch.commentsCount > 0 && (
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <span style={{ color: '#c0392b' }}>⭐</span>
-                                        <span style={{ 
-                                            fontSize: '14px', 
-                                            color: theme === 'light' ? '#1a1008' : '#fdf6e3' 
-                                        }}>
-                                            {batch.averageRating?.toFixed(1)} ({batch.commentsCount} avis)
-                                        </span>
-                                    </div>
-                                )}
-
-                                <div 
-                                    className="pt-3 mt-3"
-                                    style={{ borderTop: '1px solid #c0392b' }}
-                                >
-                                    <p className="mb-1" style={{ 
-                                        fontSize: '12px', 
-                                        color: theme === 'light' ? '#5a4a2a' : '#c8b89a' 
-                                    }}>
-                                        Producteur
-                                    </p>
-                                    <p className="mb-3" style={{ 
-                                        fontSize: '14px', 
-                                        color: theme === 'light' ? '#1a1008' : '#fdf6e3' 
-                                    }}>
-                                        {producers.get(batch.producer)?.name}
-                                    </p>
-                                    <div className="flex justify-between items-center">
-                                        <p style={{ 
-                                            fontSize: '12px', 
-                                            color: theme === 'light' ? '#5a4a2a' : '#c8b89a' 
-                                        }}>
-                                            Lot #{batch.tokenId.toString()}
+                                {/* Footer */}
+                                <div className="border-t border-[#e7e3dc] pt-4 flex items-end justify-between">
+                                    <div>
+                                        <p className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#a8a29e] mb-0.5">
+                                            Artiste
                                         </p>
-                                        <p style={{ fontSize: '14px', color: '#c0392b', fontWeight: 600 }}>
-                                            {batch.remainingTokens.toString()} tokens
+                                        <p className="text-[13px] font-light text-[#1c1917]">
+                                            {producers.get(batch.producer)?.name}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#a8a29e] mb-0.5">
+                                            Édition
+                                        </p>
+                                        <p className="text-[13px] font-light text-[#78716c] font-mono">
+                                            {batch.remainingTokens.toString()} / {batch.totalSupply.toString()}
                                         </p>
                                     </div>
                                 </div>
@@ -478,38 +283,30 @@ export default function ExplorePage() {
                     </div>
                 )}
 
-                <div className="flex justify-center mt-16 mb-8">
-                    <div
-                        className="w-16 h-16 flex items-center justify-center relative"
-                        style={{
-                            background: '#c0392b',
-                            borderRadius: '10px',
-                            boxShadow: '0 0 12px rgba(192,57,43,0.3)',
-                        }}
-                    >
-                        <div
-                            className="absolute inset-0"
-                            style={{
-                                border: '1px solid rgba(255,107,107,0.5)',
-                                borderRadius: '10px',
-                                margin: '5px',
-                            }}
-                        />
-                        <span
-                            style={{
-                                fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif",
-                                fontSize: '40px',
-                                color: 'white',
-                                fontWeight: 500,
-                                position: 'relative',
-                                zIndex: 1,
-                            }}
-                        >
-                            起
-                        </span>
+                {/* Footer mark */}
+                <div className="flex justify-center mt-20">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-px h-12 bg-[#d6d0c8]" />
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
                     </div>
                 </div>
+
             </div>
         </div>
+    );
+}
+
+function FilterBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`text-[11px] font-medium tracking-[0.06em] px-4 py-2 border transition-all duration-200 cursor-pointer
+                ${active
+                    ? 'bg-[#1c1917] text-[#f5f3ef] border-[#1c1917]'
+                    : 'bg-[#fafaf8] text-[#78716c] border-[#d6d0c8] hover:border-[#1c1917] hover:text-[#1c1917]'
+                }`}
+        >
+            {children}
+        </button>
     );
 }

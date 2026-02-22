@@ -134,13 +134,11 @@ export default function ProducerBatchesPage() {
     // Loading state while checking permissions
     if (isCheckingAuthorization || isLoadingProducer) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
-                <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <div className="text-center">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black/70 mb-4"></div>
-                        <p className="text-[#000000] font-[Olney_Light] text-xl opacity-70">Vérification des permissions...</p>
-                    </div>
+                <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
+                    <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
+                    <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Vérification des permissions…</p>
                 </div>
             </div>
         );
@@ -148,10 +146,10 @@ export default function ProducerBatchesPage() {
 
     if (!address) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="text-center text-[#000000] font-[Olney_Light] text-xl opacity-70">
+                    <p className="font-serif italic text-[22px] text-[#a8a29e]">
                         Veuillez connecter votre wallet
                     </p>
                 </div>
@@ -161,11 +159,11 @@ export default function ProducerBatchesPage() {
 
     if (!isAuthorized) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="text-center text-[#000000] font-[Olney_Light] text-xl opacity-70">
-                        Accès refusé : vous n'êtes pas autorisé comme producteur
+                    <p className="font-serif italic text-[22px] text-[#a8a29e] text-center max-w-md px-6">
+                        Accès refusé : vous n'êtes pas autorisé comme artiste
                     </p>
                 </div>
             </div>
@@ -173,76 +171,77 @@ export default function ProducerBatchesPage() {
     }
 
     return (
-        <div className="min-h-screen bg-yellow-bee pt-14">
+        <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
-            <div className="container mx-auto p-6 max-w-4xl">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-4xl font-[Carbon_Phyber] text-[#000000]">
-                        Mes lots de produits
+            <div className="max-w-[860px] mx-auto px-6 pt-28 pb-20">
+                <div className="text-center mb-12">
+                    <div className="w-[52px] h-[52px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[22px] text-[#a8a29e] mx-auto mb-6">
+                        起
+                    </div>
+                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-8">
+                        Mes <em className="italic text-[#78716c]">Œuvres</em>
                     </h1>
                     <Link
                         href="/producer/batches/create"
-                        className="bg-[#666666] text-white px-6 py-2 rounded-lg font-[Olney_Light] hover:bg-[#555555] transition-colors border border-[#000000]"
+                        className="inline-block bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-8 border border-[#1c1917] hover:bg-[#292524] transition-all duration-200"
                     >
-                        + Créer un lot
+                        + Créer une œuvre
                     </Link>
                 </div>
 
                 {isLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="text-center">
-                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black/70 mb-4"></div>
-                            <p className="text-[#000000] font-[Olney_Light] text-xl opacity-70">Chargement de vos lots...</p>
-                        </div>
+                    <div className="flex flex-col items-center justify-center py-12 gap-4">
+                        <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
+                        <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement de vos œuvres…</p>
                     </div>
                 ) : batches.length === 0 ? (
-                    <div className="text-center text-[#000000] font-[Olney_Light] opacity-70 py-12">
-                        Vous n'avez pas encore créé de lot.
+                    <div className="text-center font-serif italic text-[18px] text-[#a8a29e] py-12">
+                        Vous n'avez pas encore créé d'œuvre.
                     </div>
                 ) : (
                     <>
                         {isLoadingIPFS && (
-                            <div className="text-center text-[#000000] font-[Olney_Light] mb-4 opacity-70">
-                                Chargement des données IPFS...
+                            <div className="text-center text-[13px] font-light text-[#a8a29e] mb-4 tracking-[0.06em]">
+                                Chargement des données IPFS…
                             </div>
                         )}
-                        <div className="grid gap-4">
+                        <div className="space-y-px">
                             {batches.map((batch) => (
                                 <Link
                                     key={batch.tokenId.toString()}
                                     href={`/explore/batch/${batch.tokenId}`}
-                                    className="bg-yellow-bee rounded-lg p-4 opacity-70 border border-[#000000] hover:opacity-100 transition-opacity"
+                                    className="block border border-[#d6d0c8] bg-[#fafaf8] p-8 hover:bg-[#f5f3ef] transition-colors duration-200"
                                 >
-                                    <div className="flex justify-between items-start">
+                                    <div className="flex justify-between items-start gap-8">
                                         <div className="flex-1">
-                                            <h2 className="text-2xl font-[Carbon_Phyber] text-[#000000] mb-2">
+                                            <h2 className="font-serif text-[28px] font-normal text-[#1c1917] mb-3 leading-tight">
                                                 {batch.productType}
                                             </h2>
-                                            <div className="space-y-1">
-                                                <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                                    Lot #{batch.tokenId.toString()}
+                                            <div className="space-y-1.5">
+                                                <p className="text-[12px] font-light tracking-[0.06em] text-[#a8a29e]">
+                                                    ŒUVRE #{batch.tokenId.toString()}
                                                 </p>
                                                 {batch.ipfsData?.identifier && (
-                                                    <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                                                    <p className="text-[13px] font-light text-[#78716c]">
                                                         Identifiant: {batch.ipfsData.identifier}
                                                     </p>
                                                 )}
                                                 {batch.ipfsData?.origin && (
-                                                    <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                                        Origine: {batch.ipfsData.origin}
+                                                    <p className="text-[13px] font-light text-[#78716c]">
+                                                        Lieu: {batch.ipfsData.origin}
                                                     </p>
                                                 )}
                                                 {batch.ipfsData?.productionDate && (
-                                                    <p className="text-sm font-[Olney_Light] text-[#000000]/60">
-                                                        Production: {batch.ipfsData.productionDate}
+                                                    <p className="text-[13px] font-light text-[#78716c]">
+                                                        Création: {batch.ipfsData.productionDate}
                                                     </p>
                                                 )}
                                                 {batch.ipfsData?.certifications && batch.ipfsData.certifications.length > 0 && (
-                                                    <div className="flex flex-wrap gap-1 mt-2">
+                                                    <div className="flex flex-wrap gap-1.5 mt-3">
                                                         {batch.ipfsData.certifications.map((cert, index) => (
                                                             <span
                                                                 key={index}
-                                                                className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded"
+                                                                className="text-[11px] px-2 py-1 bg-[#ede9e3] text-[#1c1917] border border-[#d6d0c8] font-medium tracking-[0.06em]"
                                                             >
                                                                 {cert}
                                                             </span>
@@ -252,10 +251,10 @@ export default function ProducerBatchesPage() {
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm font-[Olney_Light] text-[#000000]/60 mb-1">
-                                                Tokens restants
+                                            <p className="text-[11px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                                Exemplaires restants
                                             </p>
-                                            <p className="text-3xl font-[Carbon_Phyber] text-[#000000]">
+                                            <p className="font-serif text-[36px] font-normal text-[#1c1917] leading-none">
                                                 {batch.remainingTokens.toString()}
                                             </p>
                                         </div>
@@ -266,14 +265,12 @@ export default function ProducerBatchesPage() {
                     </>
                 )}
 
-                <div className="flex justify-center mt-8 mb-6">
-                    <Image
-                        src="/originlink-logo.png"
-                        alt="Logo"
-                        width={120}
-                        height={120}
-                        className="opacity-70"
-                    />
+                {/* Footer mark */}
+                <div className="flex justify-center mt-20">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-px h-12 bg-[#d6d0c8]" />
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
+                    </div>
                 </div>
             </div>
         </div>

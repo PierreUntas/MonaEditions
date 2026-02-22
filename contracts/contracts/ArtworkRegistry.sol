@@ -1,0 +1,708 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+/**
+ * @title IArtworkTokenization
+ * @dev Interface for the ArtworkTokenization contract
+ */
+interface IArtworkTokenization {
+    function mintArtworkEdition(
+        address artist,
+        uint256 amount,
+        string memory uri
+    ) external returns (uint256);
+
+    function balanceOf(
+        address account,
+        uint256 id
+    ) external view returns (uint256);
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) external;
+
+    function tokenArtist(uint256 tokenId) external view returns (address);
+
+    function isApprovedForAll(
+        address account,
+        address operator
+    ) external view returns (bool);
+}
+
+/**
+ * @title ArtworkRegistry
+ * @dev Main contract for artwork certification system using Merkle Tree for secure certificate distribution
+ * @notice This contract manages artists, artwork editions, and certificate claims using cryptographic proofs
+ *
+ * The contract implements a three-tier authorization system:
+ * 1. Owner can add/remove admins
+ * 2. Admins can authorize artists
+ * 3. Authorized artists can create artwork editions
+ *
+ * Certificate distribution uses Merkle Tree proofs for gas-efficient and secure claiming.
+ */
+contract ArtworkRegistry is Ownable, ReentrancyGuard {
+    // ============ CONSTANTS ============
+
+    /// @dev Maximum number of certificates that can be minted in a single edition
+    uint256 public constant MAX_EDITION_SIZE = 100_000;
+
+    /// @dev Maximum number of reviews a user can add per edition
+    uint256 public constant MAX_REVIEWS_PER_USER = 2;
+
+    /// @dev Maximum number of reviews returned in a single query
+    uint256 public constant MAX_REVIEWS_QUERY = 100;
+
+    // ============ STRUCTS ============
+
+    /**
+     * @dev Structure representing an artist
+     * @param authorized Whether the artist is authorized to create editions
+     * @param metadata IPFS CID pointing to artist information JSON (name, location, bio, portfolio, website, etc.)
+     */
+    struct Artist {
+        bool authorized;
+        string metadata;
+    }
+
+    /**
+     * @dev Structure representing an artwork edition
+     * @param metadata IPFS CID pointing to edition information JSON (title, year, description, technique, images, etc.)
+     * @param merkleRoot Root hash of the Merkle Tree containing all secret keys for this edition
+     * @param hasBeenClaimed Flag indicating if at least one certificate has been claimed (locks metadata)
+     */
+    struct ArtworkEdition {
+        string metadata;
+        bytes32 merkleRoot;
+        bool hasBeenClaimed;
+    }
+
+    /**
+     * @dev Structure representing a collector review
+     * @param collector Address of the collector who left the review
+     * @param editionId ID of the edition being reviewed
+     * @param rating Numerical rating (0-5)
+     * @param metadata IPFS CID pointing to review text in JSON format
+     */
+    struct Review {
+        address collector;
+        uint editionId;
+        uint8 rating;
+        string metadata;
+    }
+
+    // ============ STATE VARIABLES ============
+
+    /// @dev Mapping from artist address to their information
+    mapping(address => Artist) private artists;
+
+    /// @dev Mapping from edition ID to edition information
+    mapping(uint => ArtworkEdition) private artworkEditions;
+
+    /// @dev Mapping from edition ID to array of reviews
+    mapping(uint => Review[]) private editionReviews;
+
+    /// @dev Mapping to track admin addresses
+    mapping(address => bool) public admins;
+
+    /// @dev Reference to the ArtworkTokenization contract
+    IArtworkTokenization public immutable artworkTokenization;
+
+    /**
+     * @dev Nested mapping to track claimed keys
+     * First key: edition ID
+     * Second key: hash of the secret key
+     * Value: whether this key has been claimed
+     *
+     * This prevents double-claiming of the same QR code
+     */
+    mapping(uint256 => mapping(bytes32 => bool)) private claimedKeys;
+
+    /**
+     * @dev Mapping to track number of reviews per user per edition
+     * First key: edition ID
+     * Second key: user address
+     * Value: number of reviews made by the user for that edition
+     */
+    mapping(uint => mapping(address => uint)) public reviewCount;
+
+    // ============ EVENTS ============
+
+    /**
+     * @dev Emitted when a new admin is added
+     * @param newAdmin Address of the newly added admin
+     */
+    event NewAdmin(address indexed newAdmin);
+
+    /**
+     * @dev Emitted when an artist's authorization status changes
+     * @param artist Address of the artist
+     * @param isAuthorized New authorization status
+     */
+    event AuthorizationArtist(address indexed artist, bool isAuthorized);
+
+    /**
+     * @dev Emitted when an admin is removed
+     * @param admin Address of the removed admin
+     */
+    event AdminRemoved(address indexed admin);
+
+    /**
+     * @dev Emitted when an artist registers or updates their information
+     * @param artist Address of the artist
+     */
+    event ArtistInfoUpdated(address indexed artist);
+
+    /**
+     * @dev Emitted when a new artwork edition is created
+     * @param artist Address of the artist who created the edition
+     * @param editionId Unique identifier for the edition
+     */
+    event NewArtworkEdition(address indexed artist, uint indexed editionId);
+
+    /**
+     * @dev Emitted when a collector successfully claims an artwork certificate
+     * @param collector Address of the collector
+     * @param editionId ID of the claimed edition
+     */
+    event CertificateClaimed(
+        address indexed collector,
+        uint indexed editionId
+    );
+
+    /**
+     * @dev Emitted when a collector adds a review to an edition
+     * @param collector Address of the collector
+     * @param editionId ID of the edition being reviewed
+     * @param rating Numerical rating given
+     */
+    event NewReview(
+        address indexed collector,
+        uint indexed editionId,
+        uint8 rating
+    );
+
+    /**
+     * @dev Emitted when an artist updates edition metadata
+     * @param artist Address of the artist
+     * @param editionId ID of the updated edition
+     * @param newMetadata New IPFS CID
+     */
+    event EditionMetadataUpdated(
+        address indexed artist,
+        uint indexed editionId,
+        string newMetadata
+    );
+
+    // ============ ERRORS ============
+
+    /// @dev Thrown when a non-admin tries to perform an admin-only action
+    error OnlyAdminAuthorized();
+
+    /// @dev Thrown when trying to set an authorization status that's already set
+    error AuthorizationAlreadyApplied();
+
+    /// @dev Thrown when an unauthorized artist tries to perform an artist action
+    error ArtistNotAuthorized();
+
+    /// @dev Thrown when a non-certificate-holder tries to review
+    error NotAllowedToReview();
+
+    /// @dev Thrown when the Merkle proof verification fails
+    error InvalidMerkleProof();
+
+    /// @dev Thrown when trying to claim with an already used secret key
+    error KeyAlreadyClaimed();
+
+    /// @dev Thrown when trying to claim but no certificates are left
+    error NoCertificateLeft();
+
+    /// @dev Thrown when the edition size exceeds the maximum allowed
+    error EditionSizeTooLarge();
+
+    /// @dev Thrown when the rating provided is not between 0 and 5
+    error RatingOutOfRange();
+
+    /// @dev Thrown when the review limit per user per edition is reached
+    error ReviewLimitReached();
+
+    /// @dev Thrown when a string parameter length is invalid
+    error InvalidStringLength();
+
+    /// @dev Thrown when an IPFS CID format is invalid
+    error InvalidIPFSCID();
+
+    /// @dev Thrown when trying to update metadata after certificates have been claimed
+    error MetadataLocked();
+
+    /// @dev Thrown when trying to update metadata for an edition that doesn't exist
+    error EditionDoesNotExist();
+
+    /// @dev Thrown when an artist tries to update metadata for an edition they don't own
+    error NotYourEdition();
+
+    /// @dev Thrown when trying to create an edition with an empty merkle root
+    error EmptyMerkleRoot();
+
+    /// @dev Thrown when trying to create an edition with zero certificates
+    error EditionMustHaveCertificates();
+
+    /// @dev Thrown when an artist hasn't approved the contract to transfer their certificates
+    error ArtistMustApproveContract();
+
+    /// @dev Thrown when trying to add an admin that already has admin privileges
+    error AlreadyAdmin();
+
+    /// @dev Thrown when trying to remove an admin that doesn't have admin privileges
+    error NotAnAdmin();
+
+    /// @dev Thrown when the query limit for reviews is too high
+    error QueryLimitTooHigh();
+
+    // ============ MODIFIERS ============
+
+    /**
+     * @dev Modifier to restrict function access to admins only
+     */
+    modifier onlyAdmin() {
+        require(admins[msg.sender], OnlyAdminAuthorized());
+        _;
+    }
+
+    /**
+     * @dev Modifier to restrict function access to authorized artists only
+     */
+    modifier onlyAuthorizedArtist() {
+        require(artists[msg.sender].authorized, ArtistNotAuthorized());
+        _;
+    }
+
+    // ============ CONSTRUCTOR ============
+
+    /**
+     * @dev Initializes the contract with the ArtworkTokenization address
+     * @param _artworkTokenizationAddress Address of the deployed ArtworkTokenization contract
+     *
+     * The deployer is automatically set as the owner and first admin
+     */
+    constructor(address _artworkTokenizationAddress) Ownable(msg.sender) {
+        artworkTokenization = IArtworkTokenization(_artworkTokenizationAddress);
+        admins[msg.sender] = true;
+        emit NewAdmin(msg.sender);
+    }
+
+    // ============ ADMIN FUNCTIONS ============
+
+    /**
+     * @dev Adds a new admin to the system
+     * @param _newAdmin Address to be granted admin privileges
+     *
+     * Requirements:
+     * - Caller must be the contract owner
+     * - Address must not already be an admin
+     *
+     * Emits a {NewAdmin} event
+     */
+    function addAdmin(address _newAdmin) external onlyOwner {
+        require(!admins[_newAdmin], AlreadyAdmin());
+        
+        admins[_newAdmin] = true;
+        emit NewAdmin(_newAdmin);
+    }
+
+    /**
+     * @dev Removes an admin from the system
+     * @param _admin Address to be removed from admin privileges
+     *
+     * Requirements:
+     * - Caller must be the contract owner
+     * - Address must currently be an admin
+     *
+     * Emits an {AdminRemoved} event
+     */
+    function removeAdmin(address _admin) external onlyOwner {
+        require(admins[_admin], NotAnAdmin());
+        
+        admins[_admin] = false;
+        emit AdminRemoved(_admin);
+    }
+
+    /**
+     * @dev Authorizes or revokes authorization for an artist
+     * @param _artist Address of the artist
+     * @param _isAuthorized True to authorize, false to revoke
+     *
+     * Requirements:
+     * - Caller must be an admin
+     * - The authorization status must be different from current status
+     *
+     * Emits an {AuthorizationArtist} event
+     */
+    function authorizeArtist(
+        address _artist,
+        bool _isAuthorized
+    ) external onlyAdmin {
+        require(
+            artists[_artist].authorized != _isAuthorized,
+            AuthorizationAlreadyApplied()
+        );
+
+        artists[_artist].authorized = _isAuthorized;
+        emit AuthorizationArtist(_artist, _isAuthorized);
+    }
+
+    // ============ ARTIST FUNCTIONS ============
+
+    /**
+     * @dev Allows an authorized artist to register or update their information
+     * @param _metadata IPFS CID pointing to artist information JSON (name, location, bio, portfolio, website, etc.)
+     *
+     * Requirements:
+     * - Caller must be an authorized artist
+     * - Metadata must be a valid IPFS CID
+     *
+     * Emits an {ArtistInfoUpdated} event
+     */
+    function setArtistInfo(
+        string memory _metadata
+    ) external onlyAuthorizedArtist {
+        require(
+            bytes(_metadata).length >= 40 && bytes(_metadata).length <= 100,
+            InvalidIPFSCID()
+        );
+
+        Artist storage artist = artists[msg.sender];
+        artist.metadata = _metadata;
+
+        emit ArtistInfoUpdated(msg.sender);
+    }
+
+    /**
+     * @dev Creates a new artwork edition with Merkle Tree root for secure distribution
+     * @param _metadata IPFS CID pointing to edition information JSON (title, year, description, technique, images, etc.)
+     * @param _amount Number of certificates to mint for this edition
+     * @param _merkleRoot Root hash of the Merkle Tree containing all secret keys
+     *
+     * The Merkle Tree allows gas-efficient verification of secret keys during claims.
+     * Each certificate in the edition corresponds to one secret key in the tree.
+     *
+     * Requirements:
+     * - Caller must be an authorized artist
+     * - Artist must have called setApprovalForAll on ArtworkTokenization
+     * - Amount must be greater than 0
+     * - Amount must not exceed MAX_EDITION_SIZE
+     * - Merkle root must not be empty
+     * - Metadata must be a valid IPFS CID
+     *
+     * Emits a {NewArtworkEdition} event
+     */
+    function createArtworkEdition(
+        string memory _metadata,
+        uint256 _amount,
+        bytes32 _merkleRoot
+    ) external onlyAuthorizedArtist {
+        require(
+            artworkTokenization.isApprovedForAll(msg.sender, address(this)),
+            ArtistMustApproveContract()
+        );
+
+        require(
+            bytes(_metadata).length >= 40 && bytes(_metadata).length <= 100,
+            InvalidIPFSCID()
+        );
+
+        require(_amount > 0, EditionMustHaveCertificates());
+        require(_amount <= MAX_EDITION_SIZE, EditionSizeTooLarge());
+
+        require(_merkleRoot != bytes32(0), EmptyMerkleRoot());
+
+        uint tokenId = artworkTokenization.mintArtworkEdition(
+            msg.sender,
+            _amount,
+            _metadata
+        );
+
+        ArtworkEdition storage edition = artworkEditions[tokenId];
+        edition.metadata = _metadata;
+        edition.merkleRoot = _merkleRoot;
+
+        emit NewArtworkEdition(msg.sender, tokenId);
+    }
+
+    /**
+     * @dev Allows an artist to update edition metadata ONLY before any certificate has been claimed
+     * @param _editionId ID of the edition to update
+     * @param _newMetadata New IPFS CID pointing to updated edition metadata JSON
+     *
+     * This ensures that once a collector has purchased and claimed a certificate,
+     * the edition information becomes permanently immutable, maintaining authenticity integrity.
+     *
+     * Requirements:
+     * - Caller must be an authorized artist
+     * - Artist must be the creator of this edition
+     * - NO certificate must have been claimed yet (hasBeenClaimed = false)
+     * - New metadata must be a valid IPFS CID
+     *
+     * Emits an {EditionMetadataUpdated} event
+     */
+    function updateEditionMetadata(
+        uint256 _editionId,
+        string memory _newMetadata
+    ) external onlyAuthorizedArtist {
+        ArtworkEdition storage edition = artworkEditions[_editionId];
+
+        require(edition.merkleRoot != bytes32(0), EditionDoesNotExist());
+
+        require(!edition.hasBeenClaimed, MetadataLocked());
+
+        address artist = artworkTokenization.tokenArtist(_editionId);
+        require(artist == msg.sender, NotYourEdition());
+
+        require(
+            bytes(_newMetadata).length >= 40 && bytes(_newMetadata).length <= 100,
+            InvalidIPFSCID()
+        );
+
+        edition.metadata = _newMetadata;
+
+        emit EditionMetadataUpdated(msg.sender, _editionId, _newMetadata);
+    }
+
+    // ============ COLLECTOR FUNCTIONS ============
+
+    /**
+     * @dev Allows a collector to claim an artwork certificate using a secret key and Merkle proof
+     * @param _editionId ID of the edition to claim from
+     * @param _secretKey Secret key from the QR code
+     * @param _merkleProof Array of hashes proving the key belongs to the Merkle Tree
+     *
+     * The function performs security checks in this order:
+     * 1. Verifies the edition exists
+     * 2. Verifies certificates are still available (balanceOf > 0)
+     * 3. Verifies the secret key hasn't been used before
+     * 4. Verifies the Merkle proof is valid
+     * 5. Transfers the certificate (reverts everything if this fails)
+     * 6. Locks metadata (only after successful transfer)
+     * 7. Emits event (only after all state changes succeed)
+     *
+     * After a successful claim, the edition metadata becomes permanently locked.
+     *
+     * Requirements:
+     * - Edition must exist
+     * - Edition must have certificates remaining
+     * - Secret key must not have been claimed before
+     * - Merkle proof must be valid
+     * - Artist must have approved ArtworkRegistry via setApprovalForAll
+     *
+     * Emits a {CertificateClaimed} event
+     */
+    function claimCertificate(
+        uint256 _editionId,
+        string memory _secretKey,
+        bytes32[] memory _merkleProof
+    ) external nonReentrant {
+        ArtworkEdition storage edition = artworkEditions[_editionId];
+
+        require(edition.merkleRoot != bytes32(0), EditionDoesNotExist());
+
+        address artist = artworkTokenization.tokenArtist(_editionId);
+
+        uint256 remainingCertificates = artworkTokenization.balanceOf(
+            artist,
+            _editionId
+        );
+        require(remainingCertificates > 0, NoCertificateLeft());
+
+        bytes32 leaf = keccak256(abi.encodePacked(_secretKey));
+        require(!claimedKeys[_editionId][leaf], KeyAlreadyClaimed());
+
+        require(
+            MerkleProof.verify(_merkleProof, edition.merkleRoot, leaf),
+            InvalidMerkleProof()
+        );
+
+        claimedKeys[_editionId][leaf] = true;
+
+        artworkTokenization.safeTransferFrom(
+            artist,
+            msg.sender,
+            _editionId,
+            1,
+            ""
+        );
+
+        edition.hasBeenClaimed = true;
+
+        emit CertificateClaimed(msg.sender, _editionId);
+    }
+
+    /**
+     * @dev Allows a certificate holder to add a review for an edition
+     * @param _editionId ID of the edition to review
+     * @param _rating Numerical rating (0-5)
+     * @param _metadata IPFS CID pointing to review text in JSON format
+     *
+     * Requirements:
+     * - Caller must own at least one certificate of the specified edition
+     * - Rating must be between 0 and 5
+     * - User must not have reached the review limit for this edition
+     * - Metadata must be a valid IPFS CID
+     *
+     * Emits a {NewReview} event
+     */
+    function addReview(
+        uint _editionId,
+        uint8 _rating,
+        string memory _metadata
+    ) external {
+        require(
+            artworkTokenization.balanceOf(msg.sender, _editionId) > 0,
+            NotAllowedToReview()
+        );
+
+        require(_rating <= 5, RatingOutOfRange());
+
+        require(
+            reviewCount[_editionId][msg.sender] < MAX_REVIEWS_PER_USER,
+            ReviewLimitReached()
+        );
+
+        require(
+            bytes(_metadata).length >= 40 && bytes(_metadata).length <= 100,
+            InvalidIPFSCID()
+        );
+
+        editionReviews[_editionId].push(
+            Review(msg.sender, _editionId, _rating, _metadata)
+        );
+
+        reviewCount[_editionId][msg.sender]++;
+
+        emit NewReview(msg.sender, _editionId, _rating);
+    }
+
+    // ============ VIEW FUNCTIONS ============
+
+    /**
+     * @dev Returns the information of an artist
+     * @param _address Address of the artist to query
+     * @return Artist struct containing all artist information
+     */
+    function getArtist(
+        address _address
+    ) external view returns (Artist memory) {
+        return artists[_address];
+    }
+
+    /**
+     * @dev Returns the information of an artwork edition
+     * @param _id ID of the edition to query
+     * @return ArtworkEdition struct containing all edition information
+     */
+    function getArtworkEdition(uint _id) external view returns (ArtworkEdition memory) {
+        return artworkEditions[_id];
+    }
+
+    /**
+     * @dev Returns all reviews for a specific edition (paginated)
+     * @param _editionId ID of the edition
+     * @param offset Starting index for pagination
+     * @param limit Maximum number of reviews to return (capped at MAX_REVIEWS_QUERY)
+     * @return Array of reviews
+     *
+     * @notice Returns empty array if offset is beyond total reviews
+     */
+    function getEditionReviews(
+        uint _editionId,
+        uint offset,
+        uint limit
+    ) external view returns (Review[] memory) {
+        require(limit <= MAX_REVIEWS_QUERY, QueryLimitTooHigh());
+
+        uint total = editionReviews[_editionId].length;
+
+        if (offset >= total) {
+            return new Review[](0);
+        }
+
+        uint end = offset + limit > total ? total : offset + limit;
+        uint resultLength = end - offset;
+
+        Review[] memory result = new Review[](resultLength);
+        for (uint i = 0; i < resultLength; i++) {
+            result[i] = editionReviews[_editionId][offset + i];
+        }
+
+        return result;
+    }
+
+    /**
+     * @dev Returns the total number of reviews for an edition
+     * @param _editionId ID of the edition
+     * @return Total number of reviews
+     */
+    function getEditionReviewsCount(
+        uint _editionId
+    ) external view returns (uint) {
+        return editionReviews[_editionId].length;
+    }
+
+    /**
+     * @dev Checks if a secret key has already been claimed for an edition
+     * @param _editionId ID of the edition
+     * @param _secretKey Secret key to check
+     * @return True if the key has been claimed, false otherwise
+     */
+    function isKeyClaimed(
+        uint256 _editionId,
+        string memory _secretKey
+    ) external view returns (bool) {
+        bytes32 leaf = keccak256(abi.encodePacked(_secretKey));
+        return claimedKeys[_editionId][leaf];
+    }
+
+    /**
+     * @dev Checks if an address has admin privileges
+     * @param _address Address to check
+     * @return True if the address is an admin, false otherwise
+     */
+    function isAdmin(address _address) external view returns (bool) {
+        return admins[_address];
+    }
+
+    /**
+     * @dev Checks if an edition has had any certificates claimed (metadata locked)
+     * @param _editionId ID of the edition to check
+     * @return True if at least one certificate has been claimed, false otherwise
+     */
+    function isEditionLocked(uint256 _editionId) external view returns (bool) {
+        return artworkEditions[_editionId].hasBeenClaimed;
+    }
+
+    /**
+     * @dev Checks if an artist has approved this contract to transfer their certificates
+     * @param _artist Address of the artist to check
+     * @return True if the artist has approved this contract, false otherwise
+     *
+     * @notice Artists must call setApprovalForAll(ArtworkRegistryAddress, true)
+     * on the ArtworkTokenization contract before collectors can claim their certificates.
+     * This function allows checking the approval status.
+     *
+     * Example usage:
+     * - Frontend can warn artists if they haven't approved yet
+     * - Artists can verify their approval status before creating editions
+     */
+    function isArtistApproved(
+        address _artist
+    ) external view returns (bool) {
+        return artworkTokenization.isApprovedForAll(_artist, address(this));
+    }
+}

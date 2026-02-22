@@ -194,12 +194,15 @@ export default function BatchDetailsPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
+            <div className="min-h-screen" style={{ background: '#07080B' }}>
                 <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
                     <div className="text-center">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black/70 mb-4"></div>
-                        <p className="text-[#000000] font-[Olney_Light] text-xl opacity-70">Chargement des détails du lot...</p>
+                        <div 
+                            className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 mb-4"
+                            style={{ borderColor: '#C9A55A' }}
+                        ></div>
+                        <p style={{ color: '#8C95AA', fontSize: '15px' }}>Chargement des détails du lot...</p>
                     </div>
                 </div>
             </div>
@@ -208,10 +211,10 @@ export default function BatchDetailsPage() {
 
     if (!batch || !producer) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
+            <div className="min-h-screen" style={{ background: '#07080B' }}>
                 <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="text-[#000000] font-[Olney_Light] opacity-70">
+                    <p style={{ color: '#8C95AA', fontSize: '15px' }}>
                         Lot introuvable
                     </p>
                 </div>
@@ -220,54 +223,83 @@ export default function BatchDetailsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-yellow-bee pt-14">
+        <div className="min-h-screen" style={{ background: '#07080B', color: '#F2F4F8' }}>
             <Navbar />
-            <div className="container mx-auto p-6 max-w-4xl">
+            <div className="container mx-auto p-6 max-w-4xl pt-28">
                 <Link
                     href="/explore/batches"
-                    className="inline-flex items-center text-[#000000] font-[Olney_Light] opacity-70 hover:opacity-100 mb-6"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 mb-8"
+                    style={{
+                        color: '#8C95AA',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: 'transparent',
+                    }}
                 >
                     ← Retour à l'exploration
                 </Link>
 
                 {isLoadingIPFS && (
-                    <div className="text-center text-[#000000] font-[Olney_Light] mb-4 opacity-70">
+                    <div className="text-center mb-6" style={{ color: '#8C95AA', fontSize: '14px' }}>
                         Chargement des données IPFS...
                     </div>
                 )}
 
-                <div className="bg-yellow-bee rounded-lg p-6 opacity-70 border border-[#000000] mb-6">
+                <div 
+                    className="rounded-2xl p-8 mb-8"
+                    style={{ background: '#0F1219', border: '1px solid rgba(255,255,255,0.06)' }}
+                >
                     <div className="flex justify-between items-start mb-4">
                         <div>
-                            <h1 className="text-4xl font-[Carbon_Phyber] text-[#000000] mb-2">
+                            <h1 
+                                className="text-4xl font-bold mb-2"
+                                style={{
+                                    fontFamily: "'Playfair Display', Georgia, serif",
+                                    color: '#F2F4F8'
+                                }}
+                            >
                                 {batch.productType}
                             </h1>
-                            <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                            <p style={{ fontSize: '14px', color: '#8C95AA' }}>
                                 Lot #{batch.tokenId.toString()}
                             </p>
                             {batchIPFSData?.identifier && (
-                                <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                                <p style={{ fontSize: '14px', color: '#8C95AA' }}>
                                     Identifiant: {batchIPFSData.identifier}
                                 </p>
                             )}
                         </div>
                         <div className="text-right">
-                            <p className="text-sm font-[Olney_Light] text-[#000000]/60 mb-1">
+                            <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                 Tokens disponibles
                             </p>
-                            <p className="text-4xl font-[Carbon_Phyber] text-[#000000]">
+                            <p 
+                                className="text-4xl font-bold"
+                                style={{
+                                    fontFamily: "'Playfair Display', Georgia, serif",
+                                    color: '#C9A55A'
+                                }}
+                            >
                                 {batch.remainingTokens.toString()}
                             </p>
                         </div>
                     </div>
 
                     {comments.length > 0 && (
-                        <div className="flex items-center gap-2 pt-3 border-t border-[#000000]/20">
-                            <span className="text-2xl font-[Carbon_Phyber] text-[#000000]">
+                        <div 
+                            className="flex items-center gap-2 pt-3"
+                            style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+                        >
+                            <span 
+                                className="text-2xl font-bold"
+                                style={{
+                                    fontFamily: "'Playfair Display', Georgia, serif",
+                                    color: '#C9A55A'
+                                }}
+                            >
                                 {calculateAverageRating()}
                             </span>
-                            <span className="text-yellow-500">★★★★★</span>
-                            <span className="text-sm font-[Olney_Light] text-[#000000]/60">
+                            <span style={{ color: '#C9A55A' }}>★★★★★</span>
+                            <span style={{ fontSize: '14px', color: '#8C95AA' }}>
                                 ({comments.length} avis)
                             </span>
                         </div>
@@ -276,8 +308,14 @@ export default function BatchDetailsPage() {
 
                 {/* Label section */}
                 {batchIPFSData?.labelUri && (
-                    <div className="bg-yellow-bee rounded-lg p-6 opacity-70 border border-[#000000] mb-6">
-                        <h2 className="text-2xl font-[Carbon_bl] text-[#000000] mb-4">
+                    <div 
+                        className="rounded-2xl p-8 mb-8"
+                        style={{ background: '#0F1219', border: '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                        <h2 
+                            className="text-2xl font-bold mb-5"
+                            style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#F2F4F8' }}
+                        >
                             Étiquette
                         </h2>
                         <div className="flex justify-center">
@@ -286,7 +324,7 @@ export default function BatchDetailsPage() {
                                     <img
                                         src={getIPFSUrl(batchIPFSData.labelUri)}
                                         alt="Étiquette du produit"
-                                        className="max-w-full max-h-96 rounded-lg shadow-lg"
+                                        className="max-w-full max-h-96 rounded-xl shadow-lg"
                                         onError={() => setLabelImageError(true)}
                                     />
                                 </div>
@@ -295,66 +333,78 @@ export default function BatchDetailsPage() {
                                     href={getIPFSUrl(batchIPFSData.labelUri)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-2 px-4 py-3 bg-[#000000]/10 rounded-lg hover:bg-[#000000]/20 transition-colors"
+                                    className="flex items-center gap-2 px-4 py-3 rounded-xl transition-colors"
+                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
                                 >
                                     <span className="text-2xl">📄</span>
-                                    <span className="font-[Olney_Light] text-[#000000]">
+                                    <span style={{ color: '#F2F4F8' }}>
                                         Voir l'étiquette (PDF)
                                     </span>
                                 </a>
                             )}
                         </div>
-                        <p className="text-xs font-mono text-[#000000]/50 mt-3 text-center break-all">
+                        <p className="font-mono text-center break-all mt-3" style={{ fontSize: '12px', color: '#8C95AA' }}>
                             {batchIPFSData.labelUri}
                         </p>
                     </div>
                 )}
 
-                <div className="bg-yellow-bee rounded-lg p-6 opacity-70 border border-[#000000] mb-6">
-                    <h2 className="text-2xl font-[Carbon_bl] text-[#000000] mb-4">
+                <div 
+                    className="rounded-2xl p-8 mb-8"
+                    style={{ background: '#0F1219', border: '1px solid rgba(255,255,255,0.06)' }}
+                >
+                    <h2 
+                        className="text-2xl font-bold mb-5"
+                        style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#F2F4F8' }}
+                    >
                         Informations du produit
                     </h2>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         {batchIPFSData?.description && (
                             <div>
-                                <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                                <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                     Description
                                 </p>
-                                <p className="text-base font-[Olney_Light] text-[#000000]">
+                                <p style={{ fontSize: '15px', color: '#F2F4F8', lineHeight: 1.75 }}>
                                     {batchIPFSData.description}
                                 </p>
                             </div>
                         )}
                         {batchIPFSData?.origin && (
                             <div>
-                                <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                                <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                     Origine
                                 </p>
-                                <p className="text-base font-[Olney_Light] text-[#000000]">
+                                <p style={{ fontSize: '15px', color: '#F2F4F8' }}>
                                     {batchIPFSData.origin}
                                 </p>
                             </div>
                         )}
                         {batchIPFSData?.productionDate && (
                             <div>
-                                <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                                <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                     Date de production
                                 </p>
-                                <p className="text-base font-[Olney_Light] text-[#000000]">
+                                <p style={{ fontSize: '15px', color: '#F2F4F8' }}>
                                     {new Date(batchIPFSData.productionDate).toLocaleDateString('fr-FR')}
                                 </p>
                             </div>
                         )}
                         {batchIPFSData?.certifications && batchIPFSData.certifications.length > 0 && (
                             <div>
-                                <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                                <p className="mb-2" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                     Certifications
                                 </p>
                                 <div className="flex flex-wrap gap-2 mt-1">
                                     {batchIPFSData.certifications.map((cert, index) => (
                                         <span
                                             key={index}
-                                            className="px-2 py-1 bg-[#000000]/10 rounded text-xs font-[Olney_Light] text-[#000000]"
+                                            className="px-3 py-1.5 text-xs font-mono rounded-full"
+                                            style={{
+                                                background: 'rgba(201,165,90,0.07)',
+                                                color: '#C9A55A',
+                                                border: '1px solid rgba(201,165,90,0.15)',
+                                            }}
                                         >
                                             {cert}
                                         </span>
@@ -363,28 +413,34 @@ export default function BatchDetailsPage() {
                             </div>
                         )}
                         <div>
-                            <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                            <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                 CID Metadata (IPFS)
                             </p>
-                            <p className="text-xs font-mono text-[#000000] break-all">
+                            <p className="text-xs font-mono break-all" style={{ color: '#8C95AA' }}>
                                 {batch.metadata}
                             </p>
                         </div>
                         <div>
-                            <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                            <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                 Merkle Root
                             </p>
-                            <p className="text-xs font-mono text-[#000000] break-all">
+                            <p className="text-xs font-mono break-all" style={{ color: '#8C95AA' }}>
                                 {batch.merkleRoot}
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-yellow-bee rounded-lg p-6 opacity-70 border border-[#000000] mb-6">
+                <div 
+                    className="rounded-2xl p-8 mb-8"
+                    style={{ background: '#0F1219', border: '1px solid rgba(255,255,255,0.06)' }}
+                >
                     <div className="flex items-start gap-6 mb-4">
                         <div className="flex-1">
-                            <h2 className="text-2xl font-[Carbon_bl] text-[#000000]">
+                            <h2 
+                                className="text-2xl font-bold"
+                                style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#F2F4F8' }}
+                            >
                                 Producteur
                             </h2>
                         </div>
@@ -395,54 +451,55 @@ export default function BatchDetailsPage() {
                                         ? `https://ipfs.io/ipfs/${producerIPFSData.logo.replace('ipfs://', '')}`
                                         : producerIPFSData.logo}
                                     alt={`Logo ${producer.name}`}
-                                    className="w-24 h-24 object-contain rounded-lg border border-[#000000]"
+                                    className="w-24 h-24 object-contain rounded-xl"
+                                    style={{ border: '1px solid rgba(255,255,255,0.06)', background: '#07080B' }}
                                 />
                             </div>
                         )}
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         <div>
-                            <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                            <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                 Nom
                             </p>
-                            <p className="text-base font-[Olney_Light] text-[#000000]">
+                            <p style={{ fontSize: '15px', color: '#F2F4F8' }}>
                                 {producer.name}
                             </p>
                         </div>
                         <div>
-                            <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                            <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                 Localisation
                             </p>
-                            <p className="text-base font-[Olney_Light] text-[#000000]">
+                            <p style={{ fontSize: '15px', color: '#F2F4F8' }}>
                                 {producer.location}
                             </p>
                         </div>
                         {producerIPFSData?.description && (
                             <div>
-                                <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                                <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                     Description
                                 </p>
-                                <p className="text-base font-[Olney_Light] text-[#000000]">
+                                <p style={{ fontSize: '15px', color: '#F2F4F8', lineHeight: 1.75 }}>
                                     {producerIPFSData.description}
                                 </p>
                             </div>
                         )}
                         {producerIPFSData?.contact?.email && (
                             <div>
-                                <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                                <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                     Contact
                                 </p>
-                                <p className="text-base font-[Olney_Light] text-[#000000]">
+                                <p style={{ fontSize: '15px', color: '#F2F4F8' }}>
                                     {producerIPFSData.contact.email}
                                 </p>
                             </div>
                         )}
                         <div>
-                            <p className="text-sm font-[Olney_Light] text-[#000000]/60">
+                            <p className="mb-1" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                 Adresse
                             </p>
-                            <p className="text-xs font-mono text-[#000000] break-all">
+                            <p className="text-xs font-mono break-all" style={{ color: '#8C95AA' }}>
                                 {batch.producer}
                             </p>
                         </div>
@@ -450,29 +507,40 @@ export default function BatchDetailsPage() {
 
                     <Link
                         href={`/explore/producer/${batch.producer}`}
-                        className="text-xs font-[Olney_Light] text-[#000000]/40 hover:text-[#000000]/60 text-right block mt-4"
+                        className="text-right block mt-4 transition-colors"
+                        style={{ fontSize: '13px', color: '#C9A55A' }}
                     >
                         Voir tous ses lots →
                     </Link>
                 </div>
 
                 {comments.length > 0 && (
-                    <div className="bg-yellow-bee rounded-lg p-6 opacity-70 border border-[#000000] mb-6">
-                        <h2 className="text-2xl font-[Carbon_bl] text-[#000000] mb-4">
+                    <div 
+                        className="rounded-2xl p-8 mb-8"
+                        style={{ background: '#0F1219', border: '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                        <h2 
+                            className="text-2xl font-bold mb-5"
+                            style={{ fontFamily: "'Playfair Display', Georgia, serif", color: '#F2F4F8' }}
+                        >
                             Avis des consommateurs
                         </h2>
                         <div className="space-y-4">
                             {comments.map((comment, index) => (
-                                <div key={index} className="border-b border-[#000000]/10 pb-3 last:border-0">
+                                <div 
+                                    key={index} 
+                                    className="pb-4 last:border-0"
+                                    style={{ borderBottom: index < comments.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}
+                                >
                                     <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-yellow-500">
+                                        <span style={{ color: '#C9A55A' }}>
                                             {'★'.repeat(comment.rating)}
                                         </span>
-                                        <span className="text-xs font-[Olney_Light] text-[#000000]/60">
+                                        <span className="font-mono" style={{ fontSize: '12px', color: '#8C95AA' }}>
                                             {comment.consumer.slice(0, 6)}...{comment.consumer.slice(-4)}
                                         </span>
                                     </div>
-                                    <p className="text-sm font-[Olney_Light] text-[#000000]">
+                                    <p style={{ fontSize: '14px', color: '#F2F4F8' }}>
                                         {comment.metadata}
                                     </p>
                                 </div>
@@ -481,14 +549,19 @@ export default function BatchDetailsPage() {
                     </div>
                 )}
 
-                <div className="flex justify-center mt-8 mb-6">
-                    <Image
-                        src="/originlink-logo.png"
-                        alt="Logo"
-                        width={120}
-                        height={120}
-                        className="opacity-70"
-                    />
+                <div className="flex justify-center mt-16 mb-8">
+                    <div
+                        className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+                        style={{
+                            background: 'linear-gradient(145deg, #1C1608, #28200A)',
+                            border: '1px solid rgba(201,165,90,0.25)',
+                            boxShadow: '0 0 32px rgba(201,165,90,0.12)',
+                            fontFamily: 'Georgia, serif',
+                            color: '#C9A55A',
+                        }}
+                    >
+                        起
+                    </div>
                 </div>
             </div>
         </div>

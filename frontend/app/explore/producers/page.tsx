@@ -145,26 +145,51 @@ export default function ProducersPage() {
         : producers.filter(p => p.name === filterProducer);
 
     return (
-        <div className="min-h-screen bg-yellow-bee pt-14">
+        <div className="min-h-screen" style={{ background: '#07080B', color: '#F2F4F8' }}>
             <Navbar />
-            <div className="container mx-auto p-6 max-w-6xl">
-                <div className="mb-8">
-                    <h1 className="text-5xl font-[Carbon_Phyber] text-[#000000] mb-2">
-                        Explorer les Producteurs
+            <div className="container mx-auto p-6 max-w-6xl pt-28">
+                {/* Header */}
+                <div className="text-center mb-12">
+                    <p
+                        className="text-xs tracking-[5px] uppercase mb-4"
+                        style={{ color: '#C9A55A' }}
+                    >
+                        Explorer
+                    </p>
+                    <h1
+                        className="text-5xl font-bold mb-4"
+                        style={{
+                            fontFamily: "'Playfair Display', Georgia, serif",
+                            letterSpacing: '-1.5px',
+                            lineHeight: 1.1,
+                            color: '#F2F4F8'
+                        }}
+                    >
+                        Les <em style={{ fontStyle: 'italic', color: '#C9A55A' }}>Producteurs</em>
                     </h1>
-                    <p className="text-lg font-[Olney_Light] text-[#000000] opacity-70">
+                    <p style={{ color: '#8C95AA', fontSize: '17px', fontWeight: 300, lineHeight: 1.75 }}>
                         Découvrez tous les producteurs traçables sur la blockchain
                     </p>
                 </div>
 
-                <div className="mb-6 flex gap-2 flex-wrap">
+                {/* Filters */}
+                <div className="mb-8 flex gap-2 flex-wrap justify-center">
                     <button
                         onClick={() => setFilterProducer('all')}
-                        className={`px-4 py-2 rounded-lg font-[Olney_Light] transition-colors border border-[#000000] cursor-pointer ${
+                        className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
+                        style={
                             filterProducer === 'all'
-                                ? 'bg-[#666666] text-white'
-                                : 'bg-yellow-bee text-[#000000] opacity-70 hover:opacity-100'
-                        }`}
+                                ? {
+                                    background: 'rgba(201,165,90,0.15)',
+                                    color: '#C9A55A',
+                                    border: '1px solid rgba(201,165,90,0.3)',
+                                }
+                                : {
+                                    background: 'transparent',
+                                    color: '#8C95AA',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                }
+                        }
                     >
                         Tous ({producers.length})
                     </button>
@@ -172,11 +197,20 @@ export default function ProducersPage() {
                         <button
                             key={producer.address}
                             onClick={() => setFilterProducer(producer.name)}
-                            className={`px-4 py-2 rounded-lg font-[Olney_Light] transition-colors border border-[#000000] cursor-pointer ${
+                            className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
+                            style={
                                 filterProducer === producer.name
-                                    ? 'bg-[#666666] text-white'
-                                    : 'bg-yellow-bee text-[#000000] opacity-70 hover:opacity-100'
-                            }`}
+                                    ? {
+                                        background: 'rgba(201,165,90,0.15)',
+                                        color: '#C9A55A',
+                                        border: '1px solid rgba(201,165,90,0.3)',
+                                    }
+                                    : {
+                                        background: 'transparent',
+                                        color: '#8C95AA',
+                                        border: '1px solid rgba(255,255,255,0.08)',
+                                    }
+                            }
                         >
                             {producer.name}
                         </button>
@@ -184,21 +218,27 @@ export default function ProducersPage() {
                 </div>
 
                 {isLoadingIPFS && (
-                    <div className="text-center text-[#000000] font-[Olney_Light] mb-4 opacity-70">
+                    <div className="text-center mb-6" style={{ color: '#8C95AA', fontSize: '14px' }}>
                         Chargement des données IPFS...
                     </div>
                 )}
 
                 {isLoading ? (
-                    <div className="flex items-center justify-center py-12">
+                    <div className="flex items-center justify-center py-20">
                         <div className="text-center">
-                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black/70 mb-4"></div>
-                            <p className="text-[#000000] font-[Olney_Light] text-xl opacity-70">Chargement des producteurs...</p>
+                            <div 
+                                className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 mb-4"
+                                style={{ borderColor: '#C9A55A' }}
+                            ></div>
+                            <p style={{ color: '#8C95AA', fontSize: '15px' }}>Chargement des producteurs...</p>
                         </div>
                     </div>
                 ) : filteredProducers.length === 0 ? (
-                    <div className="bg-yellow-bee rounded-lg p-8 opacity-70 text-center border border-[#000000]">
-                        <p className="text-[#000000] font-[Olney_Light] text-lg">
+                    <div
+                        className="rounded-2xl p-10 text-center"
+                        style={{ background: '#0F1219', border: '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                        <p style={{ color: '#8C95AA', fontSize: '15px' }}>
                             Aucun producteur trouvé
                         </p>
                     </div>
@@ -208,19 +248,29 @@ export default function ProducersPage() {
                             <Link
                                 key={producer.address}
                                 href={`/explore/producer/${producer.address}`}
-                                className="bg-yellow-bee rounded-lg p-6 opacity-70 border border-[#000000] hover:opacity-100 transition-opacity"
+                                className="rounded-2xl p-6 transition-all duration-200 hover:border-white/15"
+                                style={{ 
+                                    background: '#0F1219', 
+                                    border: '1px solid rgba(255,255,255,0.06)' 
+                                }}
                             >
                                 {/* En-tête avec logo */}
                                 <div className="flex items-start gap-4 mb-4">
                                     <div className="flex-1">
-                                        <h3 className="text-2xl font-[Carbon_bl] text-[#000000] mb-1">
+                                        <h3 
+                                            className="text-2xl font-bold mb-1"
+                                            style={{ 
+                                                fontFamily: "'Playfair Display', Georgia, serif",
+                                                color: '#F2F4F8' 
+                                            }}
+                                        >
                                             {producer.name}
                                         </h3>
-                                        <p className="text-sm font-[Olney_Light] text-[#000000]/60 mb-2">
+                                        <p className="mb-2" style={{ fontSize: '14px', color: '#8C95AA' }}>
                                             📍 {producer.location}
                                         </p>
                                         {producer.companyRegisterNumber && (
-                                            <p className="text-xs font-[Olney_Light] text-[#000000]/50">
+                                            <p style={{ fontSize: '12px', color: '#8C95AA' }}>
                                                 N° {producer.companyRegisterNumber}
                                             </p>
                                         )}
@@ -232,7 +282,11 @@ export default function ProducersPage() {
                                                     ? `https://ipfs.io/ipfs/${producer.ipfsData.logo.replace('ipfs://', '')}`
                                                     : producer.ipfsData.logo}
                                                 alt={`Logo ${producer.name}`}
-                                                className="w-20 h-20 object-contain rounded-lg border border-[#000000] bg-white"
+                                                className="w-20 h-20 object-contain rounded-xl"
+                                                style={{ 
+                                                    border: '1px solid rgba(255,255,255,0.06)',
+                                                    background: '#07080B'
+                                                }}
                                             />
                                         </div>
                                     )}
@@ -240,7 +294,7 @@ export default function ProducersPage() {
 
                                 {/* Photo principale si disponible */}
                                 {producer.ipfsData?.photos && producer.ipfsData.photos.length > 0 && (
-                                    <div className="mb-4 rounded-lg overflow-hidden">
+                                    <div className="mb-4 rounded-xl overflow-hidden">
                                         <img
                                             src={producer.ipfsData.photos[0].startsWith('ipfs://')
                                                 ? `https://ipfs.io/ipfs/${producer.ipfsData.photos[0].replace('ipfs://', '')}`
@@ -253,7 +307,7 @@ export default function ProducersPage() {
 
                                 {/* Description */}
                                 {producer.ipfsData?.description && (
-                                    <p className="text-sm font-[Olney_Light] text-[#000000]/80 mb-3 line-clamp-3">
+                                    <p className="mb-3 line-clamp-3" style={{ fontSize: '14px', color: '#8C95AA', lineHeight: 1.75 }}>
                                         {producer.ipfsData.description}
                                     </p>
                                 )}
@@ -261,25 +315,25 @@ export default function ProducersPage() {
                                 {/* Informations supplémentaires */}
                                 <div className="space-y-2 mb-3">
                                     {producer.ipfsData?.anneeCreation && (
-                                        <p className="text-sm font-[Olney_Light] text-[#000000]/70">
+                                        <p style={{ fontSize: '14px', color: '#8C95AA' }}>
                                             📅 Créé en {producer.ipfsData.anneeCreation}
                                         </p>
                                     )}
                                     
                                     {producer.ipfsData?.contact?.email && (
-                                        <p className="text-sm font-[Olney_Light] text-[#000000]/70">
+                                        <p style={{ fontSize: '14px', color: '#8C95AA' }}>
                                             ✉️ {producer.ipfsData.contact.email}
                                         </p>
                                     )}
                                     
                                     {producer.ipfsData?.contact?.telephone && (
-                                        <p className="text-sm font-[Olney_Light] text-[#000000]/70">
+                                        <p style={{ fontSize: '14px', color: '#8C95AA' }}>
                                             📞 {producer.ipfsData.contact.telephone}
                                         </p>
                                     )}
 
                                     {producer.ipfsData?.siteWeb && (
-                                        <p className="text-sm font-[Olney_Light] text-[#000000]/70">
+                                        <p style={{ fontSize: '14px', color: '#8C95AA' }}>
                                             🌐 {new URL(producer.ipfsData.siteWeb).hostname}
                                         </p>
                                     )}
@@ -287,17 +341,29 @@ export default function ProducersPage() {
 
                                 {/* Labels et certifications */}
                                 {producer.ipfsData?.labelsCertifications && producer.ipfsData.labelsCertifications.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mb-4">
+                                    <div className="flex flex-wrap gap-1.5 mb-4">
                                         {producer.ipfsData.labelsCertifications.slice(0, 4).map((cert, index) => (
                                             <span
                                                 key={index}
-                                                className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded border border-green-300"
+                                                className="text-xs px-2.5 py-1 rounded-full font-mono"
+                                                style={{
+                                                    background: 'rgba(201,165,90,0.07)',
+                                                    color: '#C9A55A',
+                                                    border: '1px solid rgba(201,165,90,0.15)',
+                                                }}
                                             >
                                                 {cert}
                                             </span>
                                         ))}
                                         {producer.ipfsData.labelsCertifications.length > 4 && (
-                                            <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                            <span
+                                                className="text-xs px-2.5 py-1 rounded-full"
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    color: '#8C95AA',
+                                                    border: '1px solid rgba(255,255,255,0.05)',
+                                                }}
+                                            >
                                                 +{producer.ipfsData.labelsCertifications.length - 4}
                                             </span>
                                         )}
@@ -305,13 +371,16 @@ export default function ProducersPage() {
                                 )}
 
                                 {/* Pied de carte */}
-                                <div className="border-t border-[#000000]/20 pt-3 mt-3">
+                                <div 
+                                    className="pt-3 mt-3"
+                                    style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+                                >
                                     <div className="flex justify-between items-center">
-                                        <p className="text-sm font-[Olney_Light] text-[#000000]">
+                                        <p style={{ fontSize: '14px', color: '#F2F4F8' }}>
                                             📦 {producer.batchCount} lot{producer.batchCount > 1 ? 's' : ''} de produits
                                         </p>
                                         {producer.ipfsData?.photos && producer.ipfsData.photos.length > 1 && (
-                                            <p className="text-xs font-[Olney_Light] text-[#000000]/60">
+                                            <p style={{ fontSize: '12px', color: '#8C95AA' }}>
                                                 📷 {producer.ipfsData.photos.length} photo{producer.ipfsData.photos.length > 1 ? 's' : ''}
                                             </p>
                                         )}
@@ -322,14 +391,19 @@ export default function ProducersPage() {
                     </div>
                 )}
 
-                <div className="flex justify-center mt-12 mb-6">
-                    <Image
-                        src="/originlink-logopng"
-                        alt="Logo"
-                        width={120}
-                        height={120}
-                        className="opacity-70"
-                    />
+                <div className="flex justify-center mt-16 mb-8">
+                    <div
+                        className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+                        style={{
+                            background: 'linear-gradient(145deg, #1C1608, #28200A)',
+                            border: '1px solid rgba(201,165,90,0.25)',
+                            boxShadow: '0 0 32px rgba(201,165,90,0.12)',
+                            fontFamily: 'Georgia, serif',
+                            color: '#C9A55A',
+                        }}
+                    >
+                        起
+                    </div>
                 </div>
             </div>
         </div>

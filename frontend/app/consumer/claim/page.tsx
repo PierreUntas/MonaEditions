@@ -86,7 +86,7 @@ function ClaimTokenForm() {
     if (!address) {
         return (
             <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                <p className="text-center text-[#000000] font-[Olney_Light] text-xl opacity-70">
+                <p className="font-serif italic text-[22px] text-[#a8a29e]">
                     Veuillez connecter votre wallet
                 </p>
             </div>
@@ -94,92 +94,96 @@ function ClaimTokenForm() {
     }
 
     return (
-        <div className="container mx-auto p-6 max-w-2xl">
-            <h1 className="text-4xl font-[Carbon_Phyber] text-[#000000] mb-6">
-                Réclamer un Token de Produit
-            </h1>
+        <div className="max-w-3xl mx-auto px-6 pt-28 pb-20">
+            <div className="text-center mb-12">
+                <div className="w-[52px] h-[52px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[22px] text-[#a8a29e] mx-auto mb-6">
+                    起
+                </div>
+                <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
+                    Réclamer un <em className="italic text-[#78716c]">Certificat</em>
+                </h1>
+            </div>
 
-            <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 rounded">
-                <p className="font-[Olney_Light] text-sm">
-                    💡 Scannez le QR code du produit afin que les champs se remplissent automatiquement. Ce token vous permettra d'émettre un avis sur le lot.
+            <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6 mb-px">
+                <p className="text-[13px] font-light text-[#78716c] leading-[1.7]">
+                    💡 Scannez le QR code de l'œuvre afin que les champs se remplissent automatiquement. Ce certificat vous permettra d'émettre un avis sur l'œuvre.
                 </p>
             </div>
 
-            <form onSubmit={handleClaim} className="space-y-6">
-                <div>
-                    <label className="block text-[#000000] font-[Olney_Light] mb-2">
-                        Numéro de lot *
-                    </label>
-                    <input
-                        type="number"
-                        value={batchId}
-                        onChange={(e) => setBatchId(e.target.value)}
-                        className="w-full p-3 rounded-lg border border-[#000000] bg-yellow-bee text-[#000000] font-[Olney_Light] focus:outline-none focus:ring-2 focus:ring-[#666666]"
-                        placeholder="Ex: 1"
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-[#000000] font-[Olney_Light] mb-2">
-                        Clé secrète *
-                    </label>
-                    <input
-                        type="text"
-                        value={secretKey}
-                        onChange={(e) => setSecretKey(e.target.value)}
-                        className="w-full p-3 rounded-lg border border-[#000000] bg-yellow-bee text-[#000000] font-[Olney_Light] focus:outline-none focus:ring-2 focus:ring-[#666666]"
-                        placeholder="Ex: abc123def456..."
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-[#000000] font-[Olney_Light] mb-2">
-                        Preuve Merkle (séparée par des virgules) *
-                    </label>
-                    <textarea
-                        value={merkleProofInput}
-                        onChange={(e) => setMerkleProofInput(e.target.value)}
-                        className="w-full p-3 rounded-lg border border-[#000000] bg-yellow-bee text-[#000000] font-[Olney_Light] focus:outline-none focus:ring-2 focus:ring-[#666666] font-mono text-xs"
-                        placeholder="Ex: 0x123...,0xabc...,0xdef..."
-                        rows={4}
-                        required
-                    />
-                    <p className="text-xs text-[#000000]/60 mt-1 font-[Olney_Light]">
-                        Format : hash1,hash2,hash3 (avec 0x devant chaque hash)
-                    </p>
-                </div>
-
-                {error && (
-                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
-                        <p className="font-[Olney_Light]">{error}</p>
+            <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
+                <form onSubmit={handleClaim} className="space-y-6">
+                    <div>
+                        <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                            Numéro de l'œuvre *
+                        </label>
+                        <input
+                            type="number"
+                            value={batchId}
+                            onChange={(e) => setBatchId(e.target.value)}
+                            className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                            placeholder="Ex: 1"
+                            required
+                        />
                     </div>
-                )}
 
-                {success && (
-                    <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded">
-                        <p className="font-[Olney_Light]">✅ Token réclamé avec succès !</p>
+                    <div>
+                        <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                            Clé secrète *
+                        </label>
+                        <input
+                            type="text"
+                            value={secretKey}
+                            onChange={(e) => setSecretKey(e.target.value)}
+                            className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                            placeholder="Ex: abc123def456..."
+                            required
+                        />
                     </div>
-                )}
 
-                <button
-                    type="submit"
-                    disabled={isPending}
-                    className="w-full bg-[#666666] text-white font-[Olney_Light] py-3 px-6 rounded-lg hover:bg-[#555555] transition-all duration-300 border border-[#000000] cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                    {isPending ? 'Transaction en cours...' : 'Réclamer mon token'}
-                </button>
-            </form>
+                    <div>
+                        <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                            Preuve Merkle (séparée par des virgules) *
+                        </label>
+                        <textarea
+                            value={merkleProofInput}
+                            onChange={(e) => setMerkleProofInput(e.target.value)}
+                            className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors font-mono text-[11px] min-h-[100px]"
+                            placeholder="Ex: 0x123...,0xabc...,0xdef..."
+                            required
+                        />
+                        <p className="text-[11px] text-[#a8a29e] mt-2 font-light">
+                            Format : hash1,hash2,hash3 (avec 0x devant chaque hash)
+                        </p>
+                    </div>
 
-            <div className="flex justify-center mt-8 mb-6">
-                <Image
-                    src="/originlink-logo.png"
-                    alt="Logo"
-                    width={120}
-                    height={120}
-                    className="opacity-70"
-                />
+                    {error && (
+                        <div className="border border-[#d6d0c8] bg-[#ede9e3] p-4">
+                            <p className="text-[13px] font-light text-[#78716c]">{error}</p>
+                        </div>
+                    )}
+
+                    {success && (
+                        <div className="border border-[#d6d0c8] bg-[#ede9e3] p-4">
+                            <p className="text-[13px] font-light text-[#1c1917]">✅ Certificat réclamé avec succès !</p>
+                        </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={isPending}
+                        className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
+                    >
+                        {isPending ? 'Transaction en cours…' : 'Réclamer mon certificat'}
+                    </button>
+                </form>
+            </div>
+
+            {/* Footer mark */}
+            <div className="flex justify-center mt-20">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-px h-12 bg-[#d6d0c8]" />
+                    <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
+                </div>
             </div>
         </div>
     );
@@ -187,13 +191,12 @@ function ClaimTokenForm() {
 
 export default function ClaimTokenPage() {
     return (
-        <div className="min-h-screen bg-yellow-bee pt-14">
+        <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
             <Suspense fallback={
-                <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="text-center text-[#000000] font-[Olney_Light] text-xl opacity-70">
-                        Chargement...
-                    </p>
+                <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
+                    <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
+                    <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement…</p>
                 </div>
             }>
                 <ClaimTokenForm />

@@ -55,6 +55,9 @@ contract ProductTokenization is ERC1155, Ownable {
     /// @dev Thrown when trying to mint a batch for the zero address
     error InvalidProducerAddress();
 
+    /// @dev Thrown when trying to transfer tokens between users (non-transferable tokens)
+    error TransferNotAllowed();
+
     /**
      * @dev Mints a new product batch and assigns it to a producer
      * @param _producer Address that will receive and own the minted tokens
@@ -91,5 +94,51 @@ contract ProductTokenization is ERC1155, Ownable {
      */
     function uri(uint256 tokenId) public view override returns (string memory) {
         return _tokenURIs[tokenId];
+    }
+
+    /**
+     * @dev Override to block direct transfers between users
+     * @notice Tokens can only be transferred by the owner contract (ProductTraceStorage) during claims
+     * This prevents token holders from transferring tokens to manipulate the comment system
+     *
+     * @param from Address to transfer from
+     * @param to Address to transfer to
+     * @param id Token ID
+     * @param value Amount to transfer
+     * @param data Additional data
+     */
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        uint256 value,
+        bytes memory data
+    ) public override {
+        // Only allow transfers initiated by the owner contract (ProductTraceStorage)
+        if (msg.sender != owner()) {
+            revert TransferNotAllowed();
+        }
+        super.safeTransferFrom(from, to, id, value, data);
+    }
+
+    /**
+     * @dev Override to block direct batch transfers between users
+     * @notice Batch transfers are completely blocked to prevent manipulation
+     *
+     * @param from Address to transfer from
+     * @param to Address to transfer to
+     * @param ids Array of token IDs
+     * @param values Array of amounts to transfer
+     * @param data Additional data
+     */
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values,
+        bytes memory data
+    ) public override {
+        // Block all batch transfers
+        revert TransferNotAllowed();
     }
 }

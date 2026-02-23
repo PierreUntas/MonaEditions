@@ -155,18 +155,14 @@ export default function ConsumerPage() {
             <Navbar />
             <div className="max-w-[860px] mx-auto px-6 pt-28 pb-20">
                 <div className="text-center mb-12">
-                    <div className="w-[52px] h-[52px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[22px] text-[#a8a29e] mx-auto mb-6">
-                        起
-                    </div>
-                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-8">
+                    <img 
+                        src="/logo-kigen.png" 
+                        alt="Kigen Logo" 
+                        className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+                    />
+                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
                         Mes <em className="italic text-[#78716c]">Certificats</em>
                     </h1>
-                    <Link
-                        href="/consumer/claim"
-                        className="inline-block bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-8 border border-[#1c1917] hover:bg-[#292524] transition-all duration-200"
-                    >
-                        Réclamer un certificat
-                    </Link>
                 </div>
 
                 {isLoading || !address ? (
@@ -296,9 +292,18 @@ export default function ConsumerPage() {
                 )}
 
                 <div className="flex justify-center mt-20">
+                    <Link
+                        href="/consumer/claim"
+                        className="inline-block bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-8 border border-[#1c1917] hover:bg-[#292524] transition-all duration-200"
+                    >
+                        Réclamer un certificat
+                    </Link>
+                </div>
+
+                <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
                     </div>
                 </div>
             </div>

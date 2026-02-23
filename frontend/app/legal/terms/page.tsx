@@ -7,9 +7,11 @@ export default function TermsPage() {
             <div className="max-w-2xl mx-auto px-6 pt-28 pb-20 flex-1">
 
                 <div className="text-center mb-12">
-                    <div className="w-[52px] h-[52px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[22px] text-[#a8a29e] mx-auto mb-6">
-                        起
-                    </div>
+                    <img 
+                        src="/logo-kigen.png" 
+                        alt="Kigen Logo" 
+                        className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+                    />
                     <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
                         Conditions générales <em className="italic text-[#78716c]">d'utilisation</em>
                     </h1>

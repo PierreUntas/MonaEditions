@@ -191,7 +191,7 @@ export default function ProducersPage() {
                                     </div>
                                 ) : (
                                     <div className="w-full aspect-[16/9] bg-[#e7e3dc] flex items-center justify-center">
-                                        <span className="font-serif italic text-[40px] text-[#d6d0c8]">起</span>
+                                        <img src="/logo-kigen.png" alt="Logo" className="w-16 h-16 object-contain opacity-20" />
                                     </div>
                                 )}
 
@@ -239,7 +239,7 @@ export default function ProducersPage() {
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
                     </div>
                 </div>
             </div>

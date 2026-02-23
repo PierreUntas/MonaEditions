@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
           </div>
           
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #d6d0c8; font-size: 12px; color: #a8a29e;">
-            <p>起 Kigen - Plateforme de certification d'œuvres d'art</p>
+            <p>Kigen - Plateforme de certification d'œuvres d'art</p>
           </div>
         </div>
       `,

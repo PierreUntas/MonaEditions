@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Navbar from '@/components/shared/Navbar';
-import Footer from '@/components/shared/Footer';
 
 const faqs = [
     {
@@ -126,7 +125,6 @@ export default function FaqPage() {
                     </a>
                 </div>
             </div>
-            <Footer />
         </div>
     );
 }

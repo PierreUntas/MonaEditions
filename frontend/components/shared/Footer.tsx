@@ -101,9 +101,9 @@ const Footer = () => {
                     <span className="text-[#d6d0c8]">·</span>
                     <FooterLink href="/legal/mentions">Mentions légales</FooterLink>
                     <span className="text-[#d6d0c8]">·</span>
-                    <FooterLink href="/legal/cgu">CGU</FooterLink>
+                    <FooterLink href="/legal/terms">CGU</FooterLink>
                     <span className="text-[#d6d0c8]">·</span>
-                    <FooterLink href="/legal/confidentialite">Confidentialité</FooterLink>
+                    <FooterLink href="/legal/privacy">Confidentialité</FooterLink>
                 </div>
 
                 {/* Copyright */}

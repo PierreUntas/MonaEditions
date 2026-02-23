@@ -230,7 +230,7 @@ export default function Navbar() {
                         {isArtist && (
                             <>
                                 <PanelDivider>Artiste</PanelDivider>
-                                <PanelLink href="/producer" onClick={() => setIsOpen(false)}>Dashboard</PanelLink>
+                                <PanelLink href="/producer" onClick={() => setIsOpen(false)}>Mon profil</PanelLink>
                                 <PanelLink href="/producer/batches" onClick={() => setIsOpen(false)}>Mes œuvres</PanelLink>
                                 <PanelLink href="/producer/batches/create" onClick={() => setIsOpen(false)}>Certifier une œuvre</PanelLink>
                             </>

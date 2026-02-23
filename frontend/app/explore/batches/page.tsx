@@ -1,29 +1,30 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI, PRODUCT_TOKENIZATION_ADDRESS, PRODUCT_TOKENIZATION_ABI } from '@/config/contracts';
-import { getFromIPFSGateway, getIPFSUrl } from '@/app/utils/ipfs';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
+import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
 
+// New artwork IPFS structure
 interface BatchIPFSData {
-    identifier: string;
-    productType: string;
+    title: string;
+    year: number;
     description: string;
-    origin: string;
-    productionDate: string;
-    certifications: string[];
-    labelUri: string;
+    technique: string;
+    dimensions: string;
+    images: string[];
+    editionSize: number;
+    category: string;
 }
 
 interface BatchInfo {
     tokenId: bigint;
     producer: string;
-    productType: string;
+    title: string;
     metadata: string;
-    totalSupply: bigint;
     remainingTokens: bigint;
     ipfsData?: BatchIPFSData;
     averageRating?: number;
@@ -35,35 +36,63 @@ interface ProducerInfo {
     location: string;
 }
 
+const ipfsToHttp = (url: string) =>
+    url?.startsWith('ipfs://')
+        ? `https://ipfs.io/ipfs/${url.replace('ipfs://', '')}`
+        : url;
+
 export default function ExplorePage() {
     const [batches, setBatches] = useState<BatchInfo[]>([]);
     const [producers, setProducers] = useState<Map<string, ProducerInfo>>(new Map());
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
-    const [filterType, setFilterType] = useState<string>('all');
+    const [filterCategory, setFilterCategory] = useState<string>('all');
 
     useEffect(() => {
         const fetchAllBatches = async () => {
             if (!publicClient) { setIsLoading(false); return; }
             try {
                 const logs = await publicClient.getLogs({
-                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                    event: parseAbiItem('event NewProductBatch(address indexed producer, uint indexed productBatchId)'),
+                    address: ARTWORK_REGISTRY_ADDRESS,
+                    event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'),
                     fromBlock: 9753823n,
                     toBlock: 'latest'
                 });
 
                 const batchesPromises = logs.map(async (log) => {
-                    const tokenId = log.args.productBatchId as bigint;
-                    const producerAddress = log.args.producer as `0x${string}`;
-                    const [batchInfo, balance, producerData] = await Promise.all([
-                        publicClient.readContract({ address: PRODUCT_TRACE_STORAGE_ADDRESS, abi: PRODUCT_TRACE_STORAGE_ABI, functionName: 'getProductBatch', args: [tokenId] }) as Promise<any>,
-                        publicClient.readContract({ address: PRODUCT_TOKENIZATION_ADDRESS, abi: PRODUCT_TOKENIZATION_ABI, functionName: 'balanceOf', args: [producerAddress, tokenId] }) as Promise<bigint>,
-                        publicClient.readContract({ address: PRODUCT_TRACE_STORAGE_ADDRESS, abi: PRODUCT_TRACE_STORAGE_ABI, functionName: 'getProducer', args: [producerAddress] }) as Promise<any>
+                    const tokenId = log.args.editionId as bigint;
+                    const producerAddress = log.args.artist as `0x${string}`;
+                    const [batchInfo, balance, artistData] = await Promise.all([
+                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [tokenId] }) as Promise<any>,
+                        publicClient.readContract({ address: ARTWORK_TOKENIZATION_ADDRESS, abi: ARTWORK_TOKENIZATION_ABI, functionName: 'balanceOf', args: [producerAddress, tokenId] }) as Promise<bigint>,
+                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [producerAddress] }) as Promise<any>
                     ]);
+
+                    let artistName = 'Artiste anonyme';
+                    let artistLocation = 'Non spécifié';
+                    if (artistData.metadata?.trim()) {
+                        try {
+                            const artistIpfsData = await getFromIPFSGateway(artistData.metadata);
+                            artistName = artistIpfsData.name || 'Artiste anonyme';
+                            artistLocation = artistIpfsData.location || 'Non spécifié';
+                        } catch (e) {
+                            console.error('Error loading artist IPFS data:', e);
+                        }
+                    }
+
+                    let artworkTitle = 'Œuvre sans titre';
+                    if (batchInfo.metadata?.trim()) {
+                        try {
+                            const editionIpfsData = await getFromIPFSGateway(batchInfo.metadata);
+                            artworkTitle = editionIpfsData.title || 'Œuvre sans titre';
+                        } catch (e) {
+                            console.error('Error loading edition IPFS data:', e);
+                        }
+                    }
+
                     return {
-                        batch: { tokenId, producer: producerAddress, productType: batchInfo.productType, metadata: batchInfo.metadata, totalSupply: balance, remainingTokens: balance },
-                        producerInfo: { address: producerAddress, name: producerData.name || 'Artiste anonyme', location: producerData.location || 'Non spécifié' }
+                        batch: { tokenId, producer: producerAddress, title: artworkTitle, metadata: batchInfo.metadata, remainingTokens: balance },
+                        producerInfo: { address: producerAddress, name: artistName, location: artistLocation }
                     };
                 });
 
@@ -80,10 +109,11 @@ export default function ExplorePage() {
                 setProducers(producersMap);
                 setIsLoading(false);
 
+                // Load full IPFS data for each artwork (images, category, technique, etc.)
                 setIsLoadingIPFS(true);
                 const ipfsResults = await Promise.all(batchesData.map(async (batch) => {
                     if (!batch.metadata) return null;
-                    try { return { tokenId: batch.tokenId, ipfsData: await getFromIPFSGateway(batch.metadata) }; }
+                    try { return { tokenId: batch.tokenId, ipfsData: await getFromIPFSGateway(batch.metadata) as BatchIPFSData }; }
                     catch { return null; }
                 }));
 
@@ -97,9 +127,9 @@ export default function ExplorePage() {
 
                 const ratingsResults = await Promise.all(batchesData.map(async (batch) => {
                     try {
-                        const count = await publicClient.readContract({ address: PRODUCT_TRACE_STORAGE_ADDRESS, abi: PRODUCT_TRACE_STORAGE_ABI, functionName: 'getProductBatchCommentsCount', args: [batch.tokenId] }) as bigint;
+                        const count = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviewsCount', args: [batch.tokenId] }) as bigint;
                         if (count > 0n) {
-                            const comments = await publicClient.readContract({ address: PRODUCT_TRACE_STORAGE_ADDRESS, abi: PRODUCT_TRACE_STORAGE_ABI, functionName: 'getProductBatchComments', args: [batch.tokenId, 0n, count] }) as any[];
+                            const comments = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviews', args: [batch.tokenId, 0n, count] }) as any[];
                             return { tokenId: batch.tokenId, averageRating: comments.reduce((s, c) => s + Number(c.rating), 0) / comments.length, commentsCount: Number(count) };
                         }
                         return null;
@@ -122,22 +152,22 @@ export default function ExplorePage() {
         fetchAllBatches();
     }, []);
 
-    const filteredBatches = filterType === 'all' ? batches : batches.filter(b => b.productType.toLowerCase().includes(filterType.toLowerCase()));
-    const uniqueTypes = Array.from(new Set(batches.map(b => b.productType)));
+    // Filter by category (from new IPFS structure)
+    const uniqueCategories = Array.from(new Set(batches.map(b => b.ipfsData?.category).filter(Boolean))) as string[];
+    const filteredBatches = filterCategory === 'all'
+        ? batches
+        : batches.filter(b => b.ipfsData?.category === filterCategory);
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
-
             <div className="max-w-6xl mx-auto px-6 pt-28 pb-20">
 
                 {/* Header */}
                 <div className="mb-16">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-8 h-px bg-[#d6d0c8]" />
-                        <span className="text-[11px] font-medium tracking-[0.15em] uppercase text-[#a8a29e]">
-                            Explorer
-                        </span>
+                        <span className="text-[11px] font-medium tracking-[0.15em] uppercase text-[#a8a29e]">Explorer</span>
                     </div>
                     <div className="flex items-end justify-between border-b border-[#d6d0c8] pb-8">
                         <div>
@@ -150,42 +180,34 @@ export default function ExplorePage() {
                             </p>
                         </div>
                         <div className="text-right hidden md:block">
-                            <span className="font-serif italic text-[48px] text-[#e7e3dc] leading-none">
-                                {batches.length}
-                            </span>
-                            <span className="block text-[11px] font-light tracking-[0.08em] text-[#a8a29e] mt-1">
-                                œuvres certifiées
-                            </span>
+                            <span className="font-serif italic text-[48px] text-[#e7e3dc] leading-none">{batches.length}</span>
+                            <span className="block text-[11px] font-light tracking-[0.08em] text-[#a8a29e] mt-1">œuvres certifiées</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Filters */}
+                {/* Filters by category */}
                 <div className="flex gap-2 flex-wrap mb-10">
-                    <FilterBtn active={filterType === 'all'} onClick={() => setFilterType('all')}>
+                    <FilterBtn active={filterCategory === 'all'} onClick={() => setFilterCategory('all')}>
                         Toutes ({batches.length})
                     </FilterBtn>
-                    {uniqueTypes.map(type => (
-                        <FilterBtn key={type} active={filterType === type} onClick={() => setFilterType(type)}>
-                            {type} ({batches.filter(b => b.productType === type).length})
+                    {uniqueCategories.map(cat => (
+                        <FilterBtn key={cat} active={filterCategory === cat} onClick={() => setFilterCategory(cat)}>
+                            {cat} ({batches.filter(b => b.ipfsData?.category === cat).length})
                         </FilterBtn>
                     ))}
                 </div>
 
-                {/* IPFS loading hint */}
                 {isLoadingIPFS && (
                     <p className="text-[12px] font-light text-[#a8a29e] tracking-[0.06em] mb-6">
                         Chargement des données IPFS…
                     </p>
                 )}
 
-                {/* States */}
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-32 gap-4">
                         <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
-                        <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">
-                            Chargement des œuvres…
-                        </p>
+                        <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement des œuvres…</p>
                     </div>
                 ) : filteredBatches.length === 0 ? (
                     <div className="border border-[#d6d0c8] bg-[#fafaf8] p-12 text-center">
@@ -199,12 +221,12 @@ export default function ExplorePage() {
                                 href={`/explore/batch/${batch.tokenId}`}
                                 className="bg-[#fafaf8] p-6 flex flex-col gap-4 hover:bg-[#f5f3ef] transition-colors duration-200 no-underline group"
                             >
-                                {/* Image */}
-                                {batch.ipfsData?.labelUri ? (
+                                {/* First image from portfolio, or placeholder */}
+                                {batch.ipfsData?.images?.[0] ? (
                                     <div className="w-full aspect-[4/3] overflow-hidden bg-[#e7e3dc]">
                                         <img
-                                            src={getIPFSUrl(batch.ipfsData.labelUri)}
-                                            alt={batch.productType}
+                                            src={ipfsToHttp(batch.ipfsData.images[0])}
+                                            alt={batch.title}
                                             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
                                         />
                                     </div>
@@ -218,11 +240,13 @@ export default function ExplorePage() {
                                 <div className="flex flex-col gap-2 flex-1">
                                     <div className="flex items-start justify-between gap-2">
                                         <div>
-                                            <p className="text-[10px] font-medium tracking-[0.12em] uppercase text-[#a8a29e] mb-1">
-                                                {batch.ipfsData?.identifier || `Œuvre #${batch.tokenId.toString()}`}
-                                            </p>
+                                            {batch.ipfsData?.category && (
+                                                <p className="text-[10px] font-medium tracking-[0.12em] uppercase text-[#a8a29e] mb-1">
+                                                    {batch.ipfsData.category}
+                                                </p>
+                                            )}
                                             <h3 className="font-serif text-[18px] font-normal text-[#1c1917] leading-tight">
-                                                {batch.productType}
+                                                {batch.title}
                                             </h3>
                                         </div>
                                         <span className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#4a5240] border border-[#4a5240] px-1.5 py-0.5 flex-shrink-0 mt-1">
@@ -230,26 +254,15 @@ export default function ExplorePage() {
                                         </span>
                                     </div>
 
-                                    {batch.ipfsData?.origin && (
+                                    {batch.ipfsData?.technique && (
                                         <p className="text-[12px] font-light text-[#78716c]">
-                                            {batch.ipfsData.origin}
+                                            {batch.ipfsData.technique}
+                                            {batch.ipfsData.dimensions ? ` — ${batch.ipfsData.dimensions}` : ''}
                                         </p>
                                     )}
 
-                                    {batch.ipfsData?.productionDate && (
-                                        <p className="text-[11px] font-light text-[#a8a29e]">
-                                            {new Date(batch.ipfsData.productionDate).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })}
-                                        </p>
-                                    )}
-
-                                    {batch.ipfsData?.certifications && batch.ipfsData.certifications.length > 0 && (
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {batch.ipfsData.certifications.map((cert, i) => (
-                                                <span key={i} className="text-[10px] font-mono text-[#78716c] border border-[#d6d0c8] px-2 py-0.5 bg-[#f5f3ef]">
-                                                    {cert}
-                                                </span>
-                                            ))}
-                                        </div>
+                                    {batch.ipfsData?.year && (
+                                        <p className="text-[11px] font-light text-[#a8a29e]">{batch.ipfsData.year}</p>
                                     )}
 
                                     {batch.commentsCount !== undefined && batch.commentsCount > 0 && (
@@ -262,19 +275,14 @@ export default function ExplorePage() {
                                 {/* Footer */}
                                 <div className="border-t border-[#e7e3dc] pt-4 flex items-end justify-between">
                                     <div>
-                                        <p className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#a8a29e] mb-0.5">
-                                            Artiste
-                                        </p>
-                                        <p className="text-[13px] font-light text-[#1c1917]">
-                                            {producers.get(batch.producer)?.name}
-                                        </p>
+                                        <p className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#a8a29e] mb-0.5">Artiste</p>
+                                        <p className="text-[13px] font-light text-[#1c1917]">{producers.get(batch.producer)?.name}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#a8a29e] mb-0.5">
-                                            Édition
-                                        </p>
+                                        <p className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#a8a29e] mb-0.5">Édition</p>
                                         <p className="text-[13px] font-light text-[#78716c] font-mono">
-                                            {batch.remainingTokens.toString()} / {batch.totalSupply.toString()}
+                                            {batch.remainingTokens.toString()}
+                                            {batch.ipfsData?.editionSize ? ` / ${batch.ipfsData.editionSize}` : ''}
                                         </p>
                                     </div>
                                 </div>
@@ -290,7 +298,6 @@ export default function ExplorePage() {
                         <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
                     </div>
                 </div>
-
             </div>
         </div>
     );

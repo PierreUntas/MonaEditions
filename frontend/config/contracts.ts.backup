@@ -4,18 +4,14 @@ import { parseAbiItem } from 'viem';
 export const ARTWORK_REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS as `0x${string}`;
 export const ARTWORK_TOKENIZATION_ADDRESS = process.env.NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS as `0x${string}`;
 
-// Backward compatibility aliases
-export const PRODUCT_TRACE_STORAGE_ADDRESS = ARTWORK_REGISTRY_ADDRESS;
-export const PRODUCT_TOKENIZATION_ADDRESS = ARTWORK_TOKENIZATION_ADDRESS;
-
 // ABI ArtworkRegistry
-export const ARTWORK_REGISTRY_ABI =
+export const ARTWORK_REGISTRY_ABI = 
 [
   {
     "inputs": [
       {
         "internalType": "address",
-        "name": "_artworkTokenizationAddress",
+        "name": "_productTokenizationAddress",
         "type": "address"
       }
     ],
@@ -29,32 +25,27 @@ export const ARTWORK_REGISTRY_ABI =
   },
   {
     "inputs": [],
-    "name": "ArtistMustApproveContract",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ArtistNotAuthorized",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "AuthorizationAlreadyApplied",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "EditionDoesNotExist",
+    "name": "BatchDoesNotExist",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "EditionMustHaveCertificates",
+    "name": "BatchMustHaveTokens",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "EditionSizeTooLarge",
+    "name": "BatchSizeTooLarge",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CommentLimitReached",
     "type": "error"
   },
   {
@@ -89,12 +80,12 @@ export const ARTWORK_REGISTRY_ABI =
   },
   {
     "inputs": [],
-    "name": "NoCertificateLeft",
+    "name": "NoTokenLeft",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "NotAllowedToReview",
+    "name": "NotAllowedToComment",
     "type": "error"
   },
   {
@@ -104,7 +95,7 @@ export const ARTWORK_REGISTRY_ABI =
   },
   {
     "inputs": [],
-    "name": "NotYourEdition",
+    "name": "NotYourBatch",
     "type": "error"
   },
   {
@@ -136,6 +127,16 @@ export const ARTWORK_REGISTRY_ABI =
   },
   {
     "inputs": [],
+    "name": "ProducerMustApproveContract",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ProducerNotAuthorized",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "QueryLimitTooHigh",
     "type": "error"
   },
@@ -147,11 +148,6 @@ export const ARTWORK_REGISTRY_ABI =
   {
     "inputs": [],
     "name": "ReentrancyGuardReentrantCall",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ReviewLimitReached",
     "type": "error"
   },
   {
@@ -173,20 +169,7 @@ export const ARTWORK_REGISTRY_ABI =
       {
         "indexed": true,
         "internalType": "address",
-        "name": "artist",
-        "type": "address"
-      }
-    ],
-    "name": "ArtistInfoUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "artist",
+        "name": "producer",
         "type": "address"
       },
       {
@@ -196,7 +179,7 @@ export const ARTWORK_REGISTRY_ABI =
         "type": "bool"
       }
     ],
-    "name": "AuthorizationArtist",
+    "name": "AuthorizationProducer",
     "type": "event"
   },
   {
@@ -205,32 +188,13 @@ export const ARTWORK_REGISTRY_ABI =
       {
         "indexed": true,
         "internalType": "address",
-        "name": "collector",
+        "name": "producer",
         "type": "address"
       },
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "editionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "CertificateClaimed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "artist",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "editionId",
+        "name": "batchId",
         "type": "uint256"
       },
       {
@@ -240,7 +204,7 @@ export const ARTWORK_REGISTRY_ABI =
         "type": "string"
       }
     ],
-    "name": "EditionMetadataUpdated",
+    "name": "BatchMetadataUpdated",
     "type": "event"
   },
   {
@@ -262,32 +226,13 @@ export const ARTWORK_REGISTRY_ABI =
       {
         "indexed": true,
         "internalType": "address",
-        "name": "artist",
+        "name": "consumer",
         "type": "address"
       },
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "editionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "NewArtworkEdition",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "collector",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "editionId",
+        "name": "productBatchId",
         "type": "uint256"
       },
       {
@@ -297,7 +242,26 @@ export const ARTWORK_REGISTRY_ABI =
         "type": "uint8"
       }
     ],
-    "name": "NewReview",
+    "name": "NewComment",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "producer",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "productBatchId",
+        "type": "uint256"
+      }
+    ],
+    "name": "NewProductBatch",
     "type": "event"
   },
   {
@@ -320,8 +284,40 @@ export const ARTWORK_REGISTRY_ABI =
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "producer",
+        "type": "address"
+      }
+    ],
+    "name": "ProducerInfoUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "consumer",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "productBatchId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ProductTokenClaimed",
+    "type": "event"
+  },
+  {
     "inputs": [],
-    "name": "MAX_EDITION_SIZE",
+    "name": "MAX_BATCH_SIZE",
     "outputs": [
       {
         "internalType": "uint256",
@@ -334,7 +330,7 @@ export const ARTWORK_REGISTRY_ABI =
   },
   {
     "inputs": [],
-    "name": "MAX_REVIEWS_PER_USER",
+    "name": "MAX_COMMENTS_PER_USER",
     "outputs": [
       {
         "internalType": "uint256",
@@ -347,7 +343,7 @@ export const ARTWORK_REGISTRY_ABI =
   },
   {
     "inputs": [],
-    "name": "MAX_REVIEWS_QUERY",
+    "name": "MAX_COMMENTS_QUERY",
     "outputs": [
       {
         "internalType": "uint256",
@@ -375,7 +371,7 @@ export const ARTWORK_REGISTRY_ABI =
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_editionId",
+        "name": "_productBatchId",
         "type": "uint256"
       },
       {
@@ -389,7 +385,35 @@ export const ARTWORK_REGISTRY_ABI =
         "type": "string"
       }
     ],
-    "name": "addReview",
+    "name": "addComment",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_productType",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_metadata",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_merkleRoot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "addProductBatch",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -414,23 +438,10 @@ export const ARTWORK_REGISTRY_ABI =
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "artworkTokenization",
-    "outputs": [
-      {
-        "internalType": "contract IArtworkTokenization",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
-        "name": "_artist",
+        "name": "_producer",
         "type": "address"
       },
       {
@@ -439,7 +450,7 @@ export const ARTWORK_REGISTRY_ABI =
         "type": "bool"
       }
     ],
-    "name": "authorizeArtist",
+    "name": "authorizeProducer",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -448,7 +459,7 @@ export const ARTWORK_REGISTRY_ABI =
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_editionId",
+        "name": "_productBatchId",
         "type": "uint256"
       },
       {
@@ -462,7 +473,7 @@ export const ARTWORK_REGISTRY_ABI =
         "type": "bytes32[]"
       }
     ],
-    "name": "claimCertificate",
+    "name": "claimProductToken",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -470,24 +481,25 @@ export const ARTWORK_REGISTRY_ABI =
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "_metadata",
-        "type": "string"
-      },
-      {
         "internalType": "uint256",
-        "name": "_amount",
+        "name": "",
         "type": "uint256"
       },
       {
-        "internalType": "bytes32",
-        "name": "_merkleRoot",
-        "type": "bytes32"
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
-    "name": "createArtworkEdition",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "name": "commentCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -498,7 +510,7 @@ export const ARTWORK_REGISTRY_ABI =
         "type": "address"
       }
     ],
-    "name": "getArtist",
+    "name": "getProducer",
     "outputs": [
       {
         "components": [
@@ -509,11 +521,26 @@ export const ARTWORK_REGISTRY_ABI =
           },
           {
             "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "location",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "companyRegisterNumber",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
             "name": "metadata",
             "type": "string"
           }
         ],
-        "internalType": "struct ArtworkRegistry.Artist",
+        "internalType": "struct ProductTraceStorage.Producer",
         "name": "",
         "type": "tuple"
       }
@@ -529,10 +556,15 @@ export const ARTWORK_REGISTRY_ABI =
         "type": "uint256"
       }
     ],
-    "name": "getArtworkEdition",
+    "name": "getProductBatch",
     "outputs": [
       {
         "components": [
+          {
+            "internalType": "string",
+            "name": "productType",
+            "type": "string"
+          },
           {
             "internalType": "string",
             "name": "metadata",
@@ -549,7 +581,7 @@ export const ARTWORK_REGISTRY_ABI =
             "type": "bool"
           }
         ],
-        "internalType": "struct ArtworkRegistry.ArtworkEdition",
+        "internalType": "struct ProductTraceStorage.ProductBatch",
         "name": "",
         "type": "tuple"
       }
@@ -561,7 +593,7 @@ export const ARTWORK_REGISTRY_ABI =
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_editionId",
+        "name": "_productBatchId",
         "type": "uint256"
       },
       {
@@ -575,18 +607,18 @@ export const ARTWORK_REGISTRY_ABI =
         "type": "uint256"
       }
     ],
-    "name": "getEditionReviews",
+    "name": "getProductBatchComments",
     "outputs": [
       {
         "components": [
           {
             "internalType": "address",
-            "name": "collector",
+            "name": "consumer",
             "type": "address"
           },
           {
             "internalType": "uint256",
-            "name": "editionId",
+            "name": "productBatchId",
             "type": "uint256"
           },
           {
@@ -600,7 +632,7 @@ export const ARTWORK_REGISTRY_ABI =
             "type": "string"
           }
         ],
-        "internalType": "struct ArtworkRegistry.Review[]",
+        "internalType": "struct ProductTraceStorage.Comment[]",
         "name": "",
         "type": "tuple[]"
       }
@@ -612,11 +644,11 @@ export const ARTWORK_REGISTRY_ABI =
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_editionId",
+        "name": "_productBatchId",
         "type": "uint256"
       }
     ],
-    "name": "getEditionReviewsCount",
+    "name": "getProductBatchCommentsCount",
     "outputs": [
       {
         "internalType": "uint256",
@@ -649,31 +681,12 @@ export const ARTWORK_REGISTRY_ABI =
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_artist",
-        "type": "address"
-      }
-    ],
-    "name": "isArtistApproved",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint256",
-        "name": "_editionId",
+        "name": "_batchId",
         "type": "uint256"
       }
     ],
-    "name": "isEditionLocked",
+    "name": "isBatchLocked",
     "outputs": [
       {
         "internalType": "bool",
@@ -688,7 +701,7 @@ export const ARTWORK_REGISTRY_ABI =
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_editionId",
+        "name": "_productBatchId",
         "type": "uint256"
       },
       {
@@ -709,11 +722,43 @@ export const ARTWORK_REGISTRY_ABI =
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_producer",
+        "type": "address"
+      }
+    ],
+    "name": "isProducerApproved",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "owner",
     "outputs": [
       {
         "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "productTokenization",
+    "outputs": [
+      {
+        "internalType": "contract IProductTokenization",
         "name": "",
         "type": "address"
       }
@@ -744,36 +789,27 @@ export const ARTWORK_REGISTRY_ABI =
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
+        "internalType": "string",
+        "name": "_name",
+        "type": "string"
       },
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "reviewCount",
-    "outputs": [
+        "internalType": "string",
+        "name": "_location",
+        "type": "string"
+      },
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
+        "internalType": "string",
+        "name": "_companyRegisterNumber",
+        "type": "string"
+      },
       {
         "internalType": "string",
         "name": "_metadata",
         "type": "string"
       }
     ],
-    "name": "setArtistInfo",
+    "name": "setProducerInfo",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -795,7 +831,7 @@ export const ARTWORK_REGISTRY_ABI =
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_editionId",
+        "name": "_batchId",
         "type": "uint256"
       },
       {
@@ -804,15 +840,15 @@ export const ARTWORK_REGISTRY_ABI =
         "type": "string"
       }
     ],
-    "name": "updateEditionMetadata",
+    "name": "updateBatchMetadata",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   }
 ] as const;
 
-// ABI ArtworkTokenization
-export const ARTWORK_TOKENIZATION_ABI =
+// ABI ProductTokenization
+export const PRODUCT_TOKENIZATION_ABI = 
 [
   {
     "inputs": [
@@ -934,12 +970,12 @@ export const ARTWORK_TOKENIZATION_ABI =
   },
   {
     "inputs": [],
-    "name": "InvalidArtistAddress",
+    "name": "InvalidIPFSCID",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "InvalidIPFSCID",
+    "name": "InvalidProducerAddress",
     "type": "error"
   },
   {
@@ -1000,7 +1036,26 @@ export const ARTWORK_TOKENIZATION_ABI =
       {
         "indexed": true,
         "internalType": "address",
-        "name": "artist",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "producer",
         "type": "address"
       },
       {
@@ -1016,26 +1071,7 @@ export const ARTWORK_TOKENIZATION_ABI =
         "type": "uint256"
       }
     ],
-    "name": "ArtworkEditionMinted",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "previousOwner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnershipTransferred",
+    "name": "ProductBatchMinted",
     "type": "event"
   },
   {
@@ -1207,7 +1243,7 @@ export const ARTWORK_TOKENIZATION_ABI =
     "inputs": [
       {
         "internalType": "address",
-        "name": "_artist",
+        "name": "_producer",
         "type": "address"
       },
       {
@@ -1221,7 +1257,7 @@ export const ARTWORK_TOKENIZATION_ABI =
         "type": "string"
       }
     ],
-    "name": "mintArtworkEdition",
+    "name": "mintProductBatch",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1363,7 +1399,7 @@ export const ARTWORK_TOKENIZATION_ABI =
         "type": "uint256"
       }
     ],
-    "name": "tokenArtist",
+    "name": "tokenProducer",
     "outputs": [
       {
         "internalType": "address",
@@ -1407,7 +1443,3 @@ export const ARTWORK_TOKENIZATION_ABI =
     "type": "function"
   }
 ] as const;
-
-// Backward compatibility aliases
-export const PRODUCT_TRACE_STORAGE_ABI = ARTWORK_REGISTRY_ABI;
-export const PRODUCT_TOKENIZATION_ABI = ARTWORK_TOKENIZATION_ABI;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
-import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI } from '@/config/contracts';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
 import { useSendTransaction } from '@privy-io/react-auth';
@@ -21,16 +21,16 @@ export default function AdminPage() {
     const { sendTransaction } = useSendTransaction();
 
     const { data: isAdminResult, isLoading: isLoadingAdmin } = useReadContract({
-        address: PRODUCT_TRACE_STORAGE_ADDRESS,
-        abi: PRODUCT_TRACE_STORAGE_ABI,
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
         functionName: 'isAdmin',
         args: address ? [address] : undefined,
     });
 
     const { data: producerData } = useReadContract({
-        address: PRODUCT_TRACE_STORAGE_ADDRESS,
-        abi: PRODUCT_TRACE_STORAGE_ABI,
-        functionName: 'getProducer',
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
+        functionName: 'getArtist',
         args: checkProducerAddress ? [checkProducerAddress as `0x${string}`] : undefined,
     });
 
@@ -52,14 +52,14 @@ export default function AdminPage() {
         setIsAuthorizingProducer(true);
         try {
             const data = encodeFunctionData({
-                abi: PRODUCT_TRACE_STORAGE_ABI,
-                functionName: 'authorizeProducer',
+                abi: ARTWORK_REGISTRY_ABI,
+                functionName: 'authorizeArtist',
                 args: [newProducerAddress as `0x${string}`, true],
             });
 
             const txHash = await sendTransaction(
                 {
-                    to: PRODUCT_TRACE_STORAGE_ADDRESS,
+                    to: ARTWORK_REGISTRY_ADDRESS,
                     data: data,
                 },
                 {
@@ -82,14 +82,14 @@ export default function AdminPage() {
         setIsRevokingProducer(true);
         try {
             const data = encodeFunctionData({
-                abi: PRODUCT_TRACE_STORAGE_ABI,
-                functionName: 'authorizeProducer',
+                abi: ARTWORK_REGISTRY_ABI,
+                functionName: 'authorizeArtist',
                 args: [removeProducerAddress as `0x${string}`, false],
             });
 
             const txHash = await sendTransaction(
                 {
-                    to: PRODUCT_TRACE_STORAGE_ADDRESS,
+                    to: ARTWORK_REGISTRY_ADDRESS,
                     data: data,
                 },
                 {

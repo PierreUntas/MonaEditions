@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
-import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI, PRODUCT_TOKENIZATION_ADDRESS, PRODUCT_TOKENIZATION_ABI } from '@/config/contracts';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
 import { uploadToIPFS, uploadFileToIPFS } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
-import Image from 'next/image';
 import { MerkleTree } from 'merkletreejs';
 import { keccak256, encodeFunctionData, decodeEventLog, createPublicClient, http } from 'viem';
 import { sepolia } from 'viem/chains';
@@ -15,47 +14,51 @@ import * as XLSX from 'xlsx';
 
 export default function CreateBatchPage() {
     const { address } = useAccount();
-    const [productType, setProductType] = useState('');
     const [amount, setAmount] = useState('');
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isCheckingAuthorization, setIsCheckingAuthorization] = useState(true);
     const [isApproved, setIsApproved] = useState(false);
     const [isApproving, setIsApproving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [isUploadingLabel, setIsUploadingLabel] = useState(false);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [isGeneratingQR, setIsGeneratingQR] = useState(false);
     const [secretKeys, setSecretKeys] = useState<string[]>([]);
     const [merkleRoot, setMerkleRoot] = useState<string>('');
     const [merkleTree, setMerkleTree] = useState<MerkleTree | null>(null);
-    const [labelFileName, setLabelFileName] = useState<string>('');
     const [createdBatchId, setCreatedBatchId] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
-    const labelInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     const { sendTransaction } = useSendTransaction();
 
+    const CATEGORIES = [
+        'Painting', 'Drawing', 'Sculpture', 'Photography', 'Digital Art',
+        'Print', 'Textile', 'Ceramics', 'Installation', 'Video', 'Other'
+    ];
+
     const [batchData, setBatchData] = useState({
-        identifier: '',
-        productType: '',
+        title: '',
+        year: new Date().getFullYear(),
         description: '',
-        origin: '',
-        productionDate: '',
-        certifications: [] as string[],
-        labelUri: ''
+        technique: '',
+        dimensions: '',
+        images: [] as string[],
+        editionSize: 0,
+        category: ''
     });
 
     const { data: producerData, isLoading: isLoadingProducer } = useReadContract({
-        address: PRODUCT_TRACE_STORAGE_ADDRESS,
-        abi: PRODUCT_TRACE_STORAGE_ABI,
-        functionName: 'getProducer',
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
+        functionName: 'getArtist',
         args: address ? [address] : undefined,
     });
 
     const { data: approvalStatus, refetch: refetchApproval } = useReadContract({
-        address: PRODUCT_TOKENIZATION_ADDRESS,
-        abi: PRODUCT_TOKENIZATION_ABI,
+        address: ARTWORK_TOKENIZATION_ADDRESS,
+        abi: ARTWORK_TOKENIZATION_ABI,
         functionName: 'isApprovedForAll',
-        args: address ? [address, PRODUCT_TRACE_STORAGE_ADDRESS] : undefined,
+        args: address ? [address, ARTWORK_REGISTRY_ADDRESS] : undefined,
     });
 
     useEffect(() => {
@@ -73,7 +76,7 @@ export default function CreateBatchPage() {
             setIsApproved(approvalStatus as boolean);
             if (approvalStatus && isApproving) {
                 setIsApproving(false);
-                alert('✅ Approbation confirmée ! Vous pouvez maintenant créer des lots.');
+                alert('✅ Approbation confirmée ! Vous pouvez maintenant créer des œuvres.');
             }
         }
     }, [approvalStatus, isApproving]);
@@ -96,78 +99,67 @@ export default function CreateBatchPage() {
             if (count > 0 && count <= 100000) {
                 const keys = generateSecretKeys(count);
                 setSecretKeys(keys);
+                setBatchData(prev => ({ ...prev, editionSize: count }));
 
                 const leaves = keys.map(key => keccak256(`0x${Buffer.from(key).toString('hex')}`));
                 const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
-                const root = tree.getHexRoot();
-
                 setMerkleTree(tree);
-                setMerkleRoot(root);
+                setMerkleRoot(tree.getHexRoot());
             }
         } else {
             setSecretKeys([]);
             setMerkleRoot('');
             setMerkleTree(null);
+            setBatchData(prev => ({ ...prev, editionSize: 0 }));
         }
     };
 
-    const handleLabelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    // Upload one or several images to IPFS and add their CIDs to batchData.images
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
 
-        setIsUploadingLabel(true);
-        setLabelFileName(file.name);
-
+        setIsUploadingImage(true);
         try {
-            const cid = await uploadFileToIPFS(file);
-            setBatchData({ ...batchData, labelUri: `ipfs://${cid}` });
-            alert('✅ Étiquette uploadée sur IPFS !');
+            const newCids: string[] = [];
+            for (const file of files) {
+                const cid = await uploadFileToIPFS(file);
+                newCids.push(`ipfs://${cid}`);
+            }
+            setBatchData(prev => ({ ...prev, images: [...prev.images, ...newCids] }));
+            alert(`✅ ${newCids.length} image${newCids.length > 1 ? 's uploadées' : ' uploadée'} sur IPFS !`);
         } catch (error) {
-            console.error('Error uploading label:', error);
-            alert('❌ Erreur lors de l\'upload de l\'étiquette');
-            setLabelFileName('');
+            console.error('Error uploading image:', error);
+            alert('❌ Erreur lors de l\'upload de l\'image');
         } finally {
-            setIsUploadingLabel(false);
+            setIsUploadingImage(false);
+            // Reset input so the same file can be re-selected if needed
+            if (imageInputRef.current) imageInputRef.current.value = '';
         }
+    };
+
+    const removeImage = (index: number) => {
+        setBatchData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
     };
 
     const generateQRCodeImage = async (text: string): Promise<string> => {
-        try {
-            const qrDataUrl = await QRCode.toDataURL(text, {
-                width: 300,
-                margin: 2,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                }
-            });
-            return qrDataUrl;
-        } catch (error) {
-            console.error('Error generating QR code:', error);
-            throw error;
-        }
+        return QRCode.toDataURL(text, {
+            width: 300,
+            margin: 2,
+            color: { dark: '#000000', light: '#FFFFFF' }
+        });
     };
 
     const downloadBatchPageQRCode = async () => {
         if (!createdBatchId || createdBatchId === 'pending' || createdBatchId === 'confirmed') return;
-
         setIsGeneratingQR(true);
-
         try {
             const batchPageUrl = `https://www.beeblock.fr/explore/batch/${createdBatchId}`;
-            
-            // Générer un QR code haute résolution pour l'impression
             const qrCodeDataUrl = await QRCode.toDataURL(batchPageUrl, {
-                width: 1000,
-                margin: 4,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                },
+                width: 1000, margin: 4,
+                color: { dark: '#000000', light: '#FFFFFF' },
                 errorCorrectionLevel: 'H'
             });
-
-            // Télécharger l'image
             const base64Data = qrCodeDataUrl.split(',')[1];
             const blob = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'image/png' });
             const url = URL.createObjectURL(blob);
@@ -178,7 +170,6 @@ export default function CreateBatchPage() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-
             alert(`✅ QR Code de la page du lot téléchargé avec succès !`);
         } catch (error) {
             console.error('Error generating batch page QR code:', error);
@@ -190,26 +181,16 @@ export default function CreateBatchPage() {
 
     const downloadExcelWithQRCodes = async () => {
         if (secretKeys.length === 0 || !merkleTree || !createdBatchId) return;
-
         setIsGeneratingQR(true);
-
         try {
-            const batchId = createdBatchId;
-
-            // Préparer les données pour Excel
             const excelData = [];
-
             for (let index = 0; index < secretKeys.length; index++) {
                 const key = secretKeys[index];
                 const leaf = keccak256(Buffer.from(key));
                 const proof = merkleTree.getHexProof(leaf);
                 const merkleProofParam = proof.join(',');
-
-                const claimUrl = `https://www.beeblock.fr/consumer/claim?batchId=${batchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
-
-                // Générer le QR code en base64
+                const claimUrl = `https://www.beeblock.fr/consumer/claim?batchId=${createdBatchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
-
                 excelData.push({
                     'Index': index + 1,
                     'Secret Key': key,
@@ -217,56 +198,27 @@ export default function CreateBatchPage() {
                     'Claim URL': claimUrl,
                     'QR Code': qrCodeDataUrl
                 });
-
-                // Afficher la progression
                 if ((index + 1) % 10 === 0 || index === secretKeys.length - 1) {
                     console.log(`Génération des QR codes: ${index + 1}/${secretKeys.length}`);
                 }
             }
-
-            // Créer le workbook
             const ws = XLSX.utils.json_to_sheet(excelData);
-
-            // Ajuster la largeur des colonnes
-            ws['!cols'] = [
-                { wch: 8 },   // Index
-                { wch: 65 },  // Secret Key
-                { wch: 50 },  // Merkle Proof
-                { wch: 80 },  // Claim URL
-                { wch: 40 }   // QR Code
-            ];
-
-            // Ajuster la hauteur des lignes pour les QR codes
-            const rowHeights = [{ hpx: 20 }]; // Header
-            for (let i = 0; i < excelData.length; i++) {
-                rowHeights.push({ hpx: 150 }); // Hauteur pour chaque ligne avec QR code
-            }
+            ws['!cols'] = [{ wch: 8 }, { wch: 65 }, { wch: 50 }, { wch: 80 }, { wch: 40 }];
+            const rowHeights = [{ hpx: 20 }];
+            for (let i = 0; i < excelData.length; i++) rowHeights.push({ hpx: 150 });
             ws['!rows'] = rowHeights;
-
-            // Ajouter les images QR code
             if (!ws['!images']) ws['!images'] = [];
-            
             for (let i = 0; i < excelData.length; i++) {
-                const qrCodeBase64 = excelData[i]['QR Code'].split(',')[1]; // Enlever le préfixe data:image/png;base64,
-                
+                const qrCodeBase64 = excelData[i]['QR Code'].split(',')[1];
                 ws['!images'].push({
                     name: `qr_${i + 1}.png`,
                     data: qrCodeBase64,
-                    opts: {
-                        positioning: {
-                            type: 'oneCellAnchor',
-                            from: { col: 4, row: i + 1 } // Colonne E (index 4), ligne i+1
-                        }
-                    }
+                    opts: { positioning: { type: 'oneCellAnchor', from: { col: 4, row: i + 1 } } }
                 });
             }
-
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Secret Keys');
-
-            // Télécharger le fichier
-            XLSX.writeFile(wb, `secret-keys-batch-${batchId}-${Date.now()}.xlsx`);
-
+            XLSX.writeFile(wb, `secret-keys-batch-${createdBatchId}-${Date.now()}.xlsx`);
             alert(`✅ Fichier Excel avec ${secretKeys.length} QR codes généré avec succès !`);
         } catch (error) {
             console.error('Error generating Excel with QR codes:', error);
@@ -278,45 +230,32 @@ export default function CreateBatchPage() {
 
     const downloadQRCodesZip = async () => {
         if (secretKeys.length === 0 || !merkleTree || !createdBatchId) return;
-
         setIsGeneratingQR(true);
-
         try {
             const JSZip = (await import('jszip')).default;
             const zip = new JSZip();
-            const batchId = createdBatchId;
-
             for (let index = 0; index < secretKeys.length; index++) {
                 const key = secretKeys[index];
                 const leaf = keccak256(Buffer.from(key));
                 const proof = merkleTree.getHexProof(leaf);
                 const merkleProofParam = proof.join(',');
-
-                const claimUrl = `https://www.beeblock.fr/consumer/claim?batchId=${batchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
-
-                // Générer le QR code
+                const claimUrl = `https://www.beeblock.fr/consumer/claim?batchId=${createdBatchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
                 const base64Data = qrCodeDataUrl.split(',')[1];
-
-                // Ajouter au ZIP
-                zip.file(`QR_Claim_${batchId}_${(index + 1).toString().padStart(5, '0')}.png`, base64Data, { base64: true });
-
+                zip.file(`QR_Claim_${createdBatchId}_${(index + 1).toString().padStart(5, '0')}.png`, base64Data, { base64: true });
                 if ((index + 1) % 10 === 0 || index === secretKeys.length - 1) {
                     console.log(`Génération des QR codes: ${index + 1}/${secretKeys.length}`);
                 }
             }
-
-            // Générer le ZIP
             const content = await zip.generateAsync({ type: 'blob' });
             const url = URL.createObjectURL(content);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `qr-codes-claim-batch-${batchId}-${Date.now()}.zip`;
+            a.download = `qr-codes-claim-batch-${createdBatchId}-${Date.now()}.zip`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-
             alert(`✅ ${secretKeys.length} QR codes téléchargés avec succès !`);
         } catch (error) {
             console.error('Error generating QR codes:', error);
@@ -329,25 +268,13 @@ export default function CreateBatchPage() {
     const handleApprove = async () => {
         try {
             setIsApproving(true);
-            
             const data = encodeFunctionData({
-                abi: PRODUCT_TOKENIZATION_ABI,
+                abi: ARTWORK_TOKENIZATION_ABI,
                 functionName: 'setApprovalForAll',
-                args: [PRODUCT_TRACE_STORAGE_ADDRESS, true]
+                args: [ARTWORK_REGISTRY_ADDRESS, true]
             });
-
-            const txHash = await sendTransaction(
-                {
-                    to: PRODUCT_TOKENIZATION_ADDRESS,
-                    data: data,
-                },
-                {
-                    sponsor: true,
-                }
-            );
-
+            await sendTransaction({ to: ARTWORK_TOKENIZATION_ADDRESS, data }, { sponsor: true });
             alert('⏳ Approbation en cours... La transaction doit être confirmée sur la blockchain (~12 sec). Attendez la confirmation avant de créer votre lot.');
-
             const checkApproval = setInterval(async () => {
                 const result = await refetchApproval();
                 if (result.data === true) {
@@ -356,12 +283,7 @@ export default function CreateBatchPage() {
                     setIsApproved(true);
                 }
             }, 3000);
-
-            setTimeout(() => {
-                clearInterval(checkApproval);
-                setIsApproving(false);
-            }, 60000);
-
+            setTimeout(() => { clearInterval(checkApproval); setIsApproving(false); }, 60000);
         } catch (error) {
             console.error('Error during approval:', error);
             alert('❌ Erreur lors de l\'approbation. Veuillez réessayer.');
@@ -371,101 +293,95 @@ export default function CreateBatchPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsUploading(true);
-
-        if (!productType || !amount || !merkleRoot) {
+        if (!batchData.title || !amount || !merkleRoot) {
             alert('Veuillez remplir tous les champs obligatoires');
-            setIsUploading(false);
             return;
         }
-
         if (!isApproved) {
-            alert('⚠️ Vous devez d\'abord approuver le contrat ProductTraceStorage');
-            setIsUploading(false);
+            alert('⚠️ Vous devez d\'abord approuver le contrat');
             return;
         }
 
+        setIsUploading(true);
         try {
-            const completeData = {
-                identifier: batchData.identifier,
-                productType: productType,
+            // IPFS object matching the target structure
+            const artworkMetadata: {
+                title: string;
+                year: number;
+                description: string;
+                technique: string;
+                dimensions: string;
+                images: string[];
+                editionSize: number;
+                category: string;
+            } = {
+                title: batchData.title,
+                year: batchData.year,
                 description: batchData.description,
-                origin: batchData.origin,
-                productionDate: batchData.productionDate,
-                certifications: batchData.certifications,
-                labelUri: batchData.labelUri
+                technique: batchData.technique,
+                dimensions: batchData.dimensions,
+                images: batchData.images,
+                editionSize: parseInt(amount),
+                category: batchData.category,
             };
 
-            const cid = await uploadToIPFS(completeData);
+            const cid = await uploadToIPFS(artworkMetadata);
 
             setIsUploading(false);
             setIsCreating(true);
 
             const data = encodeFunctionData({
-                abi: PRODUCT_TRACE_STORAGE_ABI,
-                functionName: 'addProductBatch',
-                args: [productType, cid, BigInt(amount), merkleRoot as `0x${string}`]
+                abi: ARTWORK_REGISTRY_ABI,
+                functionName: 'createArtworkEdition',
+                args: [cid, BigInt(amount), merkleRoot as `0x${string}`]
             });
 
             const txHash = await sendTransaction(
-                {
-                    to: PRODUCT_TRACE_STORAGE_ADDRESS,
-                    data: data,
-                },
-                {
-                    sponsor: true,
-                }
+                { to: ARTWORK_REGISTRY_ADDRESS, data },
+                { sponsor: true }
             );
 
             alert('⏳ Transaction envoyée ! En attente de confirmation...');
 
-            const publicClient = createPublicClient({
+            const publicClientInstance = createPublicClient({
                 chain: sepolia,
                 transport: http(process.env.NEXT_PUBLIC_RPC_URL_SEPOLIA),
             });
 
-            const receipt = await publicClient.waitForTransactionReceipt({
+            const receipt = await publicClientInstance.waitForTransactionReceipt({
                 hash: txHash.hash as `0x${string}`,
             });
 
             const batchCreatedEvent = receipt.logs.find(log => {
                 try {
-                    const decoded = decodeEventLog({
-                        abi: PRODUCT_TRACE_STORAGE_ABI,
-                        data: log.data,
-                        topics: log.topics,
-                    });
-                    return decoded.eventName === 'NewProductBatch';
-                } catch (e) {
-                    return false;
-                }
+                    const decoded = decodeEventLog({ abi: ARTWORK_REGISTRY_ABI, data: log.data, topics: log.topics });
+                    return decoded.eventName === 'NewArtworkEdition';
+                } catch { return false; }
             });
 
             if (batchCreatedEvent) {
                 const decoded = decodeEventLog({
-                    abi: PRODUCT_TRACE_STORAGE_ABI,
+                    abi: ARTWORK_REGISTRY_ABI,
                     data: batchCreatedEvent.data,
                     topics: batchCreatedEvent.topics,
                 }) as any;
-
-                const batchId = decoded.args.productBatchId?.toString();
+                const batchId = decoded.args.editionId?.toString();
                 setCreatedBatchId(batchId);
-                alert(`✅ Lot créé avec succès ! ID du lot: ${batchId}`);
+                alert(`✅ Œuvre créée avec succès ! ID : ${batchId}`);
             } else {
-                console.error('❌ NewProductBatch event not found in logs');
-                alert('⚠️ Transaction confirmée mais impossible de récupérer l\'ID du lot. Vérifiez la console.');
+                console.error('❌ NewArtworkEdition event not found in logs');
+                alert('⚠️ Transaction confirmée mais impossible de récupérer l\'ID de l\'œuvre. Vérifiez la console.');
                 setCreatedBatchId('confirmed');
             }
         } catch (error) {
-            console.error('Error creating batch:', error);
-            alert('❌ Erreur lors de la création du lot');
+            console.error('Error creating artwork:', error);
+            alert('❌ Erreur lors de la création de l\'œuvre');
         } finally {
             setIsUploading(false);
             setIsCreating(false);
         }
     };
 
-    // Loading state while checking permissions
     if (isCheckingAuthorization || isLoadingProducer) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
@@ -483,9 +399,7 @@ export default function CreateBatchPage() {
             <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="font-serif italic text-[22px] text-[#a8a29e]">
-                        Veuillez connecter votre wallet
-                    </p>
+                    <p className="font-serif italic text-[22px] text-[#a8a29e]">Veuillez connecter votre wallet</p>
                 </div>
             </div>
         );
@@ -508,12 +422,13 @@ export default function CreateBatchPage() {
         <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
             <div className="max-w-3xl mx-auto px-6 pt-28 pb-20">
+
                 {isAuthorized && !isApproved && (
                     <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6 mb-px">
                         <div className="flex items-center justify-between gap-4">
                             <div>
                                 <p className="text-[14px] font-medium text-[#1c1917] mb-1">⚠️ Action requise</p>
-                                <p className="text-[13px] font-light text-[#78716c]">Vous devez approuver le contrat ProductTraceStorage avant de créer des œuvres.</p>
+                                <p className="text-[13px] font-light text-[#78716c]">Vous devez approuver le contrat avant de créer des œuvres.</p>
                             </div>
                             <button
                                 onClick={handleApprove}
@@ -529,7 +444,7 @@ export default function CreateBatchPage() {
                 {createdBatchId && (
                     <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6 mb-px">
                         <p className="text-[14px] font-medium text-[#1c1917] mb-1">✅ Œuvre créée avec succès !</p>
-                        <p className="text-[13px] font-light text-[#78716c]">ID de l'œuvre: <span className="font-mono">{createdBatchId}</span></p>
+                        <p className="text-[13px] font-light text-[#78716c]">ID de l'œuvre : <span className="font-mono">{createdBatchId}</span></p>
                         <p className="text-[13px] font-light text-[#78716c] mt-2">Vous pouvez maintenant télécharger les QR codes.</p>
                     </div>
                 )}
@@ -545,115 +460,146 @@ export default function CreateBatchPage() {
 
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Identifiant de l'œuvre *
-                            </label>
-                            <input
-                                type="text"
-                                value={batchData.identifier}
-                                onChange={(e) => setBatchData({...batchData, identifier: e.target.value})}
-                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
-                                placeholder="OEUVRE-2026-001"
-                                required
-                            />
-                        </div>
 
+                        {/* Titre */}
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Titre de l'œuvre *
                             </label>
                             <input
                                 type="text"
-                                value={productType}
-                                onChange={(e) => {
-                                    setProductType(e.target.value);
-                                    setBatchData({...batchData, productType: e.target.value});
-                                }}
+                                value={batchData.title}
+                                onChange={(e) => setBatchData({ ...batchData, title: e.target.value })}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
-                                placeholder="Ex: Paysage d'automne, Portrait abstrait..."
+                                placeholder="Ex: Sakura Dreams"
                                 required
                             />
                         </div>
 
+                        {/* Année */}
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Description de l'œuvre
+                                Année de création *
                             </label>
-                            <textarea
-                                value={batchData.description}
-                                onChange={(e) => setBatchData({...batchData, description: e.target.value})}
-                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors min-h-[120px]"
-                                placeholder="Décrivez votre œuvre, la technique utilisée, les matériaux..."
+                            <input
+                                type="number"
+                                value={batchData.year}
+                                onChange={(e) => setBatchData({ ...batchData, year: parseInt(e.target.value) })}
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                min="1900"
+                                max={new Date().getFullYear()}
+                                required
                             />
                         </div>
 
+                        {/* Catégorie */}
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Lieu de création
+                                Catégorie
+                            </label>
+                            <select
+                                value={batchData.category}
+                                onChange={(e) => setBatchData({ ...batchData, category: e.target.value })}
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] focus:outline-none focus:border-[#1c1917] transition-colors"
+                            >
+                                <option value="">Sélectionner une catégorie</option>
+                                {CATEGORIES.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Technique */}
+                        <div>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Technique
                             </label>
                             <input
                                 type="text"
-                                value={batchData.origin}
-                                onChange={(e) => setBatchData({...batchData, origin: e.target.value})}
+                                value={batchData.technique}
+                                onChange={(e) => setBatchData({ ...batchData, technique: e.target.value })}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
-                                placeholder="Ex: Paris, France"
+                                placeholder="Ex: Oil on canvas, Watercolour, Bronze..."
                             />
                         </div>
 
+                        {/* Dimensions */}
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Date de création
+                                Dimensions
                             </label>
                             <input
-                                type="date"
-                                value={batchData.productionDate}
-                                onChange={(e) => setBatchData({...batchData, productionDate: e.target.value})}
+                                type="text"
+                                value={batchData.dimensions}
+                                onChange={(e) => setBatchData({ ...batchData, dimensions: e.target.value })}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                placeholder="Ex: 100x150 cm"
                             />
                         </div>
 
+                        {/* Description */}
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Visuel de l'œuvre (PDF, Image)
+                                Description
+                            </label>
+                            <textarea
+                                value={batchData.description}
+                                onChange={(e) => setBatchData({ ...batchData, description: e.target.value })}
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors min-h-[120px]"
+                                placeholder="Décrivez votre œuvre, la technique utilisée, les matériaux, l'inspiration..."
+                            />
+                        </div>
+
+                        {/* Images */}
+                        <div>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Images de l'œuvre
                             </label>
                             <input
                                 type="file"
-                                ref={labelInputRef}
-                                onChange={handleLabelUpload}
-                                accept=".pdf,.png,.jpg,.jpeg"
+                                ref={imageInputRef}
+                                onChange={handleImageUpload}
+                                accept=".png,.jpg,.jpeg,.webp,.gif"
+                                multiple
                                 className="hidden"
                             />
                             <button
                                 type="button"
-                                onClick={() => labelInputRef.current?.click()}
-                                disabled={isUploadingLabel}
+                                onClick={() => imageInputRef.current?.click()}
+                                disabled={isUploadingImage}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] hover:bg-[#e7e3dc] transition-colors disabled:opacity-50 text-left"
                             >
-                                {isUploadingLabel ? '📤 Upload en cours…' : '📎 Choisir un fichier'}
+                                {isUploadingImage ? '📤 Upload en cours…' : '🖼️ Ajouter des images (upload IPFS)'}
                             </button>
-                            {labelFileName && (
-                                <p className="text-[12px] font-light text-[#1c1917] mt-2">
-                                    ✅ {labelFileName}
-                                </p>
-                            )}
-                            {batchData.labelUri && (
-                                <p className="text-[11px] font-mono text-[#a8a29e] mt-1 break-all">
-                                    {batchData.labelUri}
-                                </p>
+                            {batchData.images.length > 0 && (
+                                <ul className="mt-3 space-y-1">
+                                    {batchData.images.map((img, i) => (
+                                        <li key={i} className="flex items-center justify-between gap-2 bg-[#f5f3ef] border border-[#d6d0c8] px-3 py-2">
+                                            <span className="text-[11px] font-mono text-[#a8a29e] truncate">{img}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeImage(i)}
+                                                className="text-[#a8a29e] hover:text-[#1c1917] transition-colors text-xs flex-shrink-0"
+                                            >
+                                                ×
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
                             )}
                         </div>
 
+                        {/* Nombre d'exemplaires */}
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Nombre d'exemplaires *
+                                Taille de l'édition (nombre d'exemplaires) *
                             </label>
                             <input
                                 type="number"
                                 value={amount}
                                 onChange={(e) => handleAmountChange(e.target.value)}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
-                                placeholder="Ex: 100"
+                                placeholder="Ex: 50"
                                 min="1"
                                 max="100000"
                                 required
@@ -662,14 +608,10 @@ export default function CreateBatchPage() {
 
                         {merkleRoot && (
                             <div className="border border-[#d6d0c8] bg-[#ede9e3] p-4">
-                                <p className="text-[13px] font-medium text-[#1c1917] mb-2">
-                                    ✅ Merkle Root généré
-                                </p>
-                                <p className="text-[11px] font-mono text-[#78716c] break-all">
-                                    {merkleRoot}
-                                </p>
+                                <p className="text-[13px] font-medium text-[#1c1917] mb-2">✅ Merkle Root généré</p>
+                                <p className="text-[11px] font-mono text-[#78716c] break-all">{merkleRoot}</p>
                                 <p className="text-[12px] font-light text-[#78716c] mt-2">
-                                    {secretKeys.length} clés secrètes générées
+                                    {secretKeys.length} clé{secretKeys.length > 1 ? 's' : ''} secrète{secretKeys.length > 1 ? 's' : ''} générée{secretKeys.length > 1 ? 's' : ''}
                                 </p>
                             </div>
                         )}
@@ -688,6 +630,7 @@ export default function CreateBatchPage() {
                     </form>
                 </div>
 
+                {/* Post-création : QR codes */}
                 {createdBatchId && secretKeys.length > 0 && merkleTree && (
                     <div className="space-y-px">
                         {createdBatchId !== 'pending' && createdBatchId !== 'confirmed' && (
@@ -723,7 +666,6 @@ export default function CreateBatchPage() {
                                 >
                                     {isGeneratingQR ? '🔄 Génération en cours…' : '📊 Télécharger Excel avec QR codes'}
                                 </button>
-                                
                                 <button
                                     onClick={downloadQRCodesZip}
                                     disabled={isGeneratingQR}

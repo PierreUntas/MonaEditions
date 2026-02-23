@@ -2,27 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
-import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI, PRODUCT_TOKENIZATION_ADDRESS, PRODUCT_TOKENIZATION_ABI } from '@/config/contracts';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
-import Image from 'next/image';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
 
 interface BatchIPFSData {
-    identifier: string;
-    productType: string;
+    title: string;
+    year: number;
     description: string;
-    origin: string;
-    productionDate: string;
-    certifications: string[];
-    labelUri: string;
+    technique: string;
+    dimensions: string;
+    images: string[];
+    editionSize: number;
+    category: string;
 }
 
 interface BatchInfo {
     tokenId: bigint;
-    productType: string;
+    title: string;
     metadata: string;
     merkleRoot: string;
     remainingTokens: bigint;
@@ -38,9 +38,9 @@ export default function ProducerBatchesPage() {
     const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
 
     const { data: producerData, isLoading: isLoadingProducer } = useReadContract({
-        address: PRODUCT_TRACE_STORAGE_ADDRESS,
-        abi: PRODUCT_TRACE_STORAGE_ABI,
-        functionName: 'getProducer',
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
+        functionName: 'getArtist',
         args: address ? [address] : undefined,
     });
 
@@ -56,18 +56,14 @@ export default function ProducerBatchesPage() {
 
     useEffect(() => {
         const fetchBatches = async () => {
-            if (!address || !isAuthorized || !publicClient) {
-                return;
-            }
+            if (!address || !isAuthorized || !publicClient) return;
 
             setIsLoading(true);
             try {
                 const logs = await publicClient.getLogs({
-                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                    event: parseAbiItem('event NewProductBatch(address indexed producer, uint indexed productBatchId)'),
-                    args: {
-                        producer: address
-                    },
+                    address: ARTWORK_REGISTRY_ADDRESS,
+                    event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'),
+                    args: { artist: address },
                     fromBlock: 9753823n,
                     toBlock: 'latest'
                 });
@@ -75,47 +71,46 @@ export default function ProducerBatchesPage() {
                 const batchesData: BatchInfo[] = [];
 
                 for (const log of logs) {
-                    const tokenId = log.args.productBatchId as bigint;
+                    const tokenId = log.args.editionId as bigint;
 
-                    const batchInfo = await publicClient.readContract({
-                        address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                        abi: PRODUCT_TRACE_STORAGE_ABI,
-                        functionName: 'getProductBatch',
+                    const editionInfo = await publicClient.readContract({
+                        address: ARTWORK_REGISTRY_ADDRESS,
+                        abi: ARTWORK_REGISTRY_ABI,
+                        functionName: 'getArtworkEdition',
                         args: [tokenId]
                     }) as any;
 
                     const balance = await publicClient.readContract({
-                        address: PRODUCT_TOKENIZATION_ADDRESS,
-                        abi: PRODUCT_TOKENIZATION_ABI,
+                        address: ARTWORK_TOKENIZATION_ADDRESS,
+                        abi: ARTWORK_TOKENIZATION_ABI,
                         functionName: 'balanceOf',
                         args: [address, tokenId]
                     }) as bigint;
 
-                    batchesData.push({
-                        tokenId,
-                        productType: batchInfo.productType,
-                        metadata: batchInfo.metadata,
-                        merkleRoot: batchInfo.merkleRoot,
-                        remainingTokens: balance
-                    });
+                    let artworkTitle = 'Œuvre sans titre';
+                    if (editionInfo.metadata?.trim()) {
+                        try {
+                            const ipfsData = await getFromIPFSGateway(editionInfo.metadata);
+                            artworkTitle = ipfsData.title || 'Œuvre sans titre';
+                        } catch (e) {
+                            console.error('Error loading IPFS:', e);
+                        }
+                    }
+
+                    batchesData.push({ tokenId, title: artworkTitle, metadata: editionInfo.metadata, merkleRoot: editionInfo.merkleRoot, remainingTokens: balance });
                 }
 
                 batchesData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
                 setBatches(batchesData);
 
-                // Load IPFS data for each batch
                 setIsLoadingIPFS(true);
-                for (let i = 0; i < batchesData.length; i++) {
-                    if (batchesData[i].metadata) {
+                for (const batch of batchesData) {
+                    if (batch.metadata) {
                         try {
-                            const ipfsData = await getFromIPFSGateway(batchesData[i].metadata);
-                            setBatches(prev => prev.map(batch =>
-                                batch.tokenId === batchesData[i].tokenId
-                                    ? { ...batch, ipfsData }
-                                    : batch
-                            ));
+                            const ipfsData = await getFromIPFSGateway(batch.metadata) as BatchIPFSData;
+                            setBatches(prev => prev.map(b => b.tokenId === batch.tokenId ? { ...b, ipfsData } : b));
                         } catch (error) {
-                            console.error(`Error loading IPFS for batch ${batchesData[i].tokenId}:`, error);
+                            console.error(`Error loading IPFS for batch ${batch.tokenId}:`, error);
                         }
                     }
                 }
@@ -131,7 +126,6 @@ export default function ProducerBatchesPage() {
         fetchBatches();
     }, [address, isAuthorized]);
 
-    // Loading state while checking permissions
     if (isCheckingAuthorization || isLoadingProducer) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
@@ -149,9 +143,7 @@ export default function ProducerBatchesPage() {
             <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="font-serif italic text-[22px] text-[#a8a29e]">
-                        Veuillez connecter votre wallet
-                    </p>
+                    <p className="font-serif italic text-[22px] text-[#a8a29e]">Veuillez connecter votre wallet</p>
                 </div>
             </div>
         );
@@ -215,48 +207,40 @@ export default function ProducerBatchesPage() {
                                     <div className="flex justify-between items-start gap-8">
                                         <div className="flex-1">
                                             <h2 className="font-serif text-[28px] font-normal text-[#1c1917] mb-3 leading-tight">
-                                                {batch.productType}
+                                                {batch.title}
                                             </h2>
                                             <div className="space-y-1.5">
                                                 <p className="text-[12px] font-light tracking-[0.06em] text-[#a8a29e]">
                                                     ŒUVRE #{batch.tokenId.toString()}
                                                 </p>
-                                                {batch.ipfsData?.identifier && (
+                                                {batch.ipfsData?.category && (
                                                     <p className="text-[13px] font-light text-[#78716c]">
-                                                        Identifiant: {batch.ipfsData.identifier}
+                                                        {batch.ipfsData.category}
                                                     </p>
                                                 )}
-                                                {batch.ipfsData?.origin && (
+                                                {batch.ipfsData?.technique && (
                                                     <p className="text-[13px] font-light text-[#78716c]">
-                                                        Lieu: {batch.ipfsData.origin}
+                                                        {batch.ipfsData.technique}
+                                                        {batch.ipfsData.dimensions ? ` — ${batch.ipfsData.dimensions}` : ''}
                                                     </p>
                                                 )}
-                                                {batch.ipfsData?.productionDate && (
-                                                    <p className="text-[13px] font-light text-[#78716c]">
-                                                        Création: {batch.ipfsData.productionDate}
+                                                {batch.ipfsData?.year && (
+                                                    <p className="text-[13px] font-light text-[#a8a29e]">
+                                                        {batch.ipfsData.year}
                                                     </p>
-                                                )}
-                                                {batch.ipfsData?.certifications && batch.ipfsData.certifications.length > 0 && (
-                                                    <div className="flex flex-wrap gap-1.5 mt-3">
-                                                        {batch.ipfsData.certifications.map((cert, index) => (
-                                                            <span
-                                                                key={index}
-                                                                className="text-[11px] px-2 py-1 bg-[#ede9e3] text-[#1c1917] border border-[#d6d0c8] font-medium tracking-[0.06em]"
-                                                            >
-                                                                {cert}
-                                                            </span>
-                                                        ))}
-                                                    </div>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="text-right">
+                                        <div className="text-right flex-shrink-0">
                                             <p className="text-[11px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                                 Exemplaires restants
                                             </p>
                                             <p className="font-serif text-[36px] font-normal text-[#1c1917] leading-none">
                                                 {batch.remainingTokens.toString()}
                                             </p>
+                                            {batch.ipfsData?.editionSize && (
+                                                <p className="text-[11px] text-[#a8a29e] mt-1">/ {batch.ipfsData.editionSize}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </Link>
@@ -265,7 +249,6 @@ export default function ProducerBatchesPage() {
                     </>
                 )}
 
-                {/* Footer mark */}
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />

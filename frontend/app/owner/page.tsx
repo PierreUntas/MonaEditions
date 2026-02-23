@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useReadContract } from 'wagmi';
-import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI } from '@/config/contracts';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
 
@@ -18,14 +18,14 @@ export default function AdminPage() {
     const { writeContract: writeRemoveAdmin, isPending: isRemovingAdmin } = useWriteContract();
 
     const { data: ownerAddress, isLoading: isLoadingOwner } = useReadContract({
-        address: PRODUCT_TRACE_STORAGE_ADDRESS,
-        abi: PRODUCT_TRACE_STORAGE_ABI,
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
         functionName: 'owner',
     });
 
     const { data: isAdminResult, refetch: refetchIsAdmin } = useReadContract({
-        address: PRODUCT_TRACE_STORAGE_ADDRESS,
-        abi: PRODUCT_TRACE_STORAGE_ABI,
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
         functionName: 'isAdmin',
         args: checkAdminAddress ? [checkAdminAddress as `0x${string}`] : undefined,
     });
@@ -45,8 +45,8 @@ export default function AdminPage() {
 
         try {
             await writeContract({
-                address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                abi: PRODUCT_TRACE_STORAGE_ABI,
+                address: ARTWORK_REGISTRY_ADDRESS,
+                abi: ARTWORK_REGISTRY_ABI,
                 functionName: 'addAdmin',
                 args: [newAdminAddress as `0x${string}`],
             });
@@ -62,8 +62,8 @@ export default function AdminPage() {
 
         try {
             await writeRemoveAdmin({
-                address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                abi: PRODUCT_TRACE_STORAGE_ABI,
+                address: ARTWORK_REGISTRY_ADDRESS,
+                abi: ARTWORK_REGISTRY_ABI,
                 functionName: 'removeAdmin',
                 args: [removeAdminAddress as `0x${string}`],
             });

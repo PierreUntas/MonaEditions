@@ -13,9 +13,11 @@ export default function Home() {
             <div className="max-width-[860px] mx-auto px-6 pt-28 pb-20">
                 {/* Header */}
                 <div className="text-center mb-[72px]">
-                    <div className="w-[52px] h-[52px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[22px] text-[#a8a29e] mx-auto mb-6">
-                        起
-                    </div>
+                    <img 
+                        src="/logo-kigen.png" 
+                        alt="Kigen Logo" 
+                        className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+                    />
                     <div className="text-[11px] font-normal tracking-[0.18em] uppercase text-[#a8a29e] mb-5">
                         Plateforme de certification
                     </div>
@@ -41,9 +43,6 @@ export default function Home() {
                     <div className="text-[14px] font-light text-white/50 max-w-[480px] mx-auto mb-8 leading-[1.75]">
                         Enregistrez, certifiez et tracez vos créations artistiques de manière infalsifiable.
                         Chaque œuvre devient un actif numérique vérifié, protégé par la blockchain.
-                    </div>
-                    <div className="font-serif text-[96px] text-white/[0.04] leading-none mt-6">
-                        起
                     </div>
                 </div>
 

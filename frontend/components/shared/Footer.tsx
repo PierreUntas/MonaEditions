@@ -39,9 +39,11 @@ const Footer = () => {
                     {/* Brand */}
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[15px] text-[#a8a29e]">
-                                起
-                            </div>
+                            <img 
+                                src="/logo-kigen.png" 
+                                alt="Kigen Logo" 
+                                className="w-8 h-8 object-contain"
+                            />
                             <span className="font-serif text-[18px] font-normal text-[#1c1917] tracking-[-0.3px]">
                                 Kigen
                             </span>
@@ -110,7 +112,7 @@ const Footer = () => {
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8">
                     <div className="flex items-center gap-3">
                         <div className="w-px h-4 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
                     </div>
                     <p className="text-[12px] font-light text-[#a8a29e] tracking-[0.04em]">
                         &copy; Kigen {new Date().getFullYear()} — Tous droits réservés

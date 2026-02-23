@@ -167,9 +167,11 @@ export default function ProducerBatchesPage() {
             <Navbar />
             <div className="max-w-[860px] mx-auto px-6 pt-28 pb-20">
                 <div className="text-center mb-12">
-                    <div className="w-[52px] h-[52px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[22px] text-[#a8a29e] mx-auto mb-6">
-                        起
-                    </div>
+                    <img 
+                        src="/logo-kigen.png" 
+                        alt="Kigen Logo" 
+                        className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+                    />
                     <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-8">
                         Mes <em className="italic text-[#78716c]">Œuvres</em>
                     </h1>
@@ -252,7 +254,7 @@ export default function ProducerBatchesPage() {
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
                     </div>
                 </div>
             </div>

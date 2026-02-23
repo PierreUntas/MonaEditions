@@ -74,16 +74,14 @@ export default function Navbar() {
             >
                 {/* Logo */}
                 <a href="/" className="flex items-center gap-2.5 group no-underline">
-                    <div className="w-[34px] h-[34px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center
-                        font-serif italic text-lg text-[#78716c] flex-shrink-0
-                        group-hover:border-[#1c1917] group-hover:text-[#1c1917] transition-all duration-200">
-                        起
-                    </div>
+                    <img 
+                        src="/logo-kigen.png" 
+                        alt="Kigen Logo" 
+                        className="w-[34px] h-[34px] object-contain flex-shrink-0"
+                    />
                     <div className="flex flex-col leading-none">
                         <span className="font-serif text-[17px] text-[#1c1917] tracking-[0.01em]">Kigen</span>
-                        <span className="text-[9px] font-light tracking-[0.15em] uppercase text-[#a8a29e] mt-0.5">
-                            起源 · Origine
-                        </span>
+                       
                     </div>
                 </a>
 
@@ -241,7 +239,7 @@ export default function Navbar() {
 
                     {/* Panel footer */}
                     <div className="px-6 py-4 border-t border-[#d6d0c8] flex items-center justify-between">
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
                         <span className="flex items-center gap-1.5 text-[10px] font-light text-[#a8a29e]">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#4a5240] inline-block" />
                             Sepolia · Actif

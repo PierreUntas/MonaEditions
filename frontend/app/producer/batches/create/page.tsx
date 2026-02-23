@@ -27,6 +27,7 @@ export default function CreateBatchPage() {
     const [merkleTree, setMerkleTree] = useState<MerkleTree | null>(null);
     const [createdBatchId, setCreatedBatchId] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [hasDownloadedKeys, setHasDownloadedKeys] = useState(false);
     const imageInputRef = useRef<HTMLInputElement>(null);
 
     const { sendTransaction } = useSendTransaction();
@@ -80,6 +81,20 @@ export default function CreateBatchPage() {
             }
         }
     }, [approvalStatus, isApproving]);
+
+    // Avertir l'utilisateur s'il essaie de quitter sans avoir téléchargé les clés
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (createdBatchId && secretKeys.length > 0 && !hasDownloadedKeys) {
+                e.preventDefault();
+                e.returnValue = '⚠️ ATTENTION : Vous n\'avez pas téléchargé les clés secrètes ! Si vous quittez maintenant, vous les perdrez définitivement.';
+                return e.returnValue;
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [createdBatchId, secretKeys, hasDownloadedKeys]);
 
     const generateSecretKeys = (count: number) => {
         const keys: string[] = [];
@@ -170,6 +185,7 @@ export default function CreateBatchPage() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            setHasDownloadedKeys(true); // Marquer comme téléchargé
             alert(`✅ QR Code de la page du lot téléchargé avec succès !`);
         } catch (error) {
             console.error('Error generating batch page QR code:', error);
@@ -219,6 +235,7 @@ export default function CreateBatchPage() {
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Secret Keys');
             XLSX.writeFile(wb, `secret-keys-batch-${createdBatchId}-${Date.now()}.xlsx`);
+            setHasDownloadedKeys(true); // Marquer comme téléchargé
             alert(`✅ Fichier Excel avec ${secretKeys.length} QR codes généré avec succès !`);
         } catch (error) {
             console.error('Error generating Excel with QR codes:', error);
@@ -256,6 +273,7 @@ export default function CreateBatchPage() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            setHasDownloadedKeys(true); // Marquer comme téléchargé
             alert(`✅ ${secretKeys.length} QR codes téléchargés avec succès !`);
         } catch (error) {
             console.error('Error generating QR codes:', error);
@@ -445,14 +463,25 @@ export default function CreateBatchPage() {
                     <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6 mb-px">
                         <p className="text-[14px] font-medium text-[#1c1917] mb-1">✅ Œuvre créée avec succès !</p>
                         <p className="text-[13px] font-light text-[#78716c]">ID de l'œuvre : <span className="font-mono">{createdBatchId}</span></p>
-                        <p className="text-[13px] font-light text-[#78716c] mt-2">Vous pouvez maintenant télécharger les QR codes.</p>
+                        {!hasDownloadedKeys && (
+                            <p className="text-[14px] font-medium text-[#dc2626] mt-3 leading-[1.7]">
+                                ⚠️ IMPORTANT : Vous devez télécharger les clés secrètes maintenant. Une fois cette page fermée, vous ne pourrez plus les récupérer !
+                            </p>
+                        )}
+                        {hasDownloadedKeys && (
+                            <p className="text-[13px] font-light text-[#16a34a] mt-2">
+                                ✅ Clés secrètes téléchargées avec succès
+                            </p>
+                        )}
                     </div>
                 )}
 
                 <div className="text-center mb-12">
-                    <div className="w-[52px] h-[52px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[22px] text-[#a8a29e] mx-auto mb-6">
-                        起
-                    </div>
+                    <img 
+                        src="/logo-kigen.png" 
+                        alt="Kigen Logo" 
+                        className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+                    />
                     <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
                         Créer une nouvelle <em className="italic text-[#78716c]">œuvre</em>
                     </h1>
@@ -633,6 +662,20 @@ export default function CreateBatchPage() {
                 {/* Post-création : QR codes */}
                 {createdBatchId && secretKeys.length > 0 && merkleTree && (
                     <div className="space-y-px">
+                        {!hasDownloadedKeys && (
+                            <div className="border-2 border-[#dc2626] bg-[#fef2f2] p-6 mb-px">
+                                <p className="text-[16px] font-bold text-[#dc2626] mb-3">
+                                    🚨 ACTION REQUISE - TÉLÉCHARGEMENT OBLIGATOIRE
+                                </p>
+                                <p className="text-[14px] font-medium text-[#991b1b] mb-2 leading-[1.7]">
+                                    Les clés secrètes ne sont disponibles que maintenant. Si vous quittez cette page sans les télécharger, 
+                                    vos collectionneurs ne pourront JAMAIS réclamer leurs certificats.
+                                </p>
+                                <p className="text-[13px] font-medium text-[#991b1b] leading-[1.7]">
+                                    ⚠️ Téléchargez au moins un des formats ci-dessous avant de quitter !
+                                </p>
+                            </div>
+                        )}
                         {createdBatchId !== 'pending' && createdBatchId !== 'confirmed' && (
                             <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6">
                                 <p className="text-[14px] font-medium text-[#1c1917] mb-2">
@@ -682,7 +725,7 @@ export default function CreateBatchPage() {
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
                     </div>
                 </div>
             </div>

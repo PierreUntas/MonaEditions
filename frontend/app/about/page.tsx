@@ -85,9 +85,11 @@ export default function AboutPage() {
 
         {/* Header */}
         <div className="text-center mb-[72px]">
-          <div className="w-[52px] h-[52px] border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center font-serif italic text-[22px] text-[#a8a29e] mx-auto mb-6">
-            起
-          </div>
+          <img 
+            src="/logo-kigen.png" 
+            alt="Kigen Logo" 
+            className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+          />
           <div className="text-[11px] font-normal tracking-[0.18em] uppercase text-[#a8a29e] mb-5 flex items-center justify-center gap-3">
             <span className="block w-8 h-px bg-[#d6d0c8]" />
             À propos
@@ -165,9 +167,6 @@ export default function AboutPage() {
           <div className="font-serif text-[clamp(20px,3vw,28px)] font-normal text-white leading-[1.4]">
             L'art n'a de valeur que si son histoire <em className="italic text-white/40">peut être prouvée</em>.<br />
             Kigen rend cette preuve permanente, accessible, et infalsifiable.
-          </div>
-          <div className="font-serif text-[64px] text-white/[0.04] leading-none mt-4">
-            起
           </div>
         </div>
 

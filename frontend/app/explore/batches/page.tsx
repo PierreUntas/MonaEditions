@@ -7,6 +7,7 @@ import Navbar from '@/components/shared/Navbar';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
+import { useSearchParams } from 'next/navigation';
 
 // New artwork IPFS structure
 interface BatchIPFSData {
@@ -42,11 +43,13 @@ const ipfsToHttp = (url: string) =>
         : url;
 
 export default function ExplorePage() {
+    const searchParams = useSearchParams();
+    const categoryFromUrl = searchParams.get('category');
     const [batches, setBatches] = useState<BatchInfo[]>([]);
     const [producers, setProducers] = useState<Map<string, ProducerInfo>>(new Map());
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
-    const [filterCategory, setFilterCategory] = useState<string>('all');
+    const [filterCategory, setFilterCategory] = useState<string>(categoryFromUrl || 'all');
 
     useEffect(() => {
         const fetchAllBatches = async () => {

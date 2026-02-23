@@ -33,7 +33,7 @@ export default function CreateBatchPage() {
 
     const CATEGORIES = [
         'Painting', 'Drawing', 'Sculpture', 'Photography', 'Digital Art',
-        'Print', 'Textile', 'Ceramics', 'Installation', 'Video', 'Other'
+        'Print', 'Textile', 'Ceramics', 'Mixed Media', 'Installation', 'Video', 'Other'
     ];
 
     const [batchData, setBatchData] = useState({

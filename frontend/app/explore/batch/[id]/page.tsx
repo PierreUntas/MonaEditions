@@ -315,13 +315,16 @@ export default function BatchDetailsPage() {
                                 <p className="text-[15px] text-[#1c1917]">{batchIPFSData.editionSize} exemplaires</p>
                             </InfoBlock>
                         )}
-                        <InfoBlock label="CID Metadata (IPFS)" noBorder>
-                            <p className="text-[11px] font-mono break-all text-[#a8a29e]">{batch.metadata}</p>
+                        <InfoBlock label="Lien metadata" noBorder>
+                            <a
+                                href={`https://ipfs.io/ipfs/${batch.metadata}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity break-all"
+                            >
+                                https://ipfs.io/ipfs/{batch.metadata}
+                            </a>
                         </InfoBlock>
-                        <div>
-                            <p className="mb-1 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">Merkle Root</p>
-                            <p className="text-[11px] font-mono break-all text-[#a8a29e]">{batch.merkleRoot}</p>
-                        </div>
                     </div>
                 </div>
 
@@ -358,7 +361,7 @@ export default function BatchDetailsPage() {
                                     href={producerIPFSData.website}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[14px] text-[#4a5240] underline underline-offset-2 hover:opacity-70 transition-opacity"
+                                    className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity"
                                 >
                                     {producerIPFSData.website}
                                 </a>
@@ -368,17 +371,17 @@ export default function BatchDetailsPage() {
                             <InfoBlock label="Réseaux sociaux">
                                 <div className="flex flex-col gap-1">
                                     {producerIPFSData.socialMedia.instagram && (
-                                        <a href={`https://instagram.com/${producerIPFSData.socialMedia.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#4a5240] underline underline-offset-2 hover:opacity-70 transition-opacity">
+                                        <a href={`https://instagram.com/${producerIPFSData.socialMedia.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity">
                                             Instagram · {producerIPFSData.socialMedia.instagram}
                                         </a>
                                     )}
                                     {producerIPFSData.socialMedia.twitter && (
-                                        <a href={`https://x.com/${producerIPFSData.socialMedia.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#4a5240] underline underline-offset-2 hover:opacity-70 transition-opacity">
+                                        <a href={`https://x.com/${producerIPFSData.socialMedia.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity">
                                             Twitter / X · {producerIPFSData.socialMedia.twitter}
                                         </a>
                                     )}
                                     {producerIPFSData.socialMedia.facebook && (
-                                        <a href={producerIPFSData.socialMedia.facebook.startsWith('http') ? producerIPFSData.socialMedia.facebook : `https://facebook.com/${producerIPFSData.socialMedia.facebook.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#4a5240] underline underline-offset-2 hover:opacity-70 transition-opacity">
+                                        <a href={producerIPFSData.socialMedia.facebook.startsWith('http') ? producerIPFSData.socialMedia.facebook : `https://facebook.com/${producerIPFSData.socialMedia.facebook.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity">
                                             Facebook · {producerIPFSData.socialMedia.facebook}
                                         </a>
                                     )}

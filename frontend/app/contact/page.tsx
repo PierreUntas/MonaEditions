@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Navbar from '@/components/shared/Navbar';
-import Footer from '@/components/shared/Footer';
 
 export default function ContactPage() {
     const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
@@ -142,7 +141,6 @@ export default function ContactPage() {
                     </div>
                 </div>
             </div>
-            <Footer />
         </div>
     );
 }

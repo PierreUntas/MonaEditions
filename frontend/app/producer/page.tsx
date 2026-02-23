@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAccount, useWriteContract, useReadContract } from 'wagmi';
-import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI } from '@/config/contracts';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 import { uploadToIPFS, getFromIPFSGateway } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
@@ -14,7 +14,6 @@ export default function ProducerPage() {
     const { address } = useAccount();
     const [name, setName] = useState('');
     const [location, setLocation] = useState('');
-    const [companyRegisterNumber, setCompanyRegisterNumber] = useState('');
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isCheckingAuthorization, setIsCheckingAuthorization] = useState(true);
     const [isRegistered, setIsRegistered] = useState(false);
@@ -29,27 +28,23 @@ export default function ProducerPage() {
     const photosInputRef = useRef<HTMLInputElement>(null);
 
     const [additionalData, setAdditionalData] = useState({
-        labelsCertifications: [] as string[],
-        anneeCreation: new Date().getFullYear(),
-        description: '',
-        photos: [] as string[],
-        logo: '',
-        contact: {
-            email: '',
-            telephone: '',
-            adresseCourrier: ''
-        },
-        siteWeb: ''
+        website: '',
+        bio: '',
+        exhibitions: [] as string[],
+        socialMedia: {
+            instagram: '',
+            twitter: '',
+            facebook: ''
+        }
     });
 
     const { writeContract, isPending: isRegistering } = useWriteContract();
-
     const { sendTransaction } = useSendTransaction();
 
     const { data: producerData, isLoading: isLoadingProducer } = useReadContract({
-        address: PRODUCT_TRACE_STORAGE_ADDRESS,
-        abi: PRODUCT_TRACE_STORAGE_ABI,
-        functionName: 'getProducer',
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
+        functionName: 'getArtist',
         args: address ? [address] : undefined,
     });
 
@@ -58,9 +53,7 @@ export default function ProducerPage() {
         if (file) {
             setLogoFile(file);
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setLogoPreview(reader.result as string);
-            };
+            reader.onloadend = () => setLogoPreview(reader.result as string);
             reader.readAsDataURL(file);
         }
     };
@@ -69,7 +62,6 @@ export default function ProducerPage() {
         const files = Array.from(e.target.files || []);
         if (files.length > 0) {
             setPhotoFiles(prev => [...prev, ...files]);
-
             files.forEach(file => {
                 const reader = new FileReader();
                 reader.onloadend = () => {
@@ -87,24 +79,15 @@ export default function ProducerPage() {
 
     const downloadProducerPageQRCode = async () => {
         if (!address || !isRegistered) return;
-
         setIsGeneratingQR(true);
-
         try {
             const producerPageUrl = `https://www.beeblock.fr/explore/producer/${address}`;
-            
-            // Générer un QR code haute résolution pour l'impression
             const qrCodeDataUrl = await QRCode.toDataURL(producerPageUrl, {
                 width: 1000,
                 margin: 4,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                },
+                color: { dark: '#000000', light: '#FFFFFF' },
                 errorCorrectionLevel: 'H'
             });
-
-            // Télécharger l'image
             const base64Data = qrCodeDataUrl.split(',')[1];
             const blob = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'image/png' });
             const url = URL.createObjectURL(blob);
@@ -115,7 +98,6 @@ export default function ProducerPage() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-
             alert(`✅ QR Code de votre page producteur téléchargé avec succès !`);
         } catch (error) {
             console.error('Error generating producer page QR code:', error);
@@ -129,20 +111,19 @@ export default function ProducerPage() {
         setIsLoadingIPFS(true);
         try {
             const ipfsData = await getFromIPFSGateway(cid);
-
             if (ipfsData) {
+                if (ipfsData.name) setName(ipfsData.name);
+                if (ipfsData.location) setLocation(ipfsData.location);
+
                 setAdditionalData({
-                    labelsCertifications: ipfsData.labelsCertifications || [],
-                    anneeCreation: ipfsData.anneeCreation || new Date().getFullYear(),
-                    description: ipfsData.description || '',
-                    photos: ipfsData.photos || [],
-                    logo: ipfsData.logo || '',
-                    contact: {
-                        email: ipfsData.contact?.email || '',
-                        telephone: ipfsData.contact?.telephone || '',
-                        adresseCourrier: ipfsData.contact?.adresseCourrier || ''
-                    },
-                    siteWeb: ipfsData.siteWeb || ''
+                    website: ipfsData.website || '',
+                    bio: ipfsData.bio || '',
+                    exhibitions: ipfsData.exhibitions || [],
+                    socialMedia: {
+                        instagram: ipfsData.socialMedia?.instagram || '',
+                        twitter: ipfsData.socialMedia?.twitter || '',
+                        facebook: ipfsData.socialMedia?.facebook || ''
+                    }
                 });
 
                 if (ipfsData.logo) {
@@ -152,8 +133,9 @@ export default function ProducerPage() {
                     setLogoPreview(logoUrl);
                 }
 
-                if (ipfsData.photos && ipfsData.photos.length > 0) {
-                    const existingPhotos = ipfsData.photos.map((photo: string) =>
+                // portfolio is the photos array
+                if (ipfsData.portfolio && ipfsData.portfolio.length > 0) {
+                    const existingPhotos = ipfsData.portfolio.map((photo: string) =>
                         photo.startsWith('ipfs://')
                             ? `https://ipfs.io/ipfs/${photo.replace('ipfs://', '')}`
                             : photo
@@ -166,21 +148,16 @@ export default function ProducerPage() {
         } finally {
             setIsLoadingIPFS(false);
         }
-    }; 
+    };
 
     useEffect(() => {
         if (producerData) {
-            const producer = producerData as any;
-            setIsAuthorized(producer.authorized);
-            setIsRegistered(producer.name && producer.name.length > 0);
+            const artist = producerData as any;
+            setIsAuthorized(artist.authorized);
+            setIsRegistered(artist.metadata && artist.metadata.length > 0);
             setIsCheckingAuthorization(false);
-
-            if (producer.name) setName(producer.name);
-            if (producer.location) setLocation(producer.location);
-            if (producer.companyRegisterNumber) setCompanyRegisterNumber(producer.companyRegisterNumber);
-
-            if (producer.metadata) {
-                loadIPFSData(producer.metadata);
+            if (artist.metadata) {
+                loadIPFSData(artist.metadata);
             }
         } else if (!isLoadingProducer && producerData !== undefined) {
             setIsCheckingAuthorization(false);
@@ -192,16 +169,21 @@ export default function ProducerPage() {
         setIsUploading(true);
 
         try {
-            let logoUrl = additionalData.logo;
+            // Upload logo if a new file was selected, otherwise keep existing
+            let logoUrl: string | undefined = logoPreview.startsWith('https://ipfs.io/ipfs/')
+                ? `ipfs://${logoPreview.replace('https://ipfs.io/ipfs/', '')}`
+                : undefined;
+
             if (logoFile) {
-                const reader = new FileReader();
-                logoUrl = await new Promise((resolve) => {
+                logoUrl = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
                     reader.onloadend = () => resolve(reader.result as string);
                     reader.readAsDataURL(logoFile);
                 });
             }
 
-            const photoUrls = await Promise.all(
+            // Convert newly added local files to base64
+            const newPhotoUrls = await Promise.all(
                 photoFiles.map(file =>
                     new Promise<string>((resolve) => {
                         const reader = new FileReader();
@@ -211,46 +193,45 @@ export default function ProducerPage() {
                 )
             );
 
-            const existingPhotos = additionalData.photos.filter(
-                photo => !photoPreviews.some(preview =>
-                    preview === (photo.startsWith('ipfs://')
-                        ? `https://ipfs.io/ipfs/${photo.replace('ipfs://', '')}`
-                        : photo)
-                )
-            );
+            // Preserve existing IPFS photos that weren't removed by the user
+            // They are stored in photoPreviews as resolved gateway URLs
+            const existingIpfsPhotos = photoPreviews
+                .filter(preview => preview.startsWith('https://ipfs.io/ipfs/'))
+                .map(preview => `ipfs://${preview.replace('https://ipfs.io/ipfs/', '')}`);
 
-            const producerData = {
-                address: address,
-                nom: name,
-                localisation: location,
-                numeroImmatriculation: companyRegisterNumber,
-                labelsCertifications: additionalData.labelsCertifications,
-                anneeCreation: additionalData.anneeCreation,
-                description: additionalData.description,
-                photos: [...existingPhotos, ...photoUrls],
-                logo: logoUrl,
-                contact: additionalData.contact,
-                siteWeb: additionalData.siteWeb
+            const artistMetadata: {
+                name: string;
+                location: string;
+                website: string;
+                bio: string;
+                logo?: string;
+                portfolio: string[];
+                exhibitions: string[];
+                socialMedia: { instagram: string; twitter: string; facebook: string };
+            } = {
+                name,
+                location,
+                website: additionalData.website,
+                bio: additionalData.bio,
+                ...(logoUrl ? { logo: logoUrl } : {}),
+                portfolio: [...existingIpfsPhotos, ...newPhotoUrls],
+                exhibitions: additionalData.exhibitions,
+                socialMedia: additionalData.socialMedia,
             };
 
-            const cid = await uploadToIPFS(producerData);
+            const cid = await uploadToIPFS(artistMetadata);
 
             const data = encodeFunctionData({
-                abi: PRODUCT_TRACE_STORAGE_ABI,
-                functionName: 'setProducerInfo',
-                args: [name, location, companyRegisterNumber, cid],
+                abi: ARTWORK_REGISTRY_ABI,
+                functionName: 'setArtistInfo',
+                args: [cid],
             });
 
-            const txHash = await sendTransaction(
-                {
-                    to: PRODUCT_TRACE_STORAGE_ADDRESS,
-                    data: data,
-                },
-                {
-                    sponsor: true,
-                }
+            await sendTransaction(
+                { to: ARTWORK_REGISTRY_ADDRESS, data },
+                { sponsor: true }
             );
-            
+
             alert('✅ Informations enregistrées avec succès !');
         } catch (error) {
             console.error('Error saving producer:', error);
@@ -260,7 +241,6 @@ export default function ProducerPage() {
         }
     };
 
-    // Loading state while checking permissions
     if (isCheckingAuthorization || isLoadingProducer) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
@@ -374,26 +354,11 @@ export default function ProducerPage() {
 
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Numéro d'immatriculation *
-                            </label>
-                            <input
-                                type="text"
-                                value={companyRegisterNumber}
-                                onChange={(e) => setCompanyRegisterNumber(e.target.value)}
-                                placeholder="SIRET ou numéro d'identification"
-                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
-                                maxLength={64}
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Description
+                                Biographie
                             </label>
                             <textarea
-                                value={additionalData.description}
-                                onChange={(e) => setAdditionalData({...additionalData, description: e.target.value})}
+                                value={additionalData.bio}
+                                onChange={(e) => setAdditionalData({...additionalData, bio: e.target.value})}
                                 placeholder="Présentez votre démarche artistique, votre style, vos inspirations..."
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors min-h-[120px]"
                             />
@@ -430,7 +395,7 @@ export default function ProducerPage() {
 
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Photos de l'atelier / œuvres
+                                Portfolio — Photos de l'atelier / œuvres
                             </label>
                             <input
                                 ref={photosInputRef}
@@ -445,7 +410,9 @@ export default function ProducerPage() {
                                 onClick={() => photosInputRef.current?.click()}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] hover:bg-[#e7e3dc] transition-colors text-left"
                             >
-                                {photoFiles.length > 0 ? `📷 ${photoFiles.length} photo${photoFiles.length > 1 ? 's' : ''} sélectionnée${photoFiles.length > 1 ? 's' : ''}` : '📷 Sélectionner des photos'}
+                                {photoFiles.length > 0
+                                    ? `📷 ${photoFiles.length} photo${photoFiles.length > 1 ? 's' : ''} sélectionnée${photoFiles.length > 1 ? 's' : ''}`
+                                    : '📷 Sélectionner des photos'}
                             </button>
                             {photoPreviews.length > 0 && (
                                 <div className="mt-3 grid grid-cols-3 gap-2">
@@ -471,25 +438,12 @@ export default function ProducerPage() {
 
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Année de création
-                            </label>
-                            <input
-                                type="number"
-                                value={additionalData.anneeCreation}
-                                onChange={(e) => setAdditionalData({...additionalData, anneeCreation: parseInt(e.target.value)})}
-                                placeholder="2010"
-                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Site web
                             </label>
                             <input
                                 type="url"
-                                value={additionalData.siteWeb}
-                                onChange={(e) => setAdditionalData({...additionalData, siteWeb: e.target.value})}
+                                value={additionalData.website}
+                                onChange={(e) => setAdditionalData({...additionalData, website: e.target.value})}
                                 placeholder="https://mon-atelier.fr"
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                             />
@@ -497,50 +451,56 @@ export default function ProducerPage() {
 
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Email
+                                Expositions
                             </label>
-                            <input
-                                type="email"
-                                value={additionalData.contact.email}
+                            <textarea
+                                value={additionalData.exhibitions.join('\n')}
                                 onChange={(e) => setAdditionalData({
                                     ...additionalData,
-                                    contact: {...additionalData.contact, email: e.target.value}
+                                    exhibitions: e.target.value.split('\n').filter(Boolean)
                                 })}
-                                placeholder="contact@mon-atelier.fr"
-                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                placeholder={"2024 — Galerie Perrotin, Paris\n2023 — Art Basel, Bâle"}
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors min-h-[100px]"
                             />
+                            <p className="text-[11px] text-[#a8a29e] mt-1">Une exposition par ligne</p>
                         </div>
 
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Téléphone
+                                Réseaux sociaux
                             </label>
-                            <input
-                                type="tel"
-                                value={additionalData.contact.telephone}
-                                onChange={(e) => setAdditionalData({
-                                    ...additionalData,
-                                    contact: {...additionalData.contact, telephone: e.target.value}
-                                })}
-                                placeholder="+33 1 23 45 67 89"
-                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Adresse courrier
-                            </label>
-                            <input
-                                type="text"
-                                value={additionalData.contact.adresseCourrier}
-                                onChange={(e) => setAdditionalData({
-                                    ...additionalData,
-                                    contact: {...additionalData.contact, adresseCourrier: e.target.value}
-                                })}
-                                placeholder="12 rue de l'Art, 75001 Paris"
-                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
-                            />
+                            <div className="space-y-2">
+                                <input
+                                    type="text"
+                                    value={additionalData.socialMedia.instagram}
+                                    onChange={(e) => setAdditionalData({
+                                        ...additionalData,
+                                        socialMedia: { ...additionalData.socialMedia, instagram: e.target.value }
+                                    })}
+                                    placeholder="Instagram (@handle)"
+                                    className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                />
+                                <input
+                                    type="text"
+                                    value={additionalData.socialMedia.twitter}
+                                    onChange={(e) => setAdditionalData({
+                                        ...additionalData,
+                                        socialMedia: { ...additionalData.socialMedia, twitter: e.target.value }
+                                    })}
+                                    placeholder="Twitter / X (@handle)"
+                                    className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                />
+                                <input
+                                    type="text"
+                                    value={additionalData.socialMedia.facebook}
+                                    onChange={(e) => setAdditionalData({
+                                        ...additionalData,
+                                        socialMedia: { ...additionalData.socialMedia, facebook: e.target.value }
+                                    })}
+                                    placeholder="Facebook (URL ou @page)"
+                                    className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                />
+                            </div>
                         </div>
 
                         <button
@@ -559,7 +519,6 @@ export default function ProducerPage() {
                     </form>
                 </div>
 
-                {/* Footer mark */}
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />

@@ -1,35 +1,40 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI } from '@/config/contracts';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
 
+// New artist IPFS structure
 interface ProducerIPFSData {
-    labelsCertifications: string[];
-    anneeCreation: number;
-    description: string;
-    photos: string[];
-    logo: string;
-    contact: { email: string; telephone: string; adresseCourrier: string; };
-    siteWeb: string;
+    name: string;
+    location: string;
+    website: string;
+    bio: string;
+    logo?: string;
+    portfolio: string[];
+    exhibitions: string[];
+    socialMedia: {
+        instagram: string;
+        twitter: string;
+        facebook: string;
+    };
 }
 
 interface ProducerInfo {
     address: string;
     name: string;
     location: string;
-    companyRegisterNumber: string;
     metadata: string;
     ipfsData?: ProducerIPFSData;
     batchCount: number;
 }
 
 const ipfsToHttp = (url: string) =>
-    url.startsWith('ipfs://')
+    url?.startsWith('ipfs://')
         ? `https://ipfs.io/ipfs/${url.replace('ipfs://', '')}`
         : url;
 
@@ -44,25 +49,37 @@ export default function ProducersPage() {
             if (!publicClient) { setIsLoading(false); return; }
             try {
                 const logs = await publicClient.getLogs({
-                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                    event: parseAbiItem('event ProducerInfoUpdated(address indexed producer)'),
+                    address: ARTWORK_REGISTRY_ADDRESS,
+                    event: parseAbiItem('event ArtistInfoUpdated(address indexed artist)'),
                     fromBlock: 9753823n,
                     toBlock: 'latest'
                 });
 
-                const uniqueAddresses = Array.from(new Set(logs.map(l => l.args.producer as string)));
+                const uniqueAddresses = Array.from(new Set(logs.map(l => l.args.artist as string)));
 
                 const producersData = await Promise.all(uniqueAddresses.map(async (addr) => {
-                    const [producerData, batchLogs] = await Promise.all([
-                        publicClient.readContract({ address: PRODUCT_TRACE_STORAGE_ADDRESS, abi: PRODUCT_TRACE_STORAGE_ABI, functionName: 'getProducer', args: [addr as `0x${string}`] }) as Promise<any>,
-                        publicClient.getLogs({ address: PRODUCT_TRACE_STORAGE_ADDRESS, event: parseAbiItem('event NewProductBatch(address indexed producer, uint indexed productBatchId)'), args: { producer: addr as `0x${string}` }, fromBlock: 9753823n, toBlock: 'latest' })
+                    const [artistData, batchLogs] = await Promise.all([
+                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [addr as `0x${string}`] }) as Promise<any>,
+                        publicClient.getLogs({ address: ARTWORK_REGISTRY_ADDRESS, event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'), args: { artist: addr as `0x${string}` }, fromBlock: 9753823n, toBlock: 'latest' })
                     ]);
+
+                    let artistName = 'Artiste anonyme';
+                    let artistLocation = 'Non spécifié';
+                    if (artistData.metadata?.trim()) {
+                        try {
+                            const ipfsData = await getFromIPFSGateway(artistData.metadata);
+                            artistName = ipfsData.name || 'Artiste anonyme';
+                            artistLocation = ipfsData.location || 'Non spécifié';
+                        } catch (e) {
+                            console.error('Error loading artist IPFS:', e);
+                        }
+                    }
+
                     return {
                         address: addr,
-                        name: producerData.name || 'Artiste anonyme',
-                        location: producerData.location || 'Non spécifié',
-                        companyRegisterNumber: producerData.companyRegisterNumber || '',
-                        metadata: producerData.metadata || '',
+                        name: artistName,
+                        location: artistLocation,
+                        metadata: artistData.metadata || '',
                         batchCount: batchLogs.length
                     };
                 }));
@@ -74,10 +91,11 @@ export default function ProducersPage() {
                 setProducers(valid);
                 setIsLoading(false);
 
+                // Load full IPFS data (bio, portfolio, socialMedia, etc.)
                 setIsLoadingIPFS(true);
                 const ipfsResults = await Promise.all(valid.map(async (p) => {
                     if (!p.metadata?.trim()) return null;
-                    try { return { address: p.address, ipfsData: await getFromIPFSGateway(p.metadata) }; }
+                    try { return { address: p.address, ipfsData: await getFromIPFSGateway(p.metadata) as ProducerIPFSData }; }
                     catch { return null; }
                 }));
 
@@ -102,16 +120,13 @@ export default function ProducersPage() {
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
-
             <div className="max-w-6xl mx-auto px-6 pt-28 pb-20">
 
                 {/* Header */}
                 <div className="mb-16">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-8 h-px bg-[#d6d0c8]" />
-                        <span className="text-[11px] font-medium tracking-[0.15em] uppercase text-[#a8a29e]">
-                            Explorer
-                        </span>
+                        <span className="text-[11px] font-medium tracking-[0.15em] uppercase text-[#a8a29e]">Explorer</span>
                     </div>
                     <div className="flex items-end justify-between border-b border-[#d6d0c8] pb-8">
                         <div>
@@ -124,12 +139,8 @@ export default function ProducersPage() {
                             </p>
                         </div>
                         <div className="text-right hidden md:block">
-                            <span className="font-serif italic text-[48px] text-[#e7e3dc] leading-none">
-                                {producers.length}
-                            </span>
-                            <span className="block text-[11px] font-light tracking-[0.08em] text-[#a8a29e] mt-1">
-                                artistes certifiés
-                            </span>
+                            <span className="font-serif italic text-[48px] text-[#e7e3dc] leading-none">{producers.length}</span>
+                            <span className="block text-[11px] font-light tracking-[0.08em] text-[#a8a29e] mt-1">artistes certifiés</span>
                         </div>
                     </div>
                 </div>
@@ -146,20 +157,16 @@ export default function ProducersPage() {
                     ))}
                 </div>
 
-                {/* IPFS hint */}
                 {isLoadingIPFS && (
                     <p className="text-[12px] font-light text-[#a8a29e] tracking-[0.06em] mb-6">
                         Chargement des données IPFS…
                     </p>
                 )}
 
-                {/* States */}
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-32 gap-4">
                         <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
-                        <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">
-                            Chargement des artistes…
-                        </p>
+                        <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement des artistes…</p>
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="border border-[#d6d0c8] bg-[#fafaf8] p-12 text-center">
@@ -173,11 +180,11 @@ export default function ProducersPage() {
                                 href={`/explore/producer/${producer.address}`}
                                 className="bg-[#fafaf8] p-6 flex flex-col gap-4 hover:bg-[#f5f3ef] transition-colors duration-200 no-underline group"
                             >
-                                {/* Photo principale */}
-                                {producer.ipfsData?.photos?.[0] ? (
+                                {/* First portfolio photo as hero */}
+                                {producer.ipfsData?.portfolio?.[0] ? (
                                     <div className="w-full aspect-[16/9] overflow-hidden bg-[#e7e3dc]">
                                         <img
-                                            src={ipfsToHttp(producer.ipfsData.photos[0])}
+                                            src={ipfsToHttp(producer.ipfsData.portfolio[0])}
                                             alt={producer.name}
                                             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
                                         />
@@ -188,20 +195,13 @@ export default function ProducersPage() {
                                     </div>
                                 )}
 
-                                {/* Header */}
+                                {/* Name + logo */}
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1 min-w-0">
                                         <h3 className="font-serif text-[20px] font-normal text-[#1c1917] leading-tight mb-1">
                                             {producer.name}
                                         </h3>
-                                        <p className="text-[12px] font-light text-[#78716c]">
-                                            {producer.location}
-                                        </p>
-                                        {producer.companyRegisterNumber && (
-                                            <p className="text-[10px] font-mono text-[#a8a29e] mt-0.5">
-                                                {producer.companyRegisterNumber}
-                                            </p>
-                                        )}
+                                        <p className="text-[12px] font-light text-[#78716c]">{producer.location}</p>
                                     </div>
                                     {producer.ipfsData?.logo && (
                                         <img
@@ -212,40 +212,11 @@ export default function ProducersPage() {
                                     )}
                                 </div>
 
-                                {/* Description */}
-                                {producer.ipfsData?.description && (
+                                {/* Bio */}
+                                {producer.ipfsData?.bio && (
                                     <p className="text-[13px] font-light text-[#78716c] leading-relaxed line-clamp-3">
-                                        {producer.ipfsData.description}
+                                        {producer.ipfsData.bio}
                                     </p>
-                                )}
-
-                                {/* Meta */}
-                                <div className="flex flex-col gap-1.5">
-                                    {producer.ipfsData?.anneeCreation && (
-                                        <MetaRow label="Actif depuis" value={`${producer.ipfsData.anneeCreation}`} />
-                                    )}
-                                    {producer.ipfsData?.contact?.email && (
-                                        <MetaRow label="Contact" value={producer.ipfsData.contact.email} />
-                                    )}
-                                    {producer.ipfsData?.siteWeb && (
-                                        <MetaRow label="Site" value={new URL(producer.ipfsData.siteWeb).hostname} />
-                                    )}
-                                </div>
-
-                                {/* Certifications */}
-                                {producer.ipfsData?.labelsCertifications && producer.ipfsData.labelsCertifications.length > 0 && (
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {producer.ipfsData.labelsCertifications.slice(0, 4).map((cert, i) => (
-                                            <span key={i} className="text-[10px] font-mono text-[#78716c] border border-[#d6d0c8] px-2 py-0.5 bg-[#f5f3ef]">
-                                                {cert}
-                                            </span>
-                                        ))}
-                                        {producer.ipfsData.labelsCertifications.length > 4 && (
-                                            <span className="text-[10px] font-mono text-[#a8a29e] border border-[#e7e3dc] px-2 py-0.5">
-                                                +{producer.ipfsData.labelsCertifications.length - 4}
-                                            </span>
-                                        )}
-                                    </div>
                                 )}
 
                                 {/* Footer */}
@@ -253,9 +224,9 @@ export default function ProducersPage() {
                                     <p className="text-[12px] font-light text-[#78716c]">
                                         {producer.batchCount} œuvre{producer.batchCount > 1 ? 's' : ''} certifiée{producer.batchCount > 1 ? 's' : ''}
                                     </p>
-                                    {producer.ipfsData?.photos && producer.ipfsData.photos.length > 1 && (
+                                    {producer.ipfsData?.portfolio && producer.ipfsData.portfolio.length > 1 && (
                                         <p className="text-[11px] font-light text-[#a8a29e]">
-                                            {producer.ipfsData.photos.length} photos
+                                            {producer.ipfsData.portfolio.length} photos
                                         </p>
                                     )}
                                 </div>
@@ -271,7 +242,6 @@ export default function ProducersPage() {
                         <span className="font-serif italic text-[13px] text-[#a8a29e]">起 Kigen</span>
                     </div>
                 </div>
-
             </div>
         </div>
     );
@@ -295,9 +265,7 @@ function FilterBtn({ active, onClick, children }: { active: boolean; onClick: ()
 function MetaRow({ label, value }: { label: string; value: string }) {
     return (
         <div className="flex items-baseline gap-2">
-            <span className="text-[9px] font-medium tracking-[0.12em] uppercase text-[#a8a29e] w-16 flex-shrink-0">
-                {label}
-            </span>
+            <span className="text-[9px] font-medium tracking-[0.12em] uppercase text-[#a8a29e] w-16 flex-shrink-0">{label}</span>
             <span className="text-[12px] font-light text-[#78716c] truncate">{value}</span>
         </div>
     );

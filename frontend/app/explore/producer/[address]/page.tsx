@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI, PRODUCT_TOKENIZATION_ADDRESS, PRODUCT_TOKENIZATION_ABI } from '@/config/contracts';
-import { getFromIPFSGateway, getIPFSUrl } from '@/app/utils/ipfs';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
+import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
@@ -12,33 +12,38 @@ import { publicClient } from '@/lib/client';
 interface ProducerInfo {
     name: string;
     location: string;
-    companyRegisterNumber: string;
     metadata: string;
 }
 
 interface ProducerIPFSData {
-    labelsCertifications: string[];
-    anneeCreation: number;
-    description: string;
-    photos: string[];
-    logo: string;
-    contact: { email: string; telephone: string; adresseCourrier: string; };
-    siteWeb: string;
+    name: string;
+    location: string;
+    website: string;
+    bio: string;
+    logo?: string;
+    portfolio: string[];
+    exhibitions: string[];
+    socialMedia: {
+        instagram: string;
+        twitter: string;
+        facebook: string;
+    };
 }
 
 interface BatchIPFSData {
-    identifier: string;
-    productType: string;
+    title: string;
+    year: number;
     description: string;
-    origin: string;
-    productionDate: string;
-    certifications: string[];
-    labelUri: string;
+    technique: string;
+    dimensions: string;
+    images: string[];
+    editionSize: number;
+    category: string;
 }
 
 interface BatchInfo {
     tokenId: bigint;
-    productType: string;
+    title: string;
     metadata: string;
     remainingTokens: bigint;
     ipfsData?: BatchIPFSData;
@@ -65,25 +70,23 @@ export default function ProducerDetailsPage() {
         const fetchProducerDetails = async () => {
             if (!publicClient || !producerAddress) { setIsLoading(false); return; }
             try {
-                const producerData = await publicClient.readContract({
-                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                    abi: PRODUCT_TRACE_STORAGE_ABI,
-                    functionName: 'getProducer',
+                const artistData = await publicClient.readContract({
+                    address: ARTWORK_REGISTRY_ADDRESS,
+                    abi: ARTWORK_REGISTRY_ABI,
+                    functionName: 'getArtist',
                     args: [producerAddress as `0x${string}`]
                 }) as any;
 
-                const producerInfo = {
-                    name: producerData.name,
-                    location: producerData.location,
-                    companyRegisterNumber: producerData.companyRegisterNumber,
-                    metadata: producerData.metadata
-                };
-                setProducer(producerInfo);
+                let artistName = 'Artiste anonyme';
+                let artistLocation = '';
 
-                if (producerData.metadata?.trim()) {
+                if (artistData.metadata?.trim()) {
                     setIsLoadingIPFS(true);
                     try {
-                        setProducerIPFSData(await getFromIPFSGateway(producerData.metadata));
+                        const ipfsData = await getFromIPFSGateway(artistData.metadata) as ProducerIPFSData;
+                        setProducerIPFSData(ipfsData);
+                        artistName = ipfsData.name || 'Artiste anonyme';
+                        artistLocation = ipfsData.location || '';
                     } catch (e) {
                         console.error('Error loading producer IPFS data:', e);
                     } finally {
@@ -91,32 +94,49 @@ export default function ProducerDetailsPage() {
                     }
                 }
 
+                setProducer({
+                    name: artistName,
+                    location: artistLocation,
+                    metadata: artistData.metadata
+                });
+
                 const logs = await publicClient.getLogs({
-                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                    event: parseAbiItem('event NewProductBatch(address indexed producer, uint indexed productBatchId)'),
-                    args: { producer: producerAddress as `0x${string}` },
+                    address: ARTWORK_REGISTRY_ADDRESS,
+                    event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'),
+                    args: { artist: producerAddress as `0x${string}` },
                     fromBlock: 9753823n,
                     toBlock: 'latest'
                 });
 
                 const batchesData: BatchInfo[] = [];
                 for (const log of logs) {
-                    const tokenId = log.args.productBatchId as bigint;
-                    const [batchInfo, balance] = await Promise.all([
-                        publicClient.readContract({ address: PRODUCT_TRACE_STORAGE_ADDRESS, abi: PRODUCT_TRACE_STORAGE_ABI, functionName: 'getProductBatch', args: [tokenId] }) as Promise<any>,
-                        publicClient.readContract({ address: PRODUCT_TOKENIZATION_ADDRESS, abi: PRODUCT_TOKENIZATION_ABI, functionName: 'balanceOf', args: [producerAddress as `0x${string}`, tokenId] }) as Promise<bigint>
+                    const tokenId = log.args.editionId as bigint;
+                    const [editionInfo, balance] = await Promise.all([
+                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [tokenId] }) as Promise<any>,
+                        publicClient.readContract({ address: ARTWORK_TOKENIZATION_ADDRESS, abi: ARTWORK_TOKENIZATION_ABI, functionName: 'balanceOf', args: [producerAddress as `0x${string}`, tokenId] }) as Promise<bigint>
                     ]);
-                    batchesData.push({ tokenId, productType: batchInfo.productType, metadata: batchInfo.metadata, remainingTokens: balance });
+
+                    let artworkTitle = 'Œuvre sans titre';
+                    if (editionInfo.metadata?.trim()) {
+                        try {
+                            const editionIpfsData = await getFromIPFSGateway(editionInfo.metadata);
+                            artworkTitle = editionIpfsData.title || 'Œuvre sans titre';
+                        } catch (e) {
+                            console.error('Error loading edition IPFS data:', e);
+                        }
+                    }
+
+                    batchesData.push({ tokenId, title: artworkTitle, metadata: editionInfo.metadata, remainingTokens: balance });
                 }
 
                 batchesData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
                 setBatches(batchesData);
 
                 for (const batch of batchesData) {
-                    const count = await publicClient.readContract({ address: PRODUCT_TRACE_STORAGE_ADDRESS, abi: PRODUCT_TRACE_STORAGE_ABI, functionName: 'getProductBatchCommentsCount', args: [batch.tokenId] }) as bigint;
+                    const count = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviewsCount', args: [batch.tokenId] }) as bigint;
                     let avgRating = 0;
                     if (count > 0n) {
-                        const comments = await publicClient.readContract({ address: PRODUCT_TRACE_STORAGE_ADDRESS, abi: PRODUCT_TRACE_STORAGE_ABI, functionName: 'getProductBatchComments', args: [batch.tokenId, 0n, count] }) as any[];
+                        const comments = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviews', args: [batch.tokenId, 0n, count] }) as any[];
                         avgRating = comments.reduce((a: number, c: any) => a + Number(c.rating), 0) / comments.length;
                     }
                     if (batch.metadata?.trim()) {
@@ -139,7 +159,6 @@ export default function ProducerDetailsPage() {
         fetchProducerDetails();
     }, [producerAddress]);
 
-    // Loading state
     if (isLoading) return (
         <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
@@ -150,7 +169,6 @@ export default function ProducerDetailsPage() {
         </div>
     );
 
-    // Not found state
     if (!producer) return (
         <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
@@ -159,6 +177,9 @@ export default function ProducerDetailsPage() {
             </div>
         </div>
     );
+
+    const { socialMedia, exhibitions, portfolio } = producerIPFSData ?? {};
+    const hasSocialMedia = socialMedia && (socialMedia.instagram || socialMedia.twitter || socialMedia.facebook);
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
@@ -184,11 +205,11 @@ export default function ProducerDetailsPage() {
                 {/* Artist header */}
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] mb-px">
 
-                    {/* Hero photo */}
-                    {producerIPFSData?.photos?.[0] && (
+                    {/* Hero — first portfolio photo */}
+                    {portfolio?.[0] && (
                         <div className="w-full aspect-[21/9] overflow-hidden bg-[#e7e3dc]">
                             <img
-                                src={ipfsToHttp(producerIPFSData.photos[0])}
+                                src={ipfsToHttp(portfolio[0])}
                                 alt={producer.name}
                                 className="w-full h-full object-cover"
                             />
@@ -221,58 +242,86 @@ export default function ProducerDetailsPage() {
 
                         {/* Info grid */}
                         <div className="grid md:grid-cols-2 gap-8">
-                            {/* Left */}
-                            <div className="flex flex-col gap-5">
-                                {producerIPFSData?.description && (
+                            {/* Left — bio + exhibitions */}
+                            <div className="flex flex-col gap-6">
+                                {producerIPFSData?.bio && (
                                     <div>
                                         <Label>À propos</Label>
                                         <p className="text-[14px] font-light text-[#1c1917] leading-[1.8]">
-                                            {producerIPFSData.description}
+                                            {producerIPFSData.bio}
                                         </p>
                                     </div>
                                 )}
-                                {producerIPFSData?.labelsCertifications && producerIPFSData.labelsCertifications.length > 0 && (
+                                {exhibitions && exhibitions.length > 0 && (
                                     <div>
-                                        <Label>Certifications</Label>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {producerIPFSData.labelsCertifications.map((c, i) => (
-                                                <span key={i} className="text-[10px] font-mono text-[#78716c] border border-[#d6d0c8] px-2 py-0.5 bg-[#f5f3ef]">
-                                                    {c}
-                                                </span>
+                                        <Label>Expositions</Label>
+                                        <ul className="flex flex-col gap-1.5">
+                                            {exhibitions.map((ex, i) => (
+                                                <li key={i} className="text-[13px] font-light text-[#1c1917] leading-[1.7] border-l-2 border-[#d6d0c8] pl-3">
+                                                    {ex}
+                                                </li>
                                             ))}
-                                        </div>
+                                        </ul>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Right */}
+                            {/* Right — contact & links */}
                             <div className="flex flex-col gap-4">
                                 <InfoRow label="Localisation" value={producer.location} />
-                                {producer.companyRegisterNumber && (
-                                    <InfoRow label="N° d'immatriculation" value={producer.companyRegisterNumber} />
-                                )}
-                                {producerIPFSData?.anneeCreation && (
-                                    <InfoRow label="Actif depuis" value={`${producerIPFSData.anneeCreation}`} />
-                                )}
-                                {producerIPFSData?.contact?.email && (
-                                    <InfoRow label="Email" value={producerIPFSData.contact.email} />
-                                )}
-                                {producerIPFSData?.contact?.telephone && (
-                                    <InfoRow label="Téléphone" value={producerIPFSData.contact.telephone} />
-                                )}
-                                {producerIPFSData?.siteWeb && (
-                                    <div>
+
+                                {producerIPFSData?.website && (
+                                    <div className="flex flex-col gap-1 pb-4 border-b border-[#f0ede8]">
                                         <Label>Site web</Label>
                                         <a
-                                            href={producerIPFSData.siteWeb}
+                                            href={producerIPFSData.website}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-[13px] font-light text-[#4a5240] underline underline-offset-2 hover:opacity-70 transition-opacity"
                                         >
-                                            {producerIPFSData.siteWeb}
+                                            {producerIPFSData.website}
                                         </a>
                                     </div>
                                 )}
+
+                                {hasSocialMedia && (
+                                    <div className="flex flex-col gap-1 pb-4 border-b border-[#f0ede8]">
+                                        <Label>Réseaux sociaux</Label>
+                                        <div className="flex flex-col gap-1.5">
+                                            {socialMedia.instagram && (
+                                                <a
+                                                    href={`https://instagram.com/${socialMedia.instagram.replace('@', '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-[13px] font-light text-[#4a5240] underline underline-offset-2 hover:opacity-70 transition-opacity"
+                                                >
+                                                    Instagram · {socialMedia.instagram}
+                                                </a>
+                                            )}
+                                            {socialMedia.twitter && (
+                                                <a
+                                                    href={`https://x.com/${socialMedia.twitter.replace('@', '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-[13px] font-light text-[#4a5240] underline underline-offset-2 hover:opacity-70 transition-opacity"
+                                                >
+                                                    Twitter / X · {socialMedia.twitter}
+                                                </a>
+                                            )}
+                                            {socialMedia.facebook && (
+                                                <a
+                                                    href={socialMedia.facebook.startsWith('http') ? socialMedia.facebook : `https://facebook.com/${socialMedia.facebook.replace('@', '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-[13px] font-light text-[#4a5240] underline underline-offset-2 hover:opacity-70 transition-opacity"
+                                                >
+                                                    Facebook · {socialMedia.facebook}
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div>
                                     <Label>Adresse Ethereum</Label>
                                     <p className="text-[11px] font-mono text-[#a8a29e] break-all">{producerAddress}</p>
@@ -282,14 +331,14 @@ export default function ProducerDetailsPage() {
                     </div>
                 </div>
 
-                {/* Photo gallery */}
-                {producerIPFSData?.photos && producerIPFSData.photos.length > 1 && (
+                {/* Photo gallery — portfolio (skip first used as hero) */}
+                {portfolio && portfolio.length > 1 && (
                     <div className="border border-[#d6d0c8] border-t-0 bg-[#fafaf8] p-8 mb-px">
                         <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-6">
-                            Galerie <em className="italic text-[#78716c]">photos</em>
+                            Portfolio <em className="italic text-[#78716c]">photos</em>
                         </h2>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-px bg-[#d6d0c8] border border-[#d6d0c8]">
-                            {producerIPFSData.photos.slice(1).map((photo, i) => (
+                            {portfolio.slice(1).map((photo, i) => (
                                 <div key={i} className="aspect-square overflow-hidden bg-[#e7e3dc]">
                                     <img
                                         src={ipfsToHttp(photo)}
@@ -328,11 +377,11 @@ export default function ProducerDetailsPage() {
                                 href={`/explore/batch/${batch.tokenId}`}
                                 className="bg-[#fafaf8] p-5 flex flex-col gap-3 hover:bg-[#f5f3ef] transition-colors duration-200 no-underline group"
                             >
-                                {batch.ipfsData?.labelUri ? (
+                                {batch.ipfsData?.images?.[0] ? (
                                     <div className="w-full aspect-[4/3] overflow-hidden bg-[#e7e3dc]">
                                         <img
-                                            src={getIPFSUrl(batch.ipfsData.labelUri)}
-                                            alt={batch.productType}
+                                            src={ipfsToHttp(batch.ipfsData.images[0])}
+                                            alt={batch.title}
                                             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
                                         />
                                     </div>
@@ -344,13 +393,13 @@ export default function ProducerDetailsPage() {
 
                                 <div className="flex items-start justify-between gap-2">
                                     <div>
-                                        {batch.ipfsData?.identifier && (
+                                        {batch.ipfsData?.category && (
                                             <p className="text-[10px] font-medium tracking-[0.12em] uppercase text-[#a8a29e] mb-1">
-                                                {batch.ipfsData.identifier}
+                                                {batch.ipfsData.category}
                                             </p>
                                         )}
                                         <h3 className="font-serif text-[17px] font-normal text-[#1c1917] leading-tight">
-                                            {batch.productType}
+                                            {batch.title}
                                         </h3>
                                     </div>
                                     <span className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#4a5240] border border-[#4a5240] px-1.5 py-0.5 flex-shrink-0 mt-1">
@@ -358,24 +407,15 @@ export default function ProducerDetailsPage() {
                                     </span>
                                 </div>
 
-                                {batch.ipfsData?.origin && (
-                                    <p className="text-[12px] font-light text-[#78716c]">{batch.ipfsData.origin}</p>
-                                )}
-
-                                {batch.ipfsData?.productionDate && (
-                                    <p className="text-[11px] font-light text-[#a8a29e]">
-                                        {new Date(batch.ipfsData.productionDate).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })}
+                                {batch.ipfsData?.technique && (
+                                    <p className="text-[12px] font-light text-[#78716c]">
+                                        {batch.ipfsData.technique}
+                                        {batch.ipfsData.dimensions ? ` — ${batch.ipfsData.dimensions}` : ''}
                                     </p>
                                 )}
 
-                                {batch.ipfsData?.certifications && batch.ipfsData.certifications.length > 0 && (
-                                    <div className="flex flex-wrap gap-1">
-                                        {batch.ipfsData.certifications.map((c, i) => (
-                                            <span key={i} className="text-[10px] font-mono text-[#78716c] border border-[#d6d0c8] px-1.5 py-0.5 bg-[#f5f3ef]">
-                                                {c}
-                                            </span>
-                                        ))}
-                                    </div>
+                                {batch.ipfsData?.year && (
+                                    <p className="text-[11px] font-light text-[#a8a29e]">{batch.ipfsData.year}</p>
                                 )}
 
                                 {batch.commentsCount !== undefined && batch.commentsCount > 0 && (

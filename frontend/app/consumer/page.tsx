@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI, PRODUCT_TOKENIZATION_ADDRESS, PRODUCT_TOKENIZATION_ABI } from '@/config/contracts';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
+import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import Navbar from '@/components/shared/Navbar';
-import Image from 'next/image';
 import Link from 'next/link';
 import { parseAbiItem, encodeFunctionData } from 'viem';
 import { publicClient } from '@/lib/client';
@@ -13,7 +13,7 @@ import { useSendTransaction } from '@privy-io/react-auth';
 interface OwnedToken {
     tokenId: bigint;
     balance: bigint;
-    productType: string;
+    title: string;
     metadata: string;
     producer: string;
     producerName: string;
@@ -32,67 +32,78 @@ export default function ConsumerPage() {
 
     useEffect(() => {
         const fetchOwnedTokens = async () => {
-            if (!address || !publicClient) {
-                setIsLoading(false);
-                return;
-            }
+            if (!address || !publicClient) { setIsLoading(false); return; }
 
             setIsLoading(true);
             try {
-                // Fetch all NewProductBatch events
                 const logs = await publicClient.getLogs({
-                    address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                    event: parseAbiItem('event NewProductBatch(address indexed producer, uint indexed productBatchId)'),
+                    address: ARTWORK_REGISTRY_ADDRESS,
+                    event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'),
                     fromBlock: 9753823n,
                     toBlock: 'latest'
                 });
 
                 const tokensData: OwnedToken[] = [];
 
-                // For each batch, check if the user owns tokens
                 for (const log of logs) {
-                    const tokenId = log.args.productBatchId as bigint;
-                    const producerAddress = log.args.producer as `0x${string}`;
+                    const tokenId = log.args.editionId as bigint;
+                    const producerAddress = log.args.artist as `0x${string}`;
 
-                    // Check the user's balance
                     const balance = await publicClient.readContract({
-                        address: PRODUCT_TOKENIZATION_ADDRESS,
-                        abi: PRODUCT_TOKENIZATION_ABI,
+                        address: ARTWORK_TOKENIZATION_ADDRESS,
+                        abi: ARTWORK_TOKENIZATION_ABI,
                         functionName: 'balanceOf',
                         args: [address, tokenId]
                     }) as bigint;
 
                     if (balance > 0n) {
-                        // Fetch batch info
-                        const batchInfo = await publicClient.readContract({
-                            address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                            abi: PRODUCT_TRACE_STORAGE_ABI,
-                            functionName: 'getProductBatch',
-                            args: [tokenId]
-                        }) as any;
+                        const [editionInfo, artistData] = await Promise.all([
+                            publicClient.readContract({
+                                address: ARTWORK_REGISTRY_ADDRESS,
+                                abi: ARTWORK_REGISTRY_ABI,
+                                functionName: 'getArtworkEdition',
+                                args: [tokenId]
+                            }) as Promise<any>,
+                            publicClient.readContract({
+                                address: ARTWORK_REGISTRY_ADDRESS,
+                                abi: ARTWORK_REGISTRY_ABI,
+                                functionName: 'getArtist',
+                                args: [producerAddress]
+                            }) as Promise<any>
+                        ]);
 
-                        // Fetch producer info
-                        const producerData = await publicClient.readContract({
-                            address: PRODUCT_TRACE_STORAGE_ADDRESS,
-                            abi: PRODUCT_TRACE_STORAGE_ABI,
-                            functionName: 'getProducer',
-                            args: [producerAddress]
-                        }) as any;
+                        let artworkTitle = 'Œuvre sans titre';
+                        if (editionInfo.metadata?.trim()) {
+                            try {
+                                const editionIpfs = await getFromIPFSGateway(editionInfo.metadata);
+                                artworkTitle = editionIpfs.title || 'Œuvre sans titre';
+                            } catch (e) {
+                                console.error('Error loading edition metadata:', e);
+                            }
+                        }
+
+                        let artistName = 'Artiste anonyme';
+                        if (artistData.metadata?.trim()) {
+                            try {
+                                const artistIpfs = await getFromIPFSGateway(artistData.metadata);
+                                artistName = artistIpfs.name || 'Artiste anonyme';
+                            } catch (e) {
+                                console.error('Error loading artist metadata:', e);
+                            }
+                        }
 
                         tokensData.push({
                             tokenId,
                             balance,
-                            productType: batchInfo.productType,
-                            metadata: batchInfo.metadata,
+                            title: artworkTitle,
+                            metadata: editionInfo.metadata,
                             producer: producerAddress,
-                            producerName: producerData.name || 'Producteur anonyme'
+                            producerName: artistName
                         });
                     }
                 }
 
-                // Sort by tokenId descending
                 tokensData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
-
                 setOwnedTokens(tokensData);
             } catch (error) {
                 console.error('Error loading tokens:', error);
@@ -106,35 +117,24 @@ export default function ConsumerPage() {
 
     const handleAddComment = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!selectedToken) return;
 
-        // Vérifier que l'utilisateur n'est pas le producteur
         const token = ownedTokens.find(t => t.tokenId === selectedToken);
         if (token && address && token.producer.toLowerCase() === address.toLowerCase()) {
-            alert('❌ Vous ne pouvez pas laisser un avis sur vos propres lots');
+            alert('❌ Vous ne pouvez pas laisser un avis sur vos propres œuvres');
             return;
         }
 
         setIsCommenting(true);
         try {
             const data = encodeFunctionData({
-                abi: PRODUCT_TRACE_STORAGE_ABI,
-                functionName: 'addComment',
+                abi: ARTWORK_REGISTRY_ABI,
+                functionName: 'addReview',
                 args: [selectedToken, rating, comment]
             });
 
-            const txHash = await sendTransaction(
-                {
-                    to: PRODUCT_TRACE_STORAGE_ADDRESS,
-                    data: data,
-                },
-                {
-                    sponsor: true,
-                }
-            );
+            await sendTransaction({ to: ARTWORK_REGISTRY_ADDRESS, data }, { sponsor: true });
 
-            // Comment transaction hash (internal): txHash
             alert('✅ Avis envoyé avec succès !');
             setSelectedToken(null);
             setRating(5);
@@ -147,10 +147,8 @@ export default function ConsumerPage() {
         }
     };
 
-    // Function to check if the user is the token's producer
-    const isOwnProducer = (token: OwnedToken) => {
-        return address && token.producer.toLowerCase() === address.toLowerCase();
-    };
+    const isOwnProducer = (token: OwnedToken) =>
+        address && token.producer.toLowerCase() === address.toLowerCase();
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
@@ -195,13 +193,13 @@ export default function ConsumerPage() {
                                 <div className="flex justify-between items-start mb-6">
                                     <div>
                                         <h2 className="font-serif text-[28px] font-normal text-[#1c1917] mb-2 leading-tight">
-                                            {token.productType}
+                                            {token.title}
                                         </h2>
                                         <p className="text-[12px] font-light tracking-[0.06em] text-[#a8a29e] mb-1">
                                             ŒUVRE #{token.tokenId.toString()}
                                         </p>
                                         <p className="text-[13px] font-light text-[#78716c] mb-2">
-                                            Par: {token.producerName}
+                                            Par {token.producerName}
                                         </p>
                                         {isOwnProducer(token) && (
                                             <p className="text-[11px] font-medium text-[#1c1917] bg-[#ede9e3] px-3 py-1.5 border border-[#d6d0c8] inline-block tracking-[0.06em]">
@@ -209,7 +207,7 @@ export default function ConsumerPage() {
                                             </p>
                                         )}
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-right flex-shrink-0 ml-6">
                                         <p className="text-[11px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                             Exemplaires
                                         </p>
@@ -240,7 +238,7 @@ export default function ConsumerPage() {
                     </div>
                 )}
 
-                {/* Comment modal */}
+                {/* Review modal */}
                 {selectedToken && (
                     <div className="fixed inset-0 bg-[#1c1917]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 max-w-md w-full">
@@ -250,7 +248,7 @@ export default function ConsumerPage() {
                             <form onSubmit={handleAddComment} className="space-y-5">
                                 <div>
                                     <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                        Note (0-5)
+                                        Note (0–5)
                                     </label>
                                     <input
                                         type="number"
@@ -258,13 +256,13 @@ export default function ConsumerPage() {
                                         max="5"
                                         value={rating}
                                         onChange={(e) => setRating(Number(e.target.value))}
-                                        className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                        className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] focus:outline-none focus:border-[#1c1917] transition-colors"
                                         required
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                        Commentaire (5-500 caractères)
+                                        Commentaire (5–500 caractères)
                                     </label>
                                     <textarea
                                         value={comment}
@@ -297,7 +295,6 @@ export default function ConsumerPage() {
                     </div>
                 )}
 
-                {/* Footer mark */}
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />

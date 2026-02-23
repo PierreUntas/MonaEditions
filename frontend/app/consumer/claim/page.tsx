@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useAccount } from 'wagmi';
 import { useSearchParams } from 'next/navigation';
-import { PRODUCT_TRACE_STORAGE_ADDRESS, PRODUCT_TRACE_STORAGE_ABI } from '@/config/contracts';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
 import { useSendTransaction } from '@privy-io/react-auth';
@@ -54,14 +54,14 @@ function ClaimTokenForm() {
                 .map(hash => hash.trim() as `0x${string}`);
 
             const data = encodeFunctionData({
-                abi: PRODUCT_TRACE_STORAGE_ABI,
-                functionName: 'claimProductToken',
+                abi: ARTWORK_REGISTRY_ABI,
+                functionName: 'claimCertificate',
                 args: [BigInt(batchId), secretKey, merkleProof],
             });
 
             const txHash = await sendTransaction(
                 {
-                    to: PRODUCT_TRACE_STORAGE_ADDRESS,
+                    to: ARTWORK_REGISTRY_ADDRESS,
                     data: data,
                 },
                 {

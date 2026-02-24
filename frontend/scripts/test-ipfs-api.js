@@ -39,7 +39,7 @@ async function testAddFile() {
     try {
         const testContent = JSON.stringify({
             test: true,
-            message: "Test IPFS BeeBlock",
+            message: "Test IPFS Kigen",
             timestamp: new Date().toISOString()
         });
 

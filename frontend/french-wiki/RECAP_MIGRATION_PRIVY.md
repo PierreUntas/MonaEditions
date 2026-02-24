@@ -1,13 +1,13 @@
 # 📋 Récapitulatif Migration RainbowKit → Privy
 
 **Date :** 14 janvier 2026  
-**Projet :** BeeBlock - Traçabilité du miel sur blockchain
+**Projet :** Kigen - Traçabilité du art sur blockchain
 
 ---
 
 ## 🎯 Objectif
 
-Remplacer RainbowKit par Privy pour permettre l'authentification par **email** en plus des wallets, rendant l'application plus accessible au grand public (producteurs et consommateurs de miel).
+Remplacer RainbowKit par Privy pour permettre l'authentification par **email** en plus des wallets, rendant l'application plus accessible au grand public (producteurs et consommateurs de art).
 
 ---
 
@@ -40,7 +40,7 @@ Nouveau provider principal remplaçant RainbowKit.
 - Configuration de l'authentification Privy
 - Intégration Wagmi pour la compatibilité blockchain
 - Support Sepolia (testnet)
-- Thème personnalisé (accent : `#fbbf24` - jaune BeeBlock)
+- Thème personnalisé (accent : `#fbbf24` - jaune Kigen)
 - Logo personnalisé : `/originlink-logo.png`
 
 **Méthodes de connexion :**
@@ -104,7 +104,7 @@ import PrivyProvider from "@/app/PrivyProvider";
 - Hook `usePrivy()` pour l'authentification
 - Affichage de l'**email** ET de l'**adresse Ethereum**
 - Boutons personnalisés "Se connecter" / "Déconnexion"
-- Design adapté au thème BeeBlock (couleur amber-400)
+- Design adapté au thème Kigen (couleur amber-400)
 
 **Fonctionnalités :**
 ```tsx
@@ -131,7 +131,7 @@ import { usePrivy } from '@privy-io/react-auth';
     <p>Connecté en tant que</p>
     <p>{user?.email?.address}</p>
     <p>{walletAddress}</p>
-    <a href="/explore/batches">Explorer BeeBlock</a>
+    <a href="/explore/batches">Explorer Kigen</a>
   </div>
 ) : (
   <button onClick={login}>Se connecter</button>
@@ -167,7 +167,7 @@ import { usePrivy } from '@privy-io/react-auth';
 
 ### Personnalisation
 - **Thème :** Light
-- **Couleur d'accent :** `#fbbf24` (jaune/amber BeeBlock)
+- **Couleur d'accent :** `#fbbf24` (jaune/amber Kigen)
 - **Logo :** `/originlink-logo.png`
 - **Réseau :** Sepolia (testnet Ethereum)
 
@@ -215,11 +215,11 @@ npm run dev
 
 ---
 
-## 🎯 Avantages pour BeeBlock
+## 🎯 Avantages pour Kigen
 
 ### Pour les utilisateurs
-- ✅ **Producteurs de miel** : Pas besoin de comprendre Web3, connexion par email
-- ✅ **Consommateurs** : Accès simplifié pour tracer leur miel
+- ✅ **Producteurs de art** : Pas besoin de comprendre Web3, connexion par email
+- ✅ **Consommateurs** : Accès simplifié pour tracer leur art
 - ✅ **Accessible** : Pas besoin de MetaMask ou autre wallet
 - ✅ **Sécurisé** : Wallet créé automatiquement en arrière-plan
 
@@ -266,8 +266,8 @@ appearance: {
   theme: "light",
   accentColor: "#fbbf24",
   logo: "/originlink-logo.png",
-  landingHeader: "Bienvenue sur BeeBlock",
-  loginMessage: "Connectez-vous pour suivre votre miel",
+  landingHeader: "Bienvenue sur Kigen",
+  loginMessage: "Connectez-vous pour suivre votre art",
 }
 ```
 
@@ -336,13 +336,13 @@ npm run dev
 - ✅ Connexion par wallet externe
 - ✅ Création automatique de wallet pour users email
 - ✅ Affichage email + adresse Ethereum
-- ✅ Boutons personnalisés au thème BeeBlock
+- ✅ Boutons personnalisés au thème Kigen
 - ✅ Compatible avec tout le code Wagmi existant
 
 ### Expérience utilisateur
 - 🚀 **Simple** : Email suffit pour se connecter
 - 🔒 **Sécurisé** : Gestion des clés par Privy
-- 🎨 **Cohérent** : Design aux couleurs de BeeBlock
+- 🎨 **Cohérent** : Design aux couleurs de Kigen
 - 📱 **Responsive** : Fonctionne sur mobile et desktop
 
 ---
@@ -358,7 +358,7 @@ npm run dev
    - Mesurer l'adoption
 
 3. **Configurer les emails**
-   - Personnaliser les emails OTP avec la marque BeeBlock
+   - Personnaliser les emails OTP avec la marque Kigen
    - Ajouter un logo dans les emails
 
 4. **Activer le social login** (optionnel)
@@ -372,4 +372,4 @@ npm run dev
 ---
 
 **✅ Migration réussie !**  
-BeeBlock est maintenant accessible à tous, avec ou sans wallet Ethereum. 🐝🍯
+Kigen est maintenant accessible à tous, avec ou sans wallet Ethereum. 🐝🍯

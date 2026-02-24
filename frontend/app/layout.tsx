@@ -16,13 +16,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BeeBlock - Traçabilité du Miel sur Blockchain",
-  description: "BeeBlock est une plateforme de traçabilité décentralisée pour le miel, utilisant la blockchain pour garantir l'authenticité et la transparence de chaque pot de miel.",
-  keywords: ["blockchain", "miel", "traçabilité", "NFT", "artiste", "apiculture", "honey", "Web3"],
-  authors: [{ name: "BeeBlock" }],
+  title: "Kigen - Certification d'Art sur Blockchain",
+  description: "Kigen est une plateforme de certification d'œuvres d'art sur la blockchain, garantissant l'authenticité et la provenance de chaque création artistique.",
+  keywords: ["blockchain", "art", "certification", "NFT", "artiste", "collectionneur", "authenticité", "provenance", "Web3"],
+  authors: [{ name: "Kigen" }],
   openGraph: {
-    title: "BeeBlock - Traçabilité du Miel sur Blockchain",
-    description: "Traçabilité décentralisée du miel de la ruche au consommateur",
+    title: "Kigen - Certification d'Art sur Blockchain",
+    description: "Certification décentralisée d'œuvres d'art avec provenance vérifiable",
     type: "website",
   },
 };

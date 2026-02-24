@@ -27,7 +27,7 @@ export default function NotFound() {
                     </h2>
                     
                     <p className="text-xl font-[Olney_Light] text-[#000000] opacity-70 mb-8 max-w-md">
-                        Oups ! Cette page semble avoir disparu comme du miel dans une ruche vide.
+                        Oups ! Cette page semble avoir disparu dans la galerie.
                     </p>
                     
                     <div className="flex gap-4 flex-wrap justify-center">
@@ -42,7 +42,7 @@ export default function NotFound() {
                             href="/explore/editions"
                             className="px-6 py-3 bg-yellow-bee text-[#000000] font-[Olney_Light] rounded-lg opacity-70 hover:opacity-100 transition-all duration-300 border border-[#000000] cursor-pointer"
                         >
-                            🔍 Explorer les lots
+                            🔍 Explorer les œuvres
                         </Link>
                     </div>
                 </div>

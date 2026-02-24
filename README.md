@@ -1,21 +1,21 @@
-# 🍯 Bee Block – La Ruche Numérique
+# � Kigen – Certification d'Art sur Blockchain
 
-Une DApp de traçabilité du miel qui restaure la confiance entre apiculteurs et consommateurs grâce à la blockchain.
+Une plateforme de certification qui restaure la confiance entre artistes et collectionneurs grâce à la blockchain.
 
 > Projet de fin de formation **Développeur Blockchain** chez [Alyra](https://www.alyra.fr/)
 
 ## 📋 Présentation
 
-**Bee Block** est une DApp de traçabilité du miel qui redonne de la confiance entre apiculteurs et consommateurs. En scannant un simple QR code sur votre pot de miel, vous accédez instantanément à son histoire : origine, producteur, lot, contexte de production.
+**Kigen** est une plateforme de certification d'œuvres d'art qui redonne de la confiance entre artistes et collectionneurs. En scannant un simple QR code sur une œuvre, vous accédez instantanément à son histoire : titre, artiste, édition, provenance, authenticité.
 
-Grâce à la blockchain, ces informations clés sont enregistrées de façon infalsifiable, et un petit token utilitaire permet de laisser des avis vérifiés, uniquement après un vrai scan. Bee Block valorise ainsi les producteurs honnêtes, lutte contre le "fake honey" et vous aide à choisir un miel dont vous pouvez vraiment être fier.
+Grâce à la blockchain, ces informations sont enregistrées de façon infalsifiable. Chaque œuvre possède un certificat de propriété transférable, permettant de tracer son historique complet. Kigen valorise ainsi les artistes indépendants, lutte contre la contrefaçon et permet aux collectionneurs d'acquérir des œuvres avec une provenance vérifiable.
 
-### 🔐 Système de double QR Code
+### 🔐 Système de certificat numérique
 
-- **QR Code externe** (sur l'étiquette) : Redirige vers la page d'exploration du lot pour consulter les informations de traçabilité
-- **QR Code interne** (sous le couvercle) : Contient la clé secrète permettant de claim le token et de laisser un avis vérifié
+- **QR Code sur l'œuvre** : Redirige vers la page de l'édition pour consulter les informations d'authenticité
+- **Certificat claimable** : Contient la clé secrète permettant de claim le certificat de propriété
 
-Ce système garantit que seuls les acheteurs réels peuvent laisser des avis.
+Ce système garantit que seuls les propriétaires légitimes peuvent recevoir leur certificat.
 
 ## 🏗️ Architecture
 
@@ -23,29 +23,28 @@ Ce système garantit que seuls les acheteurs réels peuvent laisser des avis.
 
 Le projet utilise 2 smart contracts principaux déployés sur **Sepolia Testnet** :
 
-- **HoneyTraceStorage** : `0xc91A35b15eD0EeF1e2eD1b1Bbba6DA1FBEA2EA4d`
-  - Gestion des producteurs et lots de miel
+- **ArtworkRegistry** : Contrat principal
+  - Gestion des artistes et éditions d'œuvres
   - Stockage des métadonnées IPFS
-  - Système de Merkle Tree pour la vérification
+  - Système de Merkle Tree pour la distribution des certificats
+  - Système d'autorisation à trois niveaux (Owner/Admin/Artist)
 
-- **HoneyTokenization** : `0x888039F6C4FF0A9aB89d75368A00e49921067755`
-  - Tokens ERC-1155 représentant chaque pot de miel
+- **ArtworkTokenization** : Contrat ERC-1155
+  - Tokens représentant les certificats d'authenticité
   - Gestion des transferts et balances
+  - Un token ID = une édition d'œuvre
 
 **Infrastructure** : Nœud Ethereum Sepolia auto-hébergé sur Raspberry Pi 5
 
 ```
 contracts/
 ├── contracts/
-│   ├── HoneyTokenization.sol
-│   └── HoneyTraceStorage.sol
+│   ├── ArtworkRegistry.sol
+│   └── ArtworkTokenization.sol
 ├── ignition/
 │   └── modules/
-│       ├── HoneyTokenization.ts
-│       ├── HoneyTraceStorage.ts
-│       └── HoneyTraceSystem.ts
+│       └── ArtworkCertificationSystem.ts
 ├── test/
-│   └── HoneyTraceStorage.ts
 ├── hardhat.config.ts
 └── package.json
 ```
@@ -59,16 +58,17 @@ frontend/
 ├── app/
 │   ├── about/              # Page à propos
 │   ├── admin/              # Interface administrateur
-│   ├── consumer/           # Interface consommateur
-│   │   └── claim/          # Claim de tokens
-│   ├── explore/            # Exploration des lots
-│   │   ├── batch/[id]/     # Détails d'un lot
-│   │   └── producer/[address]/  # Profil producteur
+│   ├── artist/             # Interface artiste
+│   │   └── editions/       # Gestion des éditions
+│   │       └── create/     # Création d'édition
+│   ├── collector/          # Interface collectionneur
+│   │   └── claim/          # Claim de certificats
+│   ├── explore/            # Exploration des œuvres
+│   │   ├── artist/[address]/ # Profil artiste
+│   │   ├── artists/        # Liste des artistes
+│   │   ├── edition/[id]/   # Détails d'une édition
+│   │   └── editions/       # Liste des éditions
 │   ├── owner/              # Administration système
-│   ├── producer/           # Interface producteur
-│   │   └── batches/        # Gestion des lots
-│   │       ├── create/     # Création de lot
-│   │       └── page.tsx    # Liste des lots
 │   └── utils/
 │       └── ipfs.ts         # Utilitaires IPFS
 ├── components/
@@ -95,7 +95,7 @@ frontend/
 - Node.js 18+
 - npm ou yarn
 - MetaMask ou autre wallet Web3
-- Compte ThirdWeb pour IPFS
+- Compte Pinata pour IPFS
 
 ### Backend (Contracts)
 
@@ -117,10 +117,10 @@ npx hardhat coverage
 ```bash
 # Réseau local
 npx hardhat node
-npx hardhat ignition deploy ignition/modules/HoneyTraceSystem.ts --network localhost
+npx hardhat ignition deploy ignition/modules/ArtworkCertificationSystem.ts --network localhost
 
 # Sepolia testnet
-npx hardhat ignition deploy ignition/modules/HoneyTraceSystem.ts --network sepolia
+npx hardhat ignition deploy ignition/modules/ArtworkCertificationSystem.ts --network sepolia
 ```
 
 ### Frontend
@@ -133,15 +133,15 @@ npm install
 Créer un fichier `.env.local` :
 
 ```env
-# ThirdWeb pour IPFS
-THIRDWEB_SECRET_KEY=votre_secret_key_thirdweb
+# Pinata pour IPFS
+NEXT_PUBLIC_PINATA_JWT=votre_jwt_pinata
 
 # Nœud Ethereum personnel (Raspberry Pi 5)
 NEXT_PUBLIC_PERSONNAL_RPC_URL_SEPOLIA=https://spacewolf.web3pi.link
 
 # Adresses des smart contracts
-NEXT_PUBLIC_HONEY_TOKENIZATION_ADDRESS=0x888039F6C4FF0A9aB89d75368A00e49921067755
-NEXT_PUBLIC_HONEY_TRACE_STORAGE_ADDRESS=0xc91A35b15eD0EeF1e2eD1b1Bbba6DA1FBEA2EA4d
+NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS=0x...
+NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS=0x...
 ```
 
 Lancer le serveur de développement :
@@ -159,8 +159,8 @@ L'application sera disponible sur `http://localhost:3000`
 Les adresses des contrats sont configurées dans `frontend/config/contracts.ts` :
 
 ```typescript
-export const HONEY_TRACE_STORAGE_ADDRESS = '0xc91A35b15eD0EeF1e2eD1b1Bbba6DA1FBEA2EA4d';
-export const HONEY_TOKENIZATION_ADDRESS = '0x888039F6C4FF0A9aB89d75368A00e49921067755';
+export const ARTWORK_REGISTRY_ADDRESS = '0x...';
+export const ARTWORK_TOKENIZATION_ADDRESS = '0x...';
 ```
 
 ### Réseau Blockchain
@@ -170,11 +170,11 @@ Par défaut configuré sur **Sepolia**. Pour changer de réseau, modifiez :
 - `contracts/hardhat.config.ts` (backend)
 - `frontend/config/wagmi.ts` (frontend)
 
-### IPFS (ThirdWeb)
+### IPFS (Pinata)
 
-1. Créer un compte sur [ThirdWeb](https://thirdweb.com)
-2. Générer une clé secrète dans le dashboard
-3. Configuration automatique via le SDK ThirdWeb
+1. Créer un compte sur [Pinata](https://pinata.cloud)
+2. Générer un JWT dans le dashboard API Keys
+3. Ajouter le JWT dans `.env.local`
 
 ## 👥 Rôles utilisateurs
 
@@ -191,70 +191,67 @@ Par défaut configuré sur **Sepolia**. Pour changer de réseau, modifiez :
 ### 👨‍💼 Admin
 
 **Capacités** :
-- Autorisation/révocation de producteurs
-- Validation des enregistrements
+- Autorisation/révocation d'artistes
+- Validation des enregistrements d'œuvres
 - Modération du système
 
 **Interface** : `/admin`
 
-### 🐝 Producteur
-
-
-**Capacités** :
-- Enregistrement du profil (nom, localisation, certifications)
-- Création de lots de miel avec métadonnées IPFS
-- Génération de clés secrètes et Merkle tree
-- Gestion de l'inventaire
-
-**Interfaces** :
-- Enregistrement : `/producer`
-- Création de lot : `/producer/batches/create`
-- Mes lots : `/producer/batches`
-
-### 🛒 Consommateur
+### 🎨 Artiste
 
 **Capacités** :
-- Scan du QR code sur le pot
-- Claim du token avec preuve Merkle
-- Consultation de la traçabilité complète
-- Dépôt d'avis vérifiés
+- Enregistrement du profil (nom, bio, style artistique)
+- Création d'éditions d'œuvres avec métadonnées IPFS
+- Génération de clés secrètes et Merkle tree pour certificats
+- Gestion de son catalogue d'œuvres
 
 **Interfaces** :
-- Claim : `/consumer/claim`
-- Explorer : `/explore/batches`
+- Profil : `/artist`
+- Création d'édition : `/artist/editions/create`
+- Mes éditions : `/artist/editions`
 
-## 🔑 Workflow de traçabilité
+### �️ Collectionneur
 
-### 1. Enregistrement du producteur
+**Capacités** :
+- Scan du QR code sur l'œuvre
+- Claim du certificat avec preuve Merkle
+- Consultation de l'historique et provenance
+- Transfert du certificat lors de revente
 
-Le producteur doit d'abord s'enregistrer avec ses informations complètes :
+**Interfaces** :
+- Claim : `/collector/claim`
+- Explorer : `/explore/editions`
+
+## 🔑 Workflow de certification
+
+### 1. Enregistrement de l'artiste
+
+L'artiste doit d'abord s'enregistrer avec ses informations complètes :
 
 ```typescript
-await addProducer(
-  name,           // Nom du producteur
-  location,       // Localisation
-  companyNumber,  // Numéro d'immatriculation
+await addArtist(
+  name,           // Nom de l'artiste
   ipfsCID         // CID des métadonnées IPFS
 );
 ```
 
-**Métadonnées IPFS du producteur** :
-- Nom complet
-- Adresse et localisation GPS
-- Numéro d'immatriculation (SIRET)
-- Logo
-- Photos de la miellerie/ruches
-- Certifications (Bio, Label Rouge, AOP, etc.)
-- Description de l'activité
+**Métadonnées IPFS de l'artiste** :
+- Nom complet / Nom d'artiste
+- Biographie
+- Style artistique
+- Photo de profil
+- Photos d'atelier
+- Expositions et récompenses
+- Site web et réseaux sociaux
 - Contact
 
-### 2. Création d'un lot
+### 2. Création d'une édition d'œuvre
 
-Le producteur crée un nouveau lot de miel :
+L'artiste crée une nouvelle édition :
 
 ```typescript
-// 1. Génération de N clés secrètes uniques
-const secretKeys = generateSecretKeys(amount);
+// 1. Génération de N clés secrètes uniques (une par certificat)
+const secretKeys = generateSecretKeys(editionSize);
 
 // 2. Construction du Merkle Tree
 const leaves = secretKeys.map(key => keccak256(key));
@@ -262,27 +259,27 @@ const merkleTree = new MerkleTree(leaves, keccak256, { sortPairs: true });
 const merkleRoot = merkleTree.getHexRoot();
 
 // 3. Upload des métadonnées sur IPFS
-const ipfsCID = await uploadToIPFS(batchMetadata);
+const ipfsCID = await uploadToIPFS(editionMetadata);
 
-// 4. Création du lot sur la blockchain
-await addHoneyBatch(
-  honeyType,    // Type de miel (Acacia, Lavande, etc.)
+// 4. Création de l'édition sur la blockchain
+await createArtworkEdition(
+  title,        // Titre de l'œuvre
   ipfsCID,      // CID des métadonnées
-  amount,       // Nombre de pots
+  editionSize,  // Nombre d'exemplaires
   merkleRoot    // Racine du Merkle Tree
 );
 ```
 
-**Métadonnées IPFS du lot** :
-- Identifiant unique
-- Type de miel
-- Période de récolte
-- Date et lieu de mise en pot
-- Certifications du lot
-- Composition et analyses
-- Format du pot (poids)
-- Étiquette (PDF/image)
-- Photos du lot
+**Métadonnées IPFS de l'édition** :
+- Titre de l'œuvre
+- Catégorie (Peinture, Sculpture, Photo, etc.)
+- Médium / Technique
+- Dimensions
+- Année de création
+- Description / Déclaration de l'artiste
+- Photos de l'œuvre (plusieurs angles)
+- Taille de l'édition
+- Numérotation
 
 ### 3. Distribution des clés
 
@@ -290,31 +287,31 @@ Le système génère automatiquement un fichier CSV contenant :
 
 | Index | Clé secrète | Merkle Proof | URL de claim |
 |-------|-------------|--------------|--------------|
-| 0 | abc123... | [0x..., 0x...] | https://bee-block.vercel.app/consumer/claim?batchId=1&secretKey=abc123&merkleProof=0x... |
-| 1 | def456... | [0x..., 0x...] | https://bee-block.vercel.app/consumer/claim?batchId=1&secretKey=def456&merkleProof=0x... |
+| 0 | abc123... | [0x..., 0x...] | https://www.kigen.art/collector/claim?editionId=1&secretKey=abc123&merkleProof=0x... |
+| 1 | def456... | [0x..., 0x...] | https://www.kigen.art/collector/claim?editionId=1&secretKey=def456&merkleProof=0x... |
 | ... | ... | ... | ... |
 
-Le producteur peut alors générer **deux QR codes par pot** :
+L'artiste peut alors générer **des QR codes pour chaque exemplaire** :
 
-1. **QR Code externe** (sur l'étiquette visible)
-   - URL : `https://bee-block.vercel.app/explore/batch/[batchId]`
-   - Permet de consulter les informations de traçabilité
+1. **QR Code sur l'œuvre** (visible au dos ou au côté)
+   - URL : `https://www.kigen.art/explore/edition/[editionId]`
+   - Permet de consulter les informations d'authenticité
    - Accessible à tous, même sans wallet
 
-2. **QR Code interne** (sous le couvercle/opercule)
-   - URL : `https://bee-block.vercel.app/consumer/claim?batchId=X&secretKey=...&merkleProof=...`
-   - Permet de claim le token NFT
-   - Accessible uniquement après achat et ouverture du pot
-   - Nécessite un wallet connecté
+2. **QR Code du certificat** (document séparé remis à l'acheteur)
+   - URL : `https://www.kigen.art/collector/claim?editionId=X&secretKey=...&merkleProof=...`
+   - Permet de claim le certificat numérique
+   - Accessible uniquement au propriétaire légitime
+   - Nécessite une connexion (email ou wallet)
 
-### 4. Claim par le consommateur
+### 4. Claim par le collectionneur
 
-Le consommateur scanne le QR code et accède à l'URL de claim :
+Le collectionneur scanne le QR code et accède à l'URL de claim :
 
 ```typescript
-// Vérification et claim du token
-await claimToken(
-  batchId,      // ID du lot
+// Vérification et claim du certificat
+await claimCertificate(
+  editionId,    // ID de l'édition
   secretKey,    // Clé secrète unique
   merkleProof   // Preuve Merkle
 );
@@ -323,41 +320,42 @@ await claimToken(
 **Vérifications effectuées** :
 1. Validité de la clé secrète
 2. Merkle Proof correct
-3. Token non déjà réclamé
-4. Lot existant
+3. Certificat non déjà réclamé
+4. Édition existante
 
-Une fois le token réclamé :
-- Il est transféré au wallet du consommateur
+Une fois le certificat réclamé :
+- Il est transféré au compte du collectionneur
 - Il ne peut plus être réclamé par quelqu'un d'autre
-- Le consommateur a accès à toutes les informations du lot
+- Le collectionneur a accès à toutes les informations de l'œuvre
+- Le certificat peut être transféré lors d'une revente
 
-## 🔍 Explorer les lots
+## 🔍 Explorer les œuvres
 
-### Page d'exploration (`/explore`)
+### Page d'exploration (`/explore/editions`)
 
 Fonctionnalités :
-- Liste complète de tous les lots
-- Filtrage par type de miel
-- Recherche par producteur
-- Affichage des certifications
-- Compteur de tokens disponibles/réclamés
+- Liste complète de toutes les éditions
+- Filtrage par catégorie artistique
+- Recherche par artiste
+- Affichage des œuvres disponibles
+- Compteur de certificats disponibles/réclamés
 
-### Page détail d'un lot (`/explore/batch/[id]`)
+### Page détail d'une édition (`/explore/edition/[id]`)
 
 Informations affichées :
 - Toutes les métadonnées IPFS
-- Informations du producteur
+- Informations de l'artiste
 - Historique blockchain
-- Statistiques (tokens restants, etc.)
-- Photos et documents
+- Statistiques (certificats restants, etc.)
+- Photos de l'œuvre
 
-### Page producteur (`/explore/producer/[address]`)
+### Page artiste (`/explore/artist/[address]`)
 
 Informations affichées :
-- Profil complet du producteur
-- Tous ses lots de miel
-- Certifications
-- Localisation
+- Profil complet de l'artiste
+- Toutes ses éditions d'œuvres
+- Style et démarche artistique
+- Expositions
 - Contact
 
 ## 🎨 Design System
@@ -365,25 +363,27 @@ Informations affichées :
 ### Couleurs
 
 ```css
---yellow-bee: #F0D67B;    /* Jaune principal */
---black: #000000;          /* Noir */
---dark-gray: #666666;      /* Gris foncé */
---green-cert: #10B981;     /* Vert certifications */
+--beige-warm: #f5f3ef;     /* Beige chaud (fond) */
+--beige-light: #fafaf8;    /* Beige clair (cards) */
+--stone: #78716c;          /* Pierre (texte secondaire) */
+--charcoal: #1c1917;       /* Charbon (texte principal) */
+--border: #d6d0c8;         /* Bordures */
 ```
 
 ### Typographie
 
-- **Titres principaux** : Carbon Phyber
-- **Titres secondaires** : Carbon Bold (Carbon_bl)
-- **Corps de texte** : Olney Light
+- **Titres principaux** : Serif (font-serif)
+- **Corps de texte** : Sans-serif (font-light)
+- **Emphase** : Italique pour les mots clés
+- **Uppercase** : Petits titres avec tracking large
 
 ### Composants
 
-- Navbar responsive avec connexion wallet
-- Cards avec effets hover
-- Boutons avec états (normal, hover, disabled)
-- Inputs avec bordures personnalisées
-- Badges pour certifications
+- Navbar minimaliste avec connexion Privy
+- Cards avec bordures subtiles
+- Boutons avec transitions douces
+- Inputs avec style épuré
+- Grid system pour galeries d'œuvres
 
 ## 📦 Technologies utilisées
 
@@ -400,14 +400,14 @@ Informations affichées :
 - **TypeScript** - Typage statique
 - **Wagmi** v2 - Hooks React pour Ethereum
 - **Viem** - Bibliothèque TypeScript pour Ethereum
-- **RainbowKit** - Connexion wallet
+- **Privy** - Authentification email + wallet
 - **TailwindCSS** - Styling
 - **MerkleTree.js** - Génération de Merkle Trees
 - **Keccak256** - Fonction de hachage
 
 ### Stockage
 
-- **IPFS** via ThirdWeb - Stockage décentralisé
+- **IPFS** via Pinata - Stockage décentralisé
 - **Sepolia** - Blockchain testnet
 - **Nœud Ethereum personnel** - Raspberry Pi 5 (spacewolf.web3pi.link)
 
@@ -415,7 +415,7 @@ Informations affichées :
 
 ### Merkle Tree
 
-Chaque lot utilise un Merkle Tree pour :
+Chaque édition utilise un Merkle Tree pour :
 - **Garantir l'unicité** : Chaque clé secrète est unique
 - **Vérification cryptographique** : Impossible de falsifier une preuve
 - **Efficacité** : Vérification en O(log n)
@@ -439,15 +439,15 @@ Chaque lot utilise un Merkle Tree pour :
 Le projet utilise des **erreurs personnalisées** (custom errors) pour une meilleure gestion du gas et des messages d'erreur plus clairs :
 
 ```solidity
-// HoneyTraceStorage.sol - Erreurs personnalisées
+// ArtworkRegistry.sol - Erreurs personnalisées
 error NotOwner();
 error NotAdmin();
-error NotAuthorizedProducer();
-error ProducerAlreadyExists();
-error ProducerNotFound();
-error BatchNotFound();
+error NotAuthorizedArtist();
+error ArtistAlreadyExists();
+error ArtistNotFound();
+error EditionNotFound();
 error InvalidMerkleProof();
-error TokenAlreadyClaimed();
+error CertificateAlreadyClaimed();
 error InvalidAmount();
 error EmptyString();
 error InvalidAddress();
@@ -463,15 +463,15 @@ modifier onlyAdmin() {
     _;
 }
 
-modifier onlyAuthorizedProducer() {
-    if (!isAuthorized[msg.sender]) revert NotAuthorizedProducer();
+modifier onlyAuthorizedArtist() {
+    if (!isAuthorized[msg.sender]) revert NotAuthorizedArtist();
     _;
 }
 
 // Exemple d'utilisation
-function addHoneyBatch(...) public onlyAuthorizedProducer {
-    if (amount == 0) revert InvalidAmount();
-    if (bytes(honeyType).length == 0) revert EmptyString();
+function createArtworkEdition(...) public onlyAuthorizedArtist {
+    if (editionSize == 0) revert InvalidAmount();
+    if (bytes(title).length == 0) revert EmptyString();
     if (bytes(ipfsCID).length == 0) revert EmptyString();
     // ...
 }
@@ -516,22 +516,21 @@ vercel --prod
 ```
 
 Variables d'environnement à configurer sur Vercel :
-- `THIRDWEB_SECRET_KEY`
+- `NEXT_PUBLIC_PINATA_JWT` (pour IPFS)
 - `NEXT_PUBLIC_PERSONNAL_RPC_URL_SEPOLIA`
-- `NEXT_PUBLIC_HONEY_TOKENIZATION_ADDRESS`
-- `NEXT_PUBLIC_HONEY_TRACE_STORAGE_ADDRESS`
+- `NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS`
+- `NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS`
+- `NEXT_PUBLIC_PRIVY_APP_ID`
 
 ### Smart Contracts (Sepolia)
 
-Les contrats sont déjà déployés :
-- HoneyTraceStorage : `0xc91A35b15eD0EeF1e2eD1b1Bbba6DA1FBEA2EA4d`
-- HoneyTokenization : `0x888039F6C4FF0A9aB89d75368A00e49921067755`
-
-Pour redéployer :
+Pour déployer les contrats :
 
 ```bash
-npx hardhat ignition deploy ignition/modules/HoneyTraceSystem.ts --network sepolia
+npx hardhat ignition deploy ignition/modules/ArtworkCertificationSystem.ts --network sepolia
 ```
+
+Les adresses seront affichées après le déploiement.
 
 ## 📚 Ressources
 
@@ -548,30 +547,31 @@ npx hardhat ignition deploy ignition/modules/HoneyTraceSystem.ts --network sepol
 ### Explorateurs
 
 - [Sepolia Etherscan](https://sepolia.etherscan.io)
-- HoneyTraceStorage : [0xF7d16F8Fb28aCFb8F11a74eC800a5f47C9CF1b24](https://sepolia.etherscan.io/address/0xF7d16F8Fb28aCFb8F11a74eC800a5f47C9CF1b24)
-- HoneyTokenization : [0xE8d20d42e32FB45c8c37CED65Acee0f33ceD5D72](https://sepolia.etherscan.io/address/0xE8d20d42e32FB45c8c37CED65Acee0f33ceD5D72)
+- Vérifiez les adresses des contrats après déploiement
 
 ## 🚀 Roadmap
 
 ### Phase 1 ✅ (Actuelle)
 - [x] Smart contracts de base
-- [x] Interface producteur complète
+- [x] Interface artiste complète
 - [x] Système de claim avec Merkle Tree
-- [x] Exploration des lots
+- [x] Exploration des éditions
 - [x] Stockage IPFS
+- [x] Authentification Privy (email + wallet)
 
 ### Phase 2 🔄 (En cours)
-- [ ] Système d'avis vérifiés
-- [ ] Notifications push
-- [ ] Application mobile (React Native)
-- [ ] Support multi-langues
+- [ ] Historique des transferts de certificats
+- [ ] Profils publics d'artistes enrichis
+- [ ] Notifications email
+- [ ] Support multi-langues (FR/EN)
 
 ### Phase 3 📋 (Prévu)
 - [ ] Déploiement sur mainnet
-- [ ] Marketplace de miel
-- [ ] Programme de fidélité
-- [ ] API publique
+- [ ] Marketplace secondaire d'œuvres
+- [ ] Système de royalties pour artistes
+- [ ] API publique pour galeries
 - [ ] Analytics avancées
+- [ ] Application mobile
 
 ## 👨‍💻 Équipe
 
@@ -599,8 +599,8 @@ Pour toute question ou suggestion :
 
 ---
 
-**Bee Block** – *Traçabilité, transparence, confiance* 🍯✨
+**Kigen** – *L'authenticité. Vérifiable.* 🎨✨
 
-*Développé avec ❤️ pour valoriser le travail des apiculteurs et protéger les consommateurs*
+*Développé avec ❤️ pour valoriser le travail des artistes et protéger les collectionneurs*
 
 

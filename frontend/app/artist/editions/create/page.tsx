@@ -169,7 +169,7 @@ export default function CreateEditionPage() {
         if (!createdEditionId || createdEditionId === 'pending' || createdEditionId === 'confirmed') return;
         setIsGeneratingQR(true);
         try {
-            const editionPageUrl = `https://www.beeblock.fr/explore/edition/${createdEditionId}`;
+            const editionPageUrl = `https://www.kigen.art/explore/edition/${createdEditionId}`;
             const qrCodeDataUrl = await QRCode.toDataURL(editionPageUrl, {
                 width: 1000, margin: 4,
                 color: { dark: '#000000', light: '#FFFFFF' },
@@ -205,7 +205,7 @@ export default function CreateEditionPage() {
                 const leaf = keccak256(Buffer.from(key));
                 const proof = merkleTree.getHexProof(leaf);
                 const merkleProofParam = proof.join(',');
-                const claimUrl = `https://www.beeblock.fr/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
+                const claimUrl = `https://www.kigen.art/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
                 excelData.push({
                     'Index': index + 1,
@@ -256,7 +256,7 @@ export default function CreateEditionPage() {
                 const leaf = keccak256(Buffer.from(key));
                 const proof = merkleTree.getHexProof(leaf);
                 const merkleProofParam = proof.join(',');
-                const claimUrl = `https://www.beeblock.fr/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
+                const claimUrl = `https://www.kigen.art/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
                 const base64Data = qrCodeDataUrl.split(',')[1];
                 zip.file(`QR_Claim_${createdEditionId}_${(index + 1).toString().padStart(5, '0')}.png`, base64Data, { base64: true });

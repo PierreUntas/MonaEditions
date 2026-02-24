@@ -81,7 +81,7 @@ export default function ArtistPage() {
         if (!address || !isRegistered) return;
         setIsGeneratingQR(true);
         try {
-            const artistPageUrl = `https://www.beeblock.fr/explore/artist/${address}`;
+            const artistPageUrl = `https://www.kigen.art/explore/artist/${address}`;
             const qrCodeDataUrl = await QRCode.toDataURL(artistPageUrl, {
                 width: 1000,
                 margin: 4,

@@ -12,7 +12,7 @@ import { useSendTransaction } from '@privy-io/react-auth';
 import QRCode from 'qrcode';
 import * as XLSX from 'xlsx';
 
-export default function CreateBatchPage() {
+export default function CreateEditionPage() {
     const { address } = useAccount();
     const [amount, setAmount] = useState('');
     const [isAuthorized, setIsAuthorized] = useState(false);
@@ -25,7 +25,7 @@ export default function CreateBatchPage() {
     const [secretKeys, setSecretKeys] = useState<string[]>([]);
     const [merkleRoot, setMerkleRoot] = useState<string>('');
     const [merkleTree, setMerkleTree] = useState<MerkleTree | null>(null);
-    const [createdBatchId, setCreatedBatchId] = useState<string | null>(null);
+    const [createdEditionId, setCreatedEditionId] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [hasDownloadedKeys, setHasDownloadedKeys] = useState(false);
     const imageInputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +37,7 @@ export default function CreateBatchPage() {
         'Print', 'Textile', 'Ceramics', 'Mixed Media', 'Installation', 'Video', 'Other'
     ];
 
-    const [batchData, setBatchData] = useState({
+    const [editionData, setEditionData] = useState({
         title: '',
         year: new Date().getFullYear(),
         description: '',
@@ -48,7 +48,7 @@ export default function CreateBatchPage() {
         category: ''
     });
 
-    const { data: producerData, isLoading: isLoadingProducer } = useReadContract({
+    const { data: artistData, isLoading: isLoadingArtist } = useReadContract({
         address: ARTWORK_REGISTRY_ADDRESS,
         abi: ARTWORK_REGISTRY_ABI,
         functionName: 'getArtist',
@@ -63,14 +63,14 @@ export default function CreateBatchPage() {
     });
 
     useEffect(() => {
-        if (producerData) {
-            const producer = producerData as any;
-            setIsAuthorized(producer.authorized);
+        if (artistData) {
+            const artist = artistData as any;
+            setIsAuthorized(artist.authorized);
             setIsCheckingAuthorization(false);
-        } else if (!isLoadingProducer && producerData !== undefined) {
+        } else if (!isLoadingArtist && artistData !== undefined) {
             setIsCheckingAuthorization(false);
         }
-    }, [producerData, isLoadingProducer]);
+    }, [artistData, isLoadingArtist]);
 
     useEffect(() => {
         if (approvalStatus !== undefined) {
@@ -85,7 +85,7 @@ export default function CreateBatchPage() {
     // Avertir l'utilisateur s'il essaie de quitter sans avoir téléchargé les clés
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (createdBatchId && secretKeys.length > 0 && !hasDownloadedKeys) {
+            if (createdEditionId && secretKeys.length > 0 && !hasDownloadedKeys) {
                 e.preventDefault();
                 e.returnValue = '⚠️ ATTENTION : Vous n\'avez pas téléchargé les clés secrètes ! Si vous quittez maintenant, vous les perdrez définitivement.';
                 return e.returnValue;
@@ -94,7 +94,7 @@ export default function CreateBatchPage() {
 
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [createdBatchId, secretKeys, hasDownloadedKeys]);
+    }, [createdEditionId, secretKeys, hasDownloadedKeys]);
 
     const generateSecretKeys = (count: number) => {
         const keys: string[] = [];
@@ -114,7 +114,7 @@ export default function CreateBatchPage() {
             if (count > 0 && count <= 100000) {
                 const keys = generateSecretKeys(count);
                 setSecretKeys(keys);
-                setBatchData(prev => ({ ...prev, editionSize: count }));
+                setEditionData(prev => ({ ...prev, editionSize: count }));
 
                 const leaves = keys.map(key => keccak256(`0x${Buffer.from(key).toString('hex')}`));
                 const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
@@ -125,11 +125,11 @@ export default function CreateBatchPage() {
             setSecretKeys([]);
             setMerkleRoot('');
             setMerkleTree(null);
-            setBatchData(prev => ({ ...prev, editionSize: 0 }));
+            setEditionData(prev => ({ ...prev, editionSize: 0 }));
         }
     };
 
-    // Upload one or several images to IPFS and add their CIDs to batchData.images
+    // Upload one or several images to IPFS and add their CIDs to editionData.images
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (!files.length) return;
@@ -141,7 +141,7 @@ export default function CreateBatchPage() {
                 const cid = await uploadFileToIPFS(file);
                 newCids.push(`ipfs://${cid}`);
             }
-            setBatchData(prev => ({ ...prev, images: [...prev.images, ...newCids] }));
+            setEditionData(prev => ({ ...prev, images: [...prev.images, ...newCids] }));
             alert(`✅ ${newCids.length} image${newCids.length > 1 ? 's uploadées' : ' uploadée'} sur IPFS !`);
         } catch (error) {
             console.error('Error uploading image:', error);
@@ -154,7 +154,7 @@ export default function CreateBatchPage() {
     };
 
     const removeImage = (index: number) => {
-        setBatchData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
+        setEditionData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
     };
 
     const generateQRCodeImage = async (text: string): Promise<string> => {
@@ -165,12 +165,12 @@ export default function CreateBatchPage() {
         });
     };
 
-    const downloadBatchPageQRCode = async () => {
-        if (!createdBatchId || createdBatchId === 'pending' || createdBatchId === 'confirmed') return;
+    const downloadEditionPageQRCode = async () => {
+        if (!createdEditionId || createdEditionId === 'pending' || createdEditionId === 'confirmed') return;
         setIsGeneratingQR(true);
         try {
-            const batchPageUrl = `https://www.beeblock.fr/explore/batch/${createdBatchId}`;
-            const qrCodeDataUrl = await QRCode.toDataURL(batchPageUrl, {
+            const editionPageUrl = `https://www.beeblock.fr/explore/edition/${createdEditionId}`;
+            const qrCodeDataUrl = await QRCode.toDataURL(editionPageUrl, {
                 width: 1000, margin: 4,
                 color: { dark: '#000000', light: '#FFFFFF' },
                 errorCorrectionLevel: 'H'
@@ -180,7 +180,7 @@ export default function CreateBatchPage() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `QR_Batch_Page_${createdBatchId}.png`;
+            a.download = `QR_Edition_Page_${createdEditionId}.png`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -188,7 +188,7 @@ export default function CreateBatchPage() {
             setHasDownloadedKeys(true); // Marquer comme téléchargé
             alert(`✅ QR Code de la page du lot téléchargé avec succès !`);
         } catch (error) {
-            console.error('Error generating batch page QR code:', error);
+            console.error('Error generating edition page QR code:', error);
             alert('❌ Erreur lors de la génération du QR code de la page');
         } finally {
             setIsGeneratingQR(false);
@@ -196,7 +196,7 @@ export default function CreateBatchPage() {
     };
 
     const downloadExcelWithQRCodes = async () => {
-        if (secretKeys.length === 0 || !merkleTree || !createdBatchId) return;
+        if (secretKeys.length === 0 || !merkleTree || !createdEditionId) return;
         setIsGeneratingQR(true);
         try {
             const excelData = [];
@@ -205,7 +205,7 @@ export default function CreateBatchPage() {
                 const leaf = keccak256(Buffer.from(key));
                 const proof = merkleTree.getHexProof(leaf);
                 const merkleProofParam = proof.join(',');
-                const claimUrl = `https://www.beeblock.fr/consumer/claim?batchId=${createdBatchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
+                const claimUrl = `https://www.beeblock.fr/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
                 excelData.push({
                     'Index': index + 1,
@@ -234,7 +234,7 @@ export default function CreateBatchPage() {
             }
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Secret Keys');
-            XLSX.writeFile(wb, `secret-keys-batch-${createdBatchId}-${Date.now()}.xlsx`);
+            XLSX.writeFile(wb, `secret-keys-edition-${createdEditionId}-${Date.now()}.xlsx`);
             setHasDownloadedKeys(true); // Marquer comme téléchargé
             alert(`✅ Fichier Excel avec ${secretKeys.length} QR codes généré avec succès !`);
         } catch (error) {
@@ -246,7 +246,7 @@ export default function CreateBatchPage() {
     };
 
     const downloadQRCodesZip = async () => {
-        if (secretKeys.length === 0 || !merkleTree || !createdBatchId) return;
+        if (secretKeys.length === 0 || !merkleTree || !createdEditionId) return;
         setIsGeneratingQR(true);
         try {
             const JSZip = (await import('jszip')).default;
@@ -256,10 +256,10 @@ export default function CreateBatchPage() {
                 const leaf = keccak256(Buffer.from(key));
                 const proof = merkleTree.getHexProof(leaf);
                 const merkleProofParam = proof.join(',');
-                const claimUrl = `https://www.beeblock.fr/consumer/claim?batchId=${createdBatchId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
+                const claimUrl = `https://www.beeblock.fr/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
                 const base64Data = qrCodeDataUrl.split(',')[1];
-                zip.file(`QR_Claim_${createdBatchId}_${(index + 1).toString().padStart(5, '0')}.png`, base64Data, { base64: true });
+                zip.file(`QR_Claim_${createdEditionId}_${(index + 1).toString().padStart(5, '0')}.png`, base64Data, { base64: true });
                 if ((index + 1) % 10 === 0 || index === secretKeys.length - 1) {
                     console.log(`Génération des QR codes: ${index + 1}/${secretKeys.length}`);
                 }
@@ -268,7 +268,7 @@ export default function CreateBatchPage() {
             const url = URL.createObjectURL(content);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `qr-codes-claim-batch-${createdBatchId}-${Date.now()}.zip`;
+            a.download = `qr-codes-claim-edition-${createdEditionId}-${Date.now()}.zip`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -311,7 +311,7 @@ export default function CreateBatchPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!batchData.title || !amount || !merkleRoot) {
+        if (!editionData.title || !amount || !merkleRoot) {
             alert('Veuillez remplir tous les champs obligatoires');
             return;
         }
@@ -333,14 +333,14 @@ export default function CreateBatchPage() {
                 editionSize: number;
                 category: string;
             } = {
-                title: batchData.title,
-                year: batchData.year,
-                description: batchData.description,
-                technique: batchData.technique,
-                dimensions: batchData.dimensions,
-                images: batchData.images,
+                title: editionData.title,
+                year: editionData.year,
+                description: editionData.description,
+                technique: editionData.technique,
+                dimensions: editionData.dimensions,
+                images: editionData.images,
                 editionSize: parseInt(amount),
-                category: batchData.category,
+                category: editionData.category,
             };
 
             const cid = await uploadToIPFS(artworkMetadata);
@@ -370,26 +370,26 @@ export default function CreateBatchPage() {
                 hash: txHash.hash as `0x${string}`,
             });
 
-            const batchCreatedEvent = receipt.logs.find(log => {
+            const editionCreatedEvent = receipt.logs.find(log => {
                 try {
                     const decoded = decodeEventLog({ abi: ARTWORK_REGISTRY_ABI, data: log.data, topics: log.topics });
                     return decoded.eventName === 'NewArtworkEdition';
                 } catch { return false; }
             });
 
-            if (batchCreatedEvent) {
+            if (editionCreatedEvent) {
                 const decoded = decodeEventLog({
                     abi: ARTWORK_REGISTRY_ABI,
-                    data: batchCreatedEvent.data,
-                    topics: batchCreatedEvent.topics,
+                    data: editionCreatedEvent.data,
+                    topics: editionCreatedEvent.topics,
                 }) as any;
-                const batchId = decoded.args.editionId?.toString();
-                setCreatedBatchId(batchId);
-                alert(`✅ Œuvre créée avec succès ! ID : ${batchId}`);
+                const editionId = decoded.args.editionId?.toString();
+                setCreatedEditionId(editionId);
+                alert(`✅ Œuvre créée avec succès ! ID : ${editionId}`);
             } else {
                 console.error('❌ NewArtworkEdition event not found in logs');
                 alert('⚠️ Transaction confirmée mais impossible de récupérer l\'ID de l\'œuvre. Vérifiez la console.');
-                setCreatedBatchId('confirmed');
+                setCreatedEditionId('confirmed');
             }
         } catch (error) {
             console.error('Error creating artwork:', error);
@@ -400,7 +400,7 @@ export default function CreateBatchPage() {
         }
     };
 
-    if (isCheckingAuthorization || isLoadingProducer) {
+    if (isCheckingAuthorization || isLoadingArtist) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
@@ -459,10 +459,10 @@ export default function CreateBatchPage() {
                     </div>
                 )}
 
-                {createdBatchId && (
+                {createdEditionId && (
                     <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6 mb-px">
                         <p className="text-[14px] font-medium text-[#1c1917] mb-1">✅ Œuvre créée avec succès !</p>
-                        <p className="text-[13px] font-light text-[#78716c]">ID de l'œuvre : <span className="font-mono">{createdBatchId}</span></p>
+                        <p className="text-[13px] font-light text-[#78716c]">ID de l'œuvre : <span className="font-mono">{createdEditionId}</span></p>
                         {!hasDownloadedKeys && (
                             <p className="text-[14px] font-medium text-[#dc2626] mt-3 leading-[1.7]">
                                 ⚠️ IMPORTANT : Vous devez télécharger les clés secrètes maintenant. Une fois cette page fermée, vous ne pourrez plus les récupérer !
@@ -497,8 +497,8 @@ export default function CreateBatchPage() {
                             </label>
                             <input
                                 type="text"
-                                value={batchData.title}
-                                onChange={(e) => setBatchData({ ...batchData, title: e.target.value })}
+                                value={editionData.title}
+                                onChange={(e) => setEditionData({ ...editionData, title: e.target.value })}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 placeholder="Ex: Sakura Dreams"
                                 required
@@ -512,8 +512,8 @@ export default function CreateBatchPage() {
                             </label>
                             <input
                                 type="number"
-                                value={batchData.year}
-                                onChange={(e) => setBatchData({ ...batchData, year: parseInt(e.target.value) })}
+                                value={editionData.year}
+                                onChange={(e) => setEditionData({ ...editionData, year: parseInt(e.target.value) })}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 min="1900"
                                 max={new Date().getFullYear()}
@@ -527,8 +527,8 @@ export default function CreateBatchPage() {
                                 Catégorie
                             </label>
                             <select
-                                value={batchData.category}
-                                onChange={(e) => setBatchData({ ...batchData, category: e.target.value })}
+                                value={editionData.category}
+                                onChange={(e) => setEditionData({ ...editionData, category: e.target.value })}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] focus:outline-none focus:border-[#1c1917] transition-colors"
                             >
                                 <option value="">Sélectionner une catégorie</option>
@@ -545,8 +545,8 @@ export default function CreateBatchPage() {
                             </label>
                             <input
                                 type="text"
-                                value={batchData.technique}
-                                onChange={(e) => setBatchData({ ...batchData, technique: e.target.value })}
+                                value={editionData.technique}
+                                onChange={(e) => setEditionData({ ...editionData, technique: e.target.value })}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 placeholder="Ex: Oil on canvas, Watercolour, Bronze..."
                             />
@@ -559,8 +559,8 @@ export default function CreateBatchPage() {
                             </label>
                             <input
                                 type="text"
-                                value={batchData.dimensions}
-                                onChange={(e) => setBatchData({ ...batchData, dimensions: e.target.value })}
+                                value={editionData.dimensions}
+                                onChange={(e) => setEditionData({ ...editionData, dimensions: e.target.value })}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 placeholder="Ex: 100x150 cm"
                             />
@@ -572,8 +572,8 @@ export default function CreateBatchPage() {
                                 Description
                             </label>
                             <textarea
-                                value={batchData.description}
-                                onChange={(e) => setBatchData({ ...batchData, description: e.target.value })}
+                                value={editionData.description}
+                                onChange={(e) => setEditionData({ ...editionData, description: e.target.value })}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors min-h-[120px]"
                                 placeholder="Décrivez votre œuvre, la technique utilisée, les matériaux, l'inspiration..."
                             />
@@ -600,9 +600,9 @@ export default function CreateBatchPage() {
                             >
                                 {isUploadingImage ? '📤 Upload en cours…' : '🖼️ Ajouter des images (upload IPFS)'}
                             </button>
-                            {batchData.images.length > 0 && (
+                            {editionData.images.length > 0 && (
                                 <ul className="mt-3 space-y-1">
-                                    {batchData.images.map((img, i) => (
+                                    {editionData.images.map((img, i) => (
                                         <li key={i} className="flex items-center justify-between gap-2 bg-[#f5f3ef] border border-[#d6d0c8] px-3 py-2">
                                             <span className="text-[11px] font-mono text-[#a8a29e] truncate">{img}</span>
                                             <button
@@ -660,7 +660,7 @@ export default function CreateBatchPage() {
                 </div>
 
                 {/* Post-création : QR codes */}
-                {createdBatchId && secretKeys.length > 0 && merkleTree && (
+                {createdEditionId && secretKeys.length > 0 && merkleTree && (
                     <div className="space-y-px">
                         {!hasDownloadedKeys && (
                             <div className="border-2 border-[#dc2626] bg-[#fef2f2] p-6 mb-px">
@@ -676,7 +676,7 @@ export default function CreateBatchPage() {
                                 </p>
                             </div>
                         )}
-                        {createdBatchId !== 'pending' && createdBatchId !== 'confirmed' && (
+                        {createdEditionId !== 'pending' && createdEditionId !== 'confirmed' && (
                             <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6">
                                 <p className="text-[14px] font-medium text-[#1c1917] mb-2">
                                     🏷️ QR Code pour l'étiquette de l'œuvre
@@ -685,7 +685,7 @@ export default function CreateBatchPage() {
                                     Ce QR code pointe vers la page de l'œuvre et peut être apposé au dos.
                                 </p>
                                 <button
-                                    onClick={downloadBatchPageQRCode}
+                                    onClick={downloadEditionPageQRCode}
                                     disabled={isGeneratingQR}
                                     className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                                 >

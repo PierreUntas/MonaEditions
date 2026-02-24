@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
 
-interface BatchIPFSData {
+interface EditionIPFSData {
     title: string;
     year: number;
     description: string;
@@ -20,24 +20,24 @@ interface BatchIPFSData {
     category: string;
 }
 
-interface BatchInfo {
+interface EditionInfo {
     tokenId: bigint;
     title: string;
     metadata: string;
     merkleRoot: string;
     remainingTokens: bigint;
-    ipfsData?: BatchIPFSData;
+    ipfsData?: EditionIPFSData;
 }
 
-export default function ProducerBatchesPage() {
+export default function ArtistEditionsPage() {
     const { address } = useAccount();
-    const [batches, setBatches] = useState<BatchInfo[]>([]);
+    const [editions, setEditions] = useState<EditionInfo[]>([]);
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isCheckingAuthorization, setIsCheckingAuthorization] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
 
-    const { data: producerData, isLoading: isLoadingProducer } = useReadContract({
+    const { data: artistData, isLoading: isLoadingArtist } = useReadContract({
         address: ARTWORK_REGISTRY_ADDRESS,
         abi: ARTWORK_REGISTRY_ABI,
         functionName: 'getArtist',
@@ -45,17 +45,17 @@ export default function ProducerBatchesPage() {
     });
 
     useEffect(() => {
-        if (producerData) {
-            const producer = producerData as any;
-            setIsAuthorized(producer.authorized);
+        if (artistData) {
+            const artist = artistData as any;
+            setIsAuthorized(artist.authorized);
             setIsCheckingAuthorization(false);
-        } else if (!isLoadingProducer && producerData !== undefined) {
+        } else if (!isLoadingArtist && artistData !== undefined) {
             setIsCheckingAuthorization(false);
         }
-    }, [producerData, isLoadingProducer]);
+    }, [artistData, isLoadingArtist]);
 
     useEffect(() => {
-        const fetchBatches = async () => {
+        const fetchEditions = async () => {
             if (!address || !isAuthorized || !publicClient) return;
 
             setIsLoading(true);
@@ -68,7 +68,7 @@ export default function ProducerBatchesPage() {
                     toBlock: 'latest'
                 });
 
-                const batchesData: BatchInfo[] = [];
+                const editionsData: EditionInfo[] = [];
 
                 for (const log of logs) {
                     const tokenId = log.args.editionId as bigint;
@@ -97,36 +97,36 @@ export default function ProducerBatchesPage() {
                         }
                     }
 
-                    batchesData.push({ tokenId, title: artworkTitle, metadata: editionInfo.metadata, merkleRoot: editionInfo.merkleRoot, remainingTokens: balance });
+                    editionsData.push({ tokenId, title: artworkTitle, metadata: editionInfo.metadata, merkleRoot: editionInfo.merkleRoot, remainingTokens: balance });
                 }
 
-                batchesData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
-                setBatches(batchesData);
+                editionsData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
+                setEditions(editionsData);
 
                 setIsLoadingIPFS(true);
-                for (const batch of batchesData) {
-                    if (batch.metadata) {
+                for (const edition of editionsData) {
+                    if (edition.metadata) {
                         try {
-                            const ipfsData = await getFromIPFSGateway(batch.metadata) as BatchIPFSData;
-                            setBatches(prev => prev.map(b => b.tokenId === batch.tokenId ? { ...b, ipfsData } : b));
+                            const ipfsData = await getFromIPFSGateway(edition.metadata) as EditionIPFSData;
+                            setEditions(prev => prev.map(e => e.tokenId === edition.tokenId ? { ...e, ipfsData } : e));
                         } catch (error) {
-                            console.error(`Error loading IPFS for batch ${batch.tokenId}:`, error);
+                            console.error(`Error loading IPFS for edition ${edition.tokenId}:`, error);
                         }
                     }
                 }
                 setIsLoadingIPFS(false);
 
             } catch (error) {
-                console.error('Error loading batches:', error);
+                console.error('Error loading editions:', error);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchBatches();
+        fetchEditions();
     }, [address, isAuthorized]);
 
-    if (isCheckingAuthorization || isLoadingProducer) {
+    if (isCheckingAuthorization || isLoadingArtist) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
@@ -176,7 +176,7 @@ export default function ProducerBatchesPage() {
                         Mes <em className="italic text-[#78716c]">Œuvres</em>
                     </h1>
                     <Link
-                        href="/producer/batches/create"
+                        href="/artist/editions/create"
                         className="inline-block bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-8 border border-[#1c1917] hover:bg-[#292524] transition-all duration-200"
                     >
                         + Créer une œuvre
@@ -188,7 +188,7 @@ export default function ProducerBatchesPage() {
                         <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
                         <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement de vos œuvres…</p>
                     </div>
-                ) : batches.length === 0 ? (
+                ) : editions.length === 0 ? (
                     <div className="text-center font-serif italic text-[18px] text-[#a8a29e] py-12">
                         Vous n'avez pas encore créé d'œuvre.
                     </div>
@@ -200,35 +200,35 @@ export default function ProducerBatchesPage() {
                             </div>
                         )}
                         <div className="space-y-px">
-                            {batches.map((batch) => (
+                            {editions.map((edition) => (
                                 <Link
-                                    key={batch.tokenId.toString()}
-                                    href={`/explore/batch/${batch.tokenId}`}
+                                    key={edition.tokenId.toString()}
+                                    href={`/explore/edition/${edition.tokenId}`}
                                     className="block border border-[#d6d0c8] bg-[#fafaf8] p-8 hover:bg-[#f5f3ef] transition-colors duration-200"
                                 >
                                     <div className="flex justify-between items-start gap-8">
                                         <div className="flex-1">
                                             <h2 className="font-serif text-[28px] font-normal text-[#1c1917] mb-3 leading-tight">
-                                                {batch.title}
+                                                {edition.title}
                                             </h2>
                                             <div className="space-y-1.5">
                                                 <p className="text-[12px] font-light tracking-[0.06em] text-[#a8a29e]">
-                                                    ŒUVRE #{batch.tokenId.toString()}
+                                                    ŒUVRE #{edition.tokenId.toString()}
                                                 </p>
-                                                {batch.ipfsData?.category && (
+                                                {edition.ipfsData?.category && (
                                                     <p className="text-[13px] font-light text-[#78716c]">
-                                                        {batch.ipfsData.category}
+                                                        {edition.ipfsData.category}
                                                     </p>
                                                 )}
-                                                {batch.ipfsData?.technique && (
+                                                {edition.ipfsData?.technique && (
                                                     <p className="text-[13px] font-light text-[#78716c]">
-                                                        {batch.ipfsData.technique}
-                                                        {batch.ipfsData.dimensions ? ` — ${batch.ipfsData.dimensions}` : ''}
+                                                        {edition.ipfsData.technique}
+                                                        {edition.ipfsData.dimensions ? ` — ${edition.ipfsData.dimensions}` : ''}
                                                     </p>
                                                 )}
-                                                {batch.ipfsData?.year && (
+                                                {edition.ipfsData?.year && (
                                                     <p className="text-[13px] font-light text-[#a8a29e]">
-                                                        {batch.ipfsData.year}
+                                                        {edition.ipfsData.year}
                                                     </p>
                                                 )}
                                             </div>
@@ -238,10 +238,10 @@ export default function ProducerBatchesPage() {
                                                 Exemplaires restants
                                             </p>
                                             <p className="font-serif text-[36px] font-normal text-[#1c1917] leading-none">
-                                                {batch.remainingTokens.toString()}
+                                                {edition.remainingTokens.toString()}
                                             </p>
-                                            {batch.ipfsData?.editionSize && (
-                                                <p className="text-[11px] text-[#a8a29e] mt-1">/ {batch.ipfsData.editionSize}</p>
+                                            {edition.ipfsData?.editionSize && (
+                                                <p className="text-[11px] text-[#a8a29e] mt-1">/ {edition.ipfsData.editionSize}</p>
                                             )}
                                         </div>
                                     </div>

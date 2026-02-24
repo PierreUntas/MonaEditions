@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "BeeBlock - Traçabilité du Miel sur Blockchain",
   description: "BeeBlock est une plateforme de traçabilité décentralisée pour le miel, utilisant la blockchain pour garantir l'authenticité et la transparence de chaque pot de miel.",
-  keywords: ["blockchain", "miel", "traçabilité", "NFT", "producteur", "apiculture", "honey", "Web3"],
+  keywords: ["blockchain", "miel", "traçabilité", "NFT", "artiste", "apiculture", "honey", "Web3"],
   authors: [{ name: "BeeBlock" }],
   openGraph: {
     title: "BeeBlock - Traçabilité du Miel sur Blockchain",

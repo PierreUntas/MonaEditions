@@ -179,7 +179,7 @@ export default function AboutPage() {
             {sectors.map(({ svg, label, category }) => (
               <a
                 key={label}
-                href={`/explore/batches?category=${encodeURIComponent(category)}`}
+                href={`/explore/editions?category=${encodeURIComponent(category)}`}
                 className="flex items-center gap-2.5 py-2.5 px-3 border border-[#d6d0c8] bg-[#f5f3ef] hover:bg-[#e7e3dc] hover:border-[#1c1917] transition-all duration-200 no-underline group"
               >
                 <div className="w-4 h-4 text-[#78716c] group-hover:text-[#1c1917] flex-shrink-0 transition-colors">

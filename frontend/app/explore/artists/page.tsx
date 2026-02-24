@@ -9,7 +9,7 @@ import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
 
 // New artist IPFS structure
-interface ProducerIPFSData {
+interface ArtistIPFSData {
     name: string;
     location: string;
     website: string;
@@ -24,13 +24,13 @@ interface ProducerIPFSData {
     };
 }
 
-interface ProducerInfo {
+interface ArtistInfo {
     address: string;
     name: string;
     location: string;
     metadata: string;
-    ipfsData?: ProducerIPFSData;
-    batchCount: number;
+    ipfsData?: ArtistIPFSData;
+    editionCount: number;
 }
 
 const ipfsToHttp = (url: string) =>
@@ -38,14 +38,14 @@ const ipfsToHttp = (url: string) =>
         ? `https://ipfs.io/ipfs/${url.replace('ipfs://', '')}`
         : url;
 
-export default function ProducersPage() {
-    const [producers, setProducers] = useState<ProducerInfo[]>([]);
+export default function ArtistsPage() {
+    const [artists, setArtists] = useState<ArtistInfo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
-    const [filterProducer, setFilterProducer] = useState<string>('all');
+    const [filterArtist, setFilterArtist] = useState<string>('all');
 
     useEffect(() => {
-        const fetchAllProducers = async () => {
+        const fetchAllArtists = async () => {
             if (!publicClient) { setIsLoading(false); return; }
             try {
                 const logs = await publicClient.getLogs({
@@ -57,8 +57,8 @@ export default function ProducersPage() {
 
                 const uniqueAddresses = Array.from(new Set(logs.map(l => l.args.artist as string)));
 
-                const producersData = await Promise.all(uniqueAddresses.map(async (addr) => {
-                    const [artistData, batchLogs] = await Promise.all([
+                const artistsData = await Promise.all(uniqueAddresses.map(async (addr) => {
+                    const [artistData, editionLogs] = await Promise.all([
                         publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [addr as `0x${string}`] }) as Promise<any>,
                         publicClient.getLogs({ address: ARTWORK_REGISTRY_ADDRESS, event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'), args: { artist: addr as `0x${string}` }, fromBlock: 9753823n, toBlock: 'latest' })
                     ]);
@@ -80,26 +80,26 @@ export default function ProducersPage() {
                         name: artistName,
                         location: artistLocation,
                         metadata: artistData.metadata || '',
-                        batchCount: batchLogs.length
+                        editionCount: editionLogs.length
                     };
                 }));
 
-                const valid = producersData
+                const valid = artistsData
                     .filter(p => p.name && p.name !== 'Artiste anonyme')
                     .sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
 
-                setProducers(valid);
+                setArtists(valid);
                 setIsLoading(false);
 
                 // Load full IPFS data (bio, portfolio, socialMedia, etc.)
                 setIsLoadingIPFS(true);
                 const ipfsResults = await Promise.all(valid.map(async (p) => {
                     if (!p.metadata?.trim()) return null;
-                    try { return { address: p.address, ipfsData: await getFromIPFSGateway(p.metadata) as ProducerIPFSData }; }
+                    try { return { address: p.address, ipfsData: await getFromIPFSGateway(p.metadata) as ArtistIPFSData }; }
                     catch { return null; }
                 }));
 
-                setProducers(prev => {
+                setArtists(prev => {
                     const updated = [...prev];
                     ipfsResults.forEach(r => {
                         if (r) { const i = updated.findIndex(p => p.address === r.address); if (i !== -1) updated[i] = { ...updated[i], ipfsData: r.ipfsData }; }
@@ -108,14 +108,14 @@ export default function ProducersPage() {
                 });
                 setIsLoadingIPFS(false);
             } catch (e) {
-                console.error('Error loading producers:', e);
+                console.error('Error loading artists:', e);
                 setIsLoading(false);
             }
         };
-        fetchAllProducers();
+        fetchAllArtists();
     }, []);
 
-    const filtered = filterProducer === 'all' ? producers : producers.filter(p => p.name === filterProducer);
+    const filtered = filterArtist === 'all' ? artists : artists.filter(p => p.name === filterArtist);
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
@@ -139,7 +139,7 @@ export default function ProducersPage() {
                             </p>
                         </div>
                         <div className="text-right hidden md:block">
-                            <span className="font-serif italic text-[48px] text-[#e7e3dc] leading-none">{producers.length}</span>
+                            <span className="font-serif italic text-[48px] text-[#e7e3dc] leading-none">{artists.length}</span>
                             <span className="block text-[11px] font-light tracking-[0.08em] text-[#a8a29e] mt-1">artistes certifiés</span>
                         </div>
                     </div>
@@ -147,11 +147,11 @@ export default function ProducersPage() {
 
                 {/* Filters */}
                 <div className="flex gap-2 flex-wrap mb-10">
-                    <FilterBtn active={filterProducer === 'all'} onClick={() => setFilterProducer('all')}>
-                        Tous ({producers.length})
+                    <FilterBtn active={filterArtist === 'all'} onClick={() => setFilterArtist('all')}>
+                        Tous ({artists.length})
                     </FilterBtn>
-                    {producers.map(p => (
-                        <FilterBtn key={p.address} active={filterProducer === p.name} onClick={() => setFilterProducer(p.name)}>
+                    {artists.map(p => (
+                        <FilterBtn key={p.address} active={filterArtist === p.name} onClick={() => setFilterArtist(p.name)}>
                             {p.name}
                         </FilterBtn>
                     ))}
@@ -174,18 +174,18 @@ export default function ProducersPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#d6d0c8] border border-[#d6d0c8]">
-                        {filtered.map((producer) => (
+                        {filtered.map((artist) => (
                             <Link
-                                key={producer.address}
-                                href={`/explore/producer/${producer.address}`}
+                                key={artist.address}
+                                href={`/explore/artist/${artist.address}`}
                                 className="bg-[#fafaf8] p-6 flex flex-col gap-4 hover:bg-[#f5f3ef] transition-colors duration-200 no-underline group"
                             >
                                 {/* First portfolio photo as hero */}
-                                {producer.ipfsData?.portfolio?.[0] ? (
+                                {artist.ipfsData?.portfolio?.[0] ? (
                                     <div className="w-full aspect-[16/9] overflow-hidden bg-[#e7e3dc]">
                                         <img
-                                            src={ipfsToHttp(producer.ipfsData.portfolio[0])}
-                                            alt={producer.name}
+                                            src={ipfsToHttp(artist.ipfsData.portfolio[0])}
+                                            alt={artist.name}
                                             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
                                         />
                                     </div>
@@ -199,34 +199,34 @@ export default function ProducersPage() {
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1 min-w-0">
                                         <h3 className="font-serif text-[20px] font-normal text-[#1c1917] leading-tight mb-1">
-                                            {producer.name}
+                                            {artist.name}
                                         </h3>
-                                        <p className="text-[12px] font-light text-[#78716c]">{producer.location}</p>
+                                        <p className="text-[12px] font-light text-[#78716c]">{artist.location}</p>
                                     </div>
-                                    {producer.ipfsData?.logo && (
+                                    {artist.ipfsData?.logo && (
                                         <img
-                                            src={ipfsToHttp(producer.ipfsData.logo)}
-                                            alt={`Logo ${producer.name}`}
+                                            src={ipfsToHttp(artist.ipfsData.logo)}
+                                            alt={`Logo ${artist.name}`}
                                             className="w-14 h-14 object-contain flex-shrink-0 border border-[#e7e3dc] bg-[#f5f3ef]"
                                         />
                                     )}
                                 </div>
 
                                 {/* Bio */}
-                                {producer.ipfsData?.bio && (
+                                {artist.ipfsData?.bio && (
                                     <p className="text-[13px] font-light text-[#78716c] leading-relaxed line-clamp-3">
-                                        {producer.ipfsData.bio}
+                                        {artist.ipfsData.bio}
                                     </p>
                                 )}
 
                                 {/* Footer */}
                                 <div className="border-t border-[#e7e3dc] pt-4 flex items-center justify-between">
                                     <p className="text-[12px] font-light text-[#78716c]">
-                                        {producer.batchCount} œuvre{producer.batchCount > 1 ? 's' : ''} certifiée{producer.batchCount > 1 ? 's' : ''}
+                                        {artist.editionCount} œuvre{artist.editionCount > 1 ? 's' : ''} certifiée{artist.editionCount > 1 ? 's' : ''}
                                     </p>
-                                    {producer.ipfsData?.portfolio && producer.ipfsData.portfolio.length > 1 && (
+                                    {artist.ipfsData?.portfolio && artist.ipfsData.portfolio.length > 1 && (
                                         <p className="text-[11px] font-light text-[#a8a29e]">
-                                            {producer.ipfsData.portfolio.length} photos
+                                            {artist.ipfsData.portfolio.length} photos
                                         </p>
                                     )}
                                 </div>

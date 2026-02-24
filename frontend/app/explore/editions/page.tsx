@@ -10,7 +10,7 @@ import { publicClient } from '@/lib/client';
 import { useSearchParams } from 'next/navigation';
 
 // New artwork IPFS structure
-interface BatchIPFSData {
+interface EditionIPFSData {
     title: string;
     year: number;
     description: string;
@@ -21,18 +21,18 @@ interface BatchIPFSData {
     category: string;
 }
 
-interface BatchInfo {
+interface EditionInfo {
     tokenId: bigint;
-    producer: string;
+    artist: string;
     title: string;
     metadata: string;
     remainingTokens: bigint;
-    ipfsData?: BatchIPFSData;
+    ipfsData?: EditionIPFSData;
     averageRating?: number;
     commentsCount?: number;
 }
 
-interface ProducerInfo {
+interface ArtistInfo {
     name: string;
     location: string;
 }
@@ -45,14 +45,14 @@ const ipfsToHttp = (url: string) =>
 function ExplorePageContent() {
     const searchParams = useSearchParams();
     const categoryFromUrl = searchParams.get('category');
-    const [batches, setBatches] = useState<BatchInfo[]>([]);
-    const [producers, setProducers] = useState<Map<string, ProducerInfo>>(new Map());
+    const [editions, setEditions] = useState<EditionInfo[]>([]);
+    const [artists, setArtists] = useState<Map<string, ArtistInfo>>(new Map());
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
     const [filterCategory, setFilterCategory] = useState<string>(categoryFromUrl || 'all');
 
     useEffect(() => {
-        const fetchAllBatches = async () => {
+        const fetchAllEditions = async () => {
             if (!publicClient) { setIsLoading(false); return; }
             try {
                 const logs = await publicClient.getLogs({
@@ -62,13 +62,13 @@ function ExplorePageContent() {
                     toBlock: 'latest'
                 });
 
-                const batchesPromises = logs.map(async (log) => {
+                const editionsPromises = logs.map(async (log) => {
                     const tokenId = log.args.editionId as bigint;
-                    const producerAddress = log.args.artist as `0x${string}`;
-                    const [batchInfo, balance, artistData] = await Promise.all([
+                    const artistAddress = log.args.artist as `0x${string}`;
+                    const [editionInfo, balance, artistData] = await Promise.all([
                         publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [tokenId] }) as Promise<any>,
-                        publicClient.readContract({ address: ARTWORK_TOKENIZATION_ADDRESS, abi: ARTWORK_TOKENIZATION_ABI, functionName: 'balanceOf', args: [producerAddress, tokenId] }) as Promise<bigint>,
-                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [producerAddress] }) as Promise<any>
+                        publicClient.readContract({ address: ARTWORK_TOKENIZATION_ADDRESS, abi: ARTWORK_TOKENIZATION_ABI, functionName: 'balanceOf', args: [artistAddress, tokenId] }) as Promise<bigint>,
+                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [artistAddress] }) as Promise<any>
                     ]);
 
                     let artistName = 'Artiste anonyme';
@@ -84,9 +84,9 @@ function ExplorePageContent() {
                     }
 
                     let artworkTitle = 'Œuvre sans titre';
-                    if (batchInfo.metadata?.trim()) {
+                    if (editionInfo.metadata?.trim()) {
                         try {
-                            const editionIpfsData = await getFromIPFSGateway(batchInfo.metadata);
+                            const editionIpfsData = await getFromIPFSGateway(editionInfo.metadata);
                             artworkTitle = editionIpfsData.title || 'Œuvre sans titre';
                         } catch (e) {
                             console.error('Error loading edition IPFS data:', e);
@@ -94,33 +94,33 @@ function ExplorePageContent() {
                     }
 
                     return {
-                        batch: { tokenId, producer: producerAddress, title: artworkTitle, metadata: batchInfo.metadata, remainingTokens: balance },
-                        producerInfo: { address: producerAddress, name: artistName, location: artistLocation }
+                        edition: { tokenId, artist: artistAddress, title: artworkTitle, metadata: editionInfo.metadata, remainingTokens: balance },
+                        artistInfo: { address: artistAddress, name: artistName, location: artistLocation }
                     };
                 });
 
-                const results = await Promise.all(batchesPromises);
-                const producersMap = new Map<string, ProducerInfo>();
-                const batchesData = results.map(({ batch, producerInfo }) => {
-                    if (!producersMap.has(producerInfo.address))
-                        producersMap.set(producerInfo.address, { name: producerInfo.name, location: producerInfo.location });
-                    return batch;
+                const results = await Promise.all(editionsPromises);
+                const artistsMap = new Map<string, ArtistInfo>();
+                const editionsData = results.map(({ edition, artistInfo }) => {
+                    if (!artistsMap.has(artistInfo.address))
+                        artistsMap.set(artistInfo.address, { name: artistInfo.name, location: artistInfo.location });
+                    return edition;
                 });
 
-                batchesData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
-                setBatches(batchesData);
-                setProducers(producersMap);
+                editionsData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
+                setEditions(editionsData);
+                setArtists(artistsMap);
                 setIsLoading(false);
 
                 // Load full IPFS data for each artwork (images, category, technique, etc.)
                 setIsLoadingIPFS(true);
-                const ipfsResults = await Promise.all(batchesData.map(async (batch) => {
-                    if (!batch.metadata) return null;
-                    try { return { tokenId: batch.tokenId, ipfsData: await getFromIPFSGateway(batch.metadata) as BatchIPFSData }; }
+                const ipfsResults = await Promise.all(editionsData.map(async (edition) => {
+                    if (!edition.metadata) return null;
+                    try { return { tokenId: edition.tokenId, ipfsData: await getFromIPFSGateway(edition.metadata) as EditionIPFSData }; }
                     catch { return null; }
                 }));
 
-                setBatches(prev => {
+                setEditions(prev => {
                     const updated = [...prev];
                     ipfsResults.forEach(r => {
                         if (r) { const i = updated.findIndex(b => b.tokenId === r.tokenId); if (i !== -1) updated[i] = { ...updated[i], ipfsData: r.ipfsData }; }
@@ -128,18 +128,18 @@ function ExplorePageContent() {
                     return updated;
                 });
 
-                const ratingsResults = await Promise.all(batchesData.map(async (batch) => {
+                const ratingsResults = await Promise.all(editionsData.map(async (edition) => {
                     try {
-                        const count = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviewsCount', args: [batch.tokenId] }) as bigint;
+                        const count = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviewsCount', args: [edition.tokenId] }) as bigint;
                         if (count > 0n) {
-                            const comments = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviews', args: [batch.tokenId, 0n, count] }) as any[];
-                            return { tokenId: batch.tokenId, averageRating: comments.reduce((s, c) => s + Number(c.rating), 0) / comments.length, commentsCount: Number(count) };
+                            const comments = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviews', args: [edition.tokenId, 0n, count] }) as any[];
+                            return { tokenId: edition.tokenId, averageRating: comments.reduce((s, c) => s + Number(c.rating), 0) / comments.length, commentsCount: Number(count) };
                         }
                         return null;
                     } catch { return null; }
                 }));
 
-                setBatches(prev => {
+                setEditions(prev => {
                     const updated = [...prev];
                     ratingsResults.forEach(r => {
                         if (r) { const i = updated.findIndex(b => b.tokenId === r.tokenId); if (i !== -1) updated[i] = { ...updated[i], averageRating: r.averageRating, commentsCount: r.commentsCount }; }
@@ -148,18 +148,18 @@ function ExplorePageContent() {
                 });
                 setIsLoadingIPFS(false);
             } catch (e) {
-                console.error('Error loading batches:', e);
+                console.error('Error loading editions:', e);
                 setIsLoading(false);
             }
         };
-        fetchAllBatches();
+        fetchAllEditions();
     }, []);
 
     // Filter by category (from new IPFS structure)
-    const uniqueCategories = Array.from(new Set(batches.map(b => b.ipfsData?.category).filter(Boolean))) as string[];
-    const filteredBatches = filterCategory === 'all'
-        ? batches
-        : batches.filter(b => b.ipfsData?.category === filterCategory);
+    const uniqueCategories = Array.from(new Set(editions.map(b => b.ipfsData?.category).filter(Boolean))) as string[];
+    const filteredEditions = filterCategory === 'all'
+        ? editions
+        : editions.filter(b => b.ipfsData?.category === filterCategory);
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
@@ -183,7 +183,7 @@ function ExplorePageContent() {
                             </p>
                         </div>
                         <div className="text-right hidden md:block">
-                            <span className="font-serif italic text-[48px] text-[#e7e3dc] leading-none">{batches.length}</span>
+                            <span className="font-serif italic text-[48px] text-[#e7e3dc] leading-none">{editions.length}</span>
                             <span className="block text-[11px] font-light tracking-[0.08em] text-[#a8a29e] mt-1">œuvres certifiées</span>
                         </div>
                     </div>
@@ -192,11 +192,11 @@ function ExplorePageContent() {
                 {/* Filters by category */}
                 <div className="flex gap-2 flex-wrap mb-10">
                     <FilterBtn active={filterCategory === 'all'} onClick={() => setFilterCategory('all')}>
-                        Toutes ({batches.length})
+                        Toutes ({editions.length})
                     </FilterBtn>
                     {uniqueCategories.map(cat => (
                         <FilterBtn key={cat} active={filterCategory === cat} onClick={() => setFilterCategory(cat)}>
-                            {cat} ({batches.filter(b => b.ipfsData?.category === cat).length})
+                            {cat} ({editions.filter(b => b.ipfsData?.category === cat).length})
                         </FilterBtn>
                     ))}
                 </div>
@@ -212,24 +212,24 @@ function ExplorePageContent() {
                         <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
                         <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement des œuvres…</p>
                     </div>
-                ) : filteredBatches.length === 0 ? (
+                ) : filteredEditions.length === 0 ? (
                     <div className="border border-[#d6d0c8] bg-[#fafaf8] p-12 text-center">
                         <p className="font-serif italic text-[22px] text-[#a8a29e]">Aucune œuvre trouvée</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#d6d0c8] border border-[#d6d0c8]">
-                        {filteredBatches.map((batch) => (
+                        {filteredEditions.map((edition) => (
                             <Link
-                                key={batch.tokenId.toString()}
-                                href={`/explore/batch/${batch.tokenId}`}
+                                key={edition.tokenId.toString()}
+                                href={`/explore/edition/${edition.tokenId}`}
                                 className="bg-[#fafaf8] p-6 flex flex-col gap-4 hover:bg-[#f5f3ef] transition-colors duration-200 no-underline group"
                             >
                                 {/* First image from portfolio, or placeholder */}
-                                {batch.ipfsData?.images?.[0] ? (
+                                {edition.ipfsData?.images?.[0] ? (
                                     <div className="w-full aspect-[4/3] overflow-hidden bg-[#e7e3dc]">
                                         <img
-                                            src={ipfsToHttp(batch.ipfsData.images[0])}
-                                            alt={batch.title}
+                                            src={ipfsToHttp(edition.ipfsData.images[0])}
+                                            alt={edition.title}
                                             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
                                         />
                                     </div>
@@ -243,13 +243,13 @@ function ExplorePageContent() {
                                 <div className="flex flex-col gap-2 flex-1">
                                     <div className="flex items-start justify-between gap-2">
                                         <div>
-                                            {batch.ipfsData?.category && (
+                                            {edition.ipfsData?.category && (
                                                 <p className="text-[10px] font-medium tracking-[0.12em] uppercase text-[#a8a29e] mb-1">
-                                                    {batch.ipfsData.category}
+                                                    {edition.ipfsData.category}
                                                 </p>
                                             )}
                                             <h3 className="font-serif text-[18px] font-normal text-[#1c1917] leading-tight">
-                                                {batch.title}
+                                                {edition.title}
                                             </h3>
                                         </div>
                                         <span className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#4a5240] border border-[#4a5240] px-1.5 py-0.5 flex-shrink-0 mt-1">
@@ -257,20 +257,20 @@ function ExplorePageContent() {
                                         </span>
                                     </div>
 
-                                    {batch.ipfsData?.technique && (
+                                    {edition.ipfsData?.technique && (
                                         <p className="text-[12px] font-light text-[#78716c]">
-                                            {batch.ipfsData.technique}
-                                            {batch.ipfsData.dimensions ? ` — ${batch.ipfsData.dimensions}` : ''}
+                                            {edition.ipfsData.technique}
+                                            {edition.ipfsData.dimensions ? ` — ${edition.ipfsData.dimensions}` : ''}
                                         </p>
                                     )}
 
-                                    {batch.ipfsData?.year && (
-                                        <p className="text-[11px] font-light text-[#a8a29e]">{batch.ipfsData.year}</p>
+                                    {edition.ipfsData?.year && (
+                                        <p className="text-[11px] font-light text-[#a8a29e]">{edition.ipfsData.year}</p>
                                     )}
 
-                                    {batch.commentsCount !== undefined && batch.commentsCount > 0 && (
+                                    {edition.commentsCount !== undefined && edition.commentsCount > 0 && (
                                         <p className="text-[12px] font-light text-[#78716c]">
-                                            {batch.averageRating?.toFixed(1)} · {batch.commentsCount} avis vérifié{batch.commentsCount > 1 ? 's' : ''}
+                                            {edition.averageRating?.toFixed(1)} · {edition.commentsCount} avis vérifié{edition.commentsCount > 1 ? 's' : ''}
                                         </p>
                                     )}
                                 </div>
@@ -279,13 +279,13 @@ function ExplorePageContent() {
                                 <div className="border-t border-[#e7e3dc] pt-4 flex items-end justify-between">
                                     <div>
                                         <p className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#a8a29e] mb-0.5">Artiste</p>
-                                        <p className="text-[13px] font-light text-[#1c1917]">{producers.get(batch.producer)?.name}</p>
+                                        <p className="text-[13px] font-light text-[#1c1917]">{artists.get(edition.artist)?.name}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#a8a29e] mb-0.5">Édition</p>
                                         <p className="text-[13px] font-light text-[#78716c] font-mono">
-                                            {batch.remainingTokens.toString()}
-                                            {batch.ipfsData?.editionSize ? ` / ${batch.ipfsData.editionSize}` : ''}
+                                            {edition.remainingTokens.toString()}
+                                            {edition.ipfsData?.editionSize ? ` / ${edition.ipfsData.editionSize}` : ''}
                                         </p>
                                     </div>
                                 </div>

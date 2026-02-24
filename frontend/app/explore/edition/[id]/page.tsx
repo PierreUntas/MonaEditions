@@ -8,9 +8,9 @@ import Navbar from '@/components/shared/Navbar';
 import Link from 'next/link';
 import { publicClient } from '@/lib/client';
 
-interface BatchDetails {
+interface EditionDetails {
     tokenId: bigint;
-    producer: string;
+    artist: string;
     title: string;
     metadata: string;
     merkleRoot: string;
@@ -18,7 +18,7 @@ interface BatchDetails {
 }
 
 // New artwork IPFS structure
-interface BatchIPFSData {
+interface EditionIPFSData {
     title: string;
     year: number;
     description: string;
@@ -29,14 +29,14 @@ interface BatchIPFSData {
     category: string;
 }
 
-interface ProducerInfo {
+interface ArtistInfo {
     name: string;
     location: string;
     metadata: string;
 }
 
 // New artist IPFS structure
-interface ProducerIPFSData {
+interface ArtistIPFSData {
     name: string;
     location: string;
     website: string;
@@ -52,8 +52,8 @@ interface ProducerIPFSData {
 }
 
 interface Comment {
-    consumer: string;
-    productBatchId: bigint;
+    collector: string;
+    productEditionId: bigint;
     rating: number;
     metadata: string;
 }
@@ -63,34 +63,34 @@ const ipfsToHttp = (url: string) =>
         ? `https://ipfs.io/ipfs/${url.replace('ipfs://', '')}`
         : url;
 
-export default function BatchDetailsPage() {
+export default function EditionDetailsPage() {
     const params = useParams();
-    const batchId = params.id as string;
+    const editionId = params.id as string;
 
-    const [batch, setBatch] = useState<BatchDetails | null>(null);
-    const [batchIPFSData, setBatchIPFSData] = useState<BatchIPFSData | null>(null);
-    const [producer, setProducer] = useState<ProducerInfo | null>(null);
-    const [producerIPFSData, setProducerIPFSData] = useState<ProducerIPFSData | null>(null);
+    const [edition, setEdition] = useState<EditionDetails | null>(null);
+    const [editionIPFSData, setEditionIPFSData] = useState<EditionIPFSData | null>(null);
+    const [artist, setArtist] = useState<ArtistInfo | null>(null);
+    const [artistIPFSData, setArtistIPFSData] = useState<ArtistIPFSData | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
     const [selectedImage, setSelectedImage] = useState<number>(0);
 
     useEffect(() => {
-        const fetchBatchDetails = async () => {
-            if (!publicClient || !batchId) { setIsLoading(false); return; }
+        const fetchEditionDetails = async () => {
+            if (!publicClient || !editionId) { setIsLoading(false); return; }
 
             try {
-                const tokenId = BigInt(batchId);
+                const tokenId = BigInt(editionId);
 
-                const batchInfo = await publicClient.readContract({
+                const editionInfo = await publicClient.readContract({
                     address: ARTWORK_REGISTRY_ADDRESS,
                     abi: ARTWORK_REGISTRY_ABI,
                     functionName: 'getArtworkEdition',
                     args: [tokenId]
                 }) as any;
 
-                const producerAddress = await publicClient.readContract({
+                const artistAddress = await publicClient.readContract({
                     address: ARTWORK_TOKENIZATION_ADDRESS,
                     abi: ARTWORK_TOKENIZATION_ABI,
                     functionName: 'tokenArtist',
@@ -101,38 +101,38 @@ export default function BatchDetailsPage() {
                     address: ARTWORK_TOKENIZATION_ADDRESS,
                     abi: ARTWORK_TOKENIZATION_ABI,
                     functionName: 'balanceOf',
-                    args: [producerAddress, tokenId]
+                    args: [artistAddress, tokenId]
                 }) as bigint;
 
                 let artworkTitle = 'Œuvre sans titre';
-                if (batchInfo.metadata?.trim()) {
+                if (editionInfo.metadata?.trim()) {
                     setIsLoadingIPFS(true);
                     try {
-                        const ipfsData = await getFromIPFSGateway(batchInfo.metadata) as BatchIPFSData;
-                        setBatchIPFSData(ipfsData);
+                        const ipfsData = await getFromIPFSGateway(editionInfo.metadata) as EditionIPFSData;
+                        setEditionIPFSData(ipfsData);
                         artworkTitle = ipfsData.title || 'Œuvre sans titre';
                     } catch (error) {
-                        console.error('Error loading batch IPFS data:', error);
+                        console.error('Error loading edition IPFS data:', error);
                     } finally {
                         setIsLoadingIPFS(false);
                     }
                 }
 
-                setBatch({ tokenId, producer: producerAddress, title: artworkTitle, metadata: batchInfo.metadata, merkleRoot: batchInfo.merkleRoot, remainingTokens: balance });
+                setEdition({ tokenId, artist: artistAddress, title: artworkTitle, metadata: editionInfo.metadata, merkleRoot: editionInfo.merkleRoot, remainingTokens: balance });
 
                 const artistData = await publicClient.readContract({
                     address: ARTWORK_REGISTRY_ADDRESS,
                     abi: ARTWORK_REGISTRY_ABI,
                     functionName: 'getArtist',
-                    args: [producerAddress]
+                    args: [artistAddress]
                 }) as any;
 
                 let artistName = 'Artiste anonyme';
                 let artistLocation = '';
                 if (artistData.metadata?.trim()) {
                     try {
-                        const artistIpfsData = await getFromIPFSGateway(artistData.metadata) as ProducerIPFSData;
-                        setProducerIPFSData(artistIpfsData);
+                        const artistIpfsData = await getFromIPFSGateway(artistData.metadata) as ArtistIPFSData;
+                        setArtistIPFSData(artistIpfsData);
                         artistName = artistIpfsData.name || 'Artiste anonyme';
                         artistLocation = artistIpfsData.location || '';
                     } catch (error) {
@@ -140,7 +140,7 @@ export default function BatchDetailsPage() {
                     }
                 }
 
-                setProducer({ name: artistName, location: artistLocation, metadata: artistData.metadata });
+                setArtist({ name: artistName, location: artistLocation, metadata: artistData.metadata });
 
                 const commentsCount = await publicClient.readContract({
                     address: ARTWORK_REGISTRY_ADDRESS,
@@ -160,14 +160,14 @@ export default function BatchDetailsPage() {
                 }
 
             } catch (error) {
-                console.error('Error loading batch details:', error);
+                console.error('Error loading edition details:', error);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchBatchDetails();
-    }, [batchId]);
+        fetchEditionDetails();
+    }, [editionId]);
 
     const calculateAverageRating = () => {
         if (comments.length === 0) return 0;
@@ -184,7 +184,7 @@ export default function BatchDetailsPage() {
         </div>
     );
 
-    if (!batch || !producer) return (
+    if (!edition || !artist) return (
         <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
             <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
@@ -193,7 +193,7 @@ export default function BatchDetailsPage() {
         </div>
     );
 
-    const images = batchIPFSData?.images ?? [];
+    const images = editionIPFSData?.images ?? [];
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
@@ -201,7 +201,7 @@ export default function BatchDetailsPage() {
             <div className="max-w-4xl mx-auto px-6 pt-28 pb-20">
 
                 <Link
-                    href="/explore/batches"
+                    href="/explore/editions"
                     className="inline-flex items-center gap-2 text-[11px] font-medium tracking-[0.06em] text-[#78716c]
                         border border-[#d6d0c8] px-4 py-2 mb-12 no-underline
                         hover:border-[#1c1917] hover:text-[#1c1917] transition-all duration-200"
@@ -219,23 +219,23 @@ export default function BatchDetailsPage() {
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] mb-px p-8">
                     <div className="flex justify-between items-start mb-4">
                         <div>
-                            {batchIPFSData?.category && (
+                            {editionIPFSData?.category && (
                                 <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-[#a8a29e] border border-[#d6d0c8] px-2 py-0.5 mb-3 inline-block">
-                                    {batchIPFSData.category}
+                                    {editionIPFSData.category}
                                 </span>
                             )}
                             <h1 className="font-serif text-[clamp(32px,5vw,42px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-1">
-                                {batch.title}
+                                {edition.title}
                             </h1>
-                            <p className="text-[14px] text-[#78716c]">Œuvre #{batch.tokenId.toString()}</p>
+                            <p className="text-[14px] text-[#78716c]">Œuvre #{edition.tokenId.toString()}</p>
                         </div>
                         <div className="text-right flex-shrink-0 ml-6">
                             <p className="mb-1 text-[12px] text-[#a8a29e]">Exemplaires</p>
                             <p className="font-serif text-4xl font-normal text-[#1c1917]">
-                                {batch.remainingTokens.toString()}
+                                {edition.remainingTokens.toString()}
                             </p>
-                            {batchIPFSData?.editionSize && (
-                                <p className="text-[11px] text-[#a8a29e]">/ {batchIPFSData.editionSize}</p>
+                            {editionIPFSData?.editionSize && (
+                                <p className="text-[11px] text-[#a8a29e]">/ {editionIPFSData.editionSize}</p>
                             )}
                         </div>
                     </div>
@@ -258,7 +258,7 @@ export default function BatchDetailsPage() {
                         <div className="w-full aspect-[4/3] overflow-hidden bg-[#e7e3dc] border border-[#d6d0c8] mb-3">
                             <img
                                 src={ipfsToHttp(images[selectedImage])}
-                                alt={`${batch.title} — image ${selectedImage + 1}`}
+                                alt={`${edition.title} — image ${selectedImage + 1}`}
                                 className="w-full h-full object-contain"
                             />
                         </div>
@@ -290,39 +290,39 @@ export default function BatchDetailsPage() {
                         Informations de l'<em className="italic text-[#78716c]">œuvre</em>
                     </h2>
                     <div className="space-y-4">
-                        {batchIPFSData?.description && (
+                        {editionIPFSData?.description && (
                             <InfoBlock label="Description">
-                                <p className="text-[15px] text-[#1c1917] leading-[1.75]">{batchIPFSData.description}</p>
+                                <p className="text-[15px] text-[#1c1917] leading-[1.75]">{editionIPFSData.description}</p>
                             </InfoBlock>
                         )}
-                        {batchIPFSData?.year && (
+                        {editionIPFSData?.year && (
                             <InfoBlock label="Année">
-                                <p className="text-[15px] text-[#1c1917]">{batchIPFSData.year}</p>
+                                <p className="text-[15px] text-[#1c1917]">{editionIPFSData.year}</p>
                             </InfoBlock>
                         )}
-                        {batchIPFSData?.technique && (
+                        {editionIPFSData?.technique && (
                             <InfoBlock label="Technique">
-                                <p className="text-[15px] text-[#1c1917]">{batchIPFSData.technique}</p>
+                                <p className="text-[15px] text-[#1c1917]">{editionIPFSData.technique}</p>
                             </InfoBlock>
                         )}
-                        {batchIPFSData?.dimensions && (
+                        {editionIPFSData?.dimensions && (
                             <InfoBlock label="Dimensions">
-                                <p className="text-[15px] text-[#1c1917]">{batchIPFSData.dimensions}</p>
+                                <p className="text-[15px] text-[#1c1917]">{editionIPFSData.dimensions}</p>
                             </InfoBlock>
                         )}
-                        {batchIPFSData?.editionSize && (
+                        {editionIPFSData?.editionSize && (
                             <InfoBlock label="Taille de l'édition">
-                                <p className="text-[15px] text-[#1c1917]">{batchIPFSData.editionSize} exemplaires</p>
+                                <p className="text-[15px] text-[#1c1917]">{editionIPFSData.editionSize} exemplaires</p>
                             </InfoBlock>
                         )}
                         <InfoBlock label="Lien metadata" noBorder>
                             <a
-                                href={`https://ipfs.io/ipfs/${batch.metadata}`}
+                                href={`https://ipfs.io/ipfs/${edition.metadata}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity break-all"
                             >
-                                https://ipfs.io/ipfs/{batch.metadata}
+                                https://ipfs.io/ipfs/{edition.metadata}
                             </a>
                         </InfoBlock>
                     </div>
@@ -334,10 +334,10 @@ export default function BatchDetailsPage() {
                         <h2 className="font-serif text-[22px] font-normal text-[#1c1917] flex-1">
                             L'<em className="italic text-[#78716c]">artiste</em>
                         </h2>
-                        {producerIPFSData?.logo && (
+                        {artistIPFSData?.logo && (
                             <img
-                                src={ipfsToHttp(producerIPFSData.logo)}
-                                alt={`Logo ${producer.name}`}
+                                src={ipfsToHttp(artistIPFSData.logo)}
+                                alt={`Logo ${artist.name}`}
                                 className="w-20 h-20 object-contain flex-shrink-0 border border-[#d6d0c8] bg-[#f5f3ef]"
                             />
                         )}
@@ -345,44 +345,44 @@ export default function BatchDetailsPage() {
 
                     <div className="space-y-4">
                         <InfoBlock label="Nom">
-                            <p className="text-[15px] text-[#1c1917]">{producer.name}</p>
+                            <p className="text-[15px] text-[#1c1917]">{artist.name}</p>
                         </InfoBlock>
                         <InfoBlock label="Localisation">
-                            <p className="text-[15px] text-[#1c1917]">{producer.location}</p>
+                            <p className="text-[15px] text-[#1c1917]">{artist.location}</p>
                         </InfoBlock>
-                        {producerIPFSData?.bio && (
+                        {artistIPFSData?.bio && (
                             <InfoBlock label="Biographie">
-                                <p className="text-[15px] text-[#1c1917] leading-[1.75]">{producerIPFSData.bio}</p>
+                                <p className="text-[15px] text-[#1c1917] leading-[1.75]">{artistIPFSData.bio}</p>
                             </InfoBlock>
                         )}
-                        {producerIPFSData?.website && (
+                        {artistIPFSData?.website && (
                             <InfoBlock label="Site web">
                                 <a
-                                    href={producerIPFSData.website}
+                                    href={artistIPFSData.website}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity"
                                 >
-                                    {producerIPFSData.website}
+                                    {artistIPFSData.website}
                                 </a>
                             </InfoBlock>
                         )}
-                        {producerIPFSData?.socialMedia && (producerIPFSData.socialMedia.instagram || producerIPFSData.socialMedia.twitter || producerIPFSData.socialMedia.facebook) && (
+                        {artistIPFSData?.socialMedia && (artistIPFSData.socialMedia.instagram || artistIPFSData.socialMedia.twitter || artistIPFSData.socialMedia.facebook) && (
                             <InfoBlock label="Réseaux sociaux">
                                 <div className="flex flex-col gap-1">
-                                    {producerIPFSData.socialMedia.instagram && (
-                                        <a href={`https://instagram.com/${producerIPFSData.socialMedia.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity">
-                                            Instagram · {producerIPFSData.socialMedia.instagram}
+                                    {artistIPFSData.socialMedia.instagram && (
+                                        <a href={`https://instagram.com/${artistIPFSData.socialMedia.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity">
+                                            Instagram · {artistIPFSData.socialMedia.instagram}
                                         </a>
                                     )}
-                                    {producerIPFSData.socialMedia.twitter && (
-                                        <a href={`https://x.com/${producerIPFSData.socialMedia.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity">
-                                            Twitter / X · {producerIPFSData.socialMedia.twitter}
+                                    {artistIPFSData.socialMedia.twitter && (
+                                        <a href={`https://x.com/${artistIPFSData.socialMedia.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity">
+                                            Twitter / X · {artistIPFSData.socialMedia.twitter}
                                         </a>
                                     )}
-                                    {producerIPFSData.socialMedia.facebook && (
-                                        <a href={producerIPFSData.socialMedia.facebook.startsWith('http') ? producerIPFSData.socialMedia.facebook : `https://facebook.com/${producerIPFSData.socialMedia.facebook.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity">
-                                            Facebook · {producerIPFSData.socialMedia.facebook}
+                                    {artistIPFSData.socialMedia.facebook && (
+                                        <a href={artistIPFSData.socialMedia.facebook.startsWith('http') ? artistIPFSData.socialMedia.facebook : `https://facebook.com/${artistIPFSData.socialMedia.facebook.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-[14px] text-[#4a5240] hover:opacity-70 transition-opacity">
+                                            Facebook · {artistIPFSData.socialMedia.facebook}
                                         </a>
                                     )}
                                 </div>
@@ -390,12 +390,12 @@ export default function BatchDetailsPage() {
                         )}
                         <div>
                             <p className="mb-1 text-[12px] text-[#a8a29e] uppercase tracking-[0.12em]">Adresse Ethereum</p>
-                            <p className="text-[11px] font-mono break-all text-[#a8a29e]">{batch.producer}</p>
+                            <p className="text-[11px] font-mono break-all text-[#a8a29e]">{edition.artist}</p>
                         </div>
                     </div>
 
                     <Link
-                        href={`/explore/producer/${batch.producer}`}
+                        href={`/explore/artist/${edition.artist}`}
                         className="text-right block mt-6 text-[13px] text-[#4a5240] hover:text-[#1c1917] underline underline-offset-2 transition-colors"
                     >
                         Voir toutes ses œuvres →
@@ -417,7 +417,7 @@ export default function BatchDetailsPage() {
                                     <div className="flex items-center gap-2 mb-2">
                                         <span className="text-[#1c1917]">{'★'.repeat(comment.rating)}</span>
                                         <span className="font-mono text-[12px] text-[#a8a29e]">
-                                            {comment.consumer.slice(0, 6)}…{comment.consumer.slice(-4)}
+                                            {comment.collector.slice(0, 6)}…{comment.collector.slice(-4)}
                                         </span>
                                     </div>
                                     <p className="text-[14px] text-[#1c1917] leading-[1.75]">{comment.metadata}</p>

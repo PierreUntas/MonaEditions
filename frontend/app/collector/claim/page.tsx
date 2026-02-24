@@ -13,7 +13,7 @@ function ClaimTokenForm() {
     const { address } = useAccount();
     const searchParams = useSearchParams();
 
-    const [batchId, setBatchId] = useState('');
+    const [editionId, setEditionId] = useState('');
     const [secretKey, setSecretKey] = useState('');
     const [merkleProofInput, setMerkleProofInput] = useState('');
     const [error, setError] = useState('');
@@ -23,11 +23,11 @@ function ClaimTokenForm() {
     const { sendTransaction } = useSendTransaction();
 
     useEffect(() => {
-        const batchIdParam = searchParams.get('batchId');
+        const editionIdParam = searchParams.get('editionId');
         const secretKeyParam = searchParams.get('secretKey');
         const merkleProofParam = searchParams.get('merkleProof');
 
-        if (batchIdParam) setBatchId(batchIdParam);
+        if (editionIdParam) setEditionId(editionIdParam);
         if (secretKeyParam) setSecretKey(secretKeyParam);
         if (merkleProofParam) setMerkleProofInput(merkleProofParam);
     }, [searchParams]);
@@ -42,7 +42,7 @@ function ClaimTokenForm() {
             return;
         }
 
-        if (!batchId || !secretKey || !merkleProofInput) {
+        if (!editionId || !secretKey || !merkleProofInput) {
             setError('❌ Veuillez remplir tous les champs');
             return;
         }
@@ -56,7 +56,7 @@ function ClaimTokenForm() {
             const data = encodeFunctionData({
                 abi: ARTWORK_REGISTRY_ABI,
                 functionName: 'claimCertificate',
-                args: [BigInt(batchId), secretKey, merkleProof],
+                args: [BigInt(editionId), secretKey, merkleProof],
             });
 
             const txHash = await sendTransaction(
@@ -72,7 +72,7 @@ function ClaimTokenForm() {
             // Transaction hash (internal): txHash
             setSuccess(true);
             alert('✅ Token réclamé avec succès !');
-            setBatchId('');
+            setEditionId('');
             setSecretKey('');
             setMerkleProofInput('');
         } catch (err: any) {
@@ -120,8 +120,8 @@ function ClaimTokenForm() {
                         </label>
                         <input
                             type="number"
-                            value={batchId}
-                            onChange={(e) => setBatchId(e.target.value)}
+                            value={editionId}
+                            onChange={(e) => setEditionId(e.target.value)}
                             className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                             placeholder="Ex: 1"
                             required

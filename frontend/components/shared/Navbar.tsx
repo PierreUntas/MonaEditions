@@ -30,7 +30,7 @@ export default function Navbar() {
         functionName: 'isAdmin',
         args: address ? [address] : undefined,
     });
-    const { data: producerData } = useReadContract({
+    const { data: artistData } = useReadContract({
         address: ARTWORK_REGISTRY_ADDRESS,
         abi: ARTWORK_REGISTRY_ABI,
         functionName: 'getArtist',
@@ -47,8 +47,8 @@ export default function Navbar() {
     }, [isAdminResult]);
 
     useEffect(() => {
-        if (producerData) setIsArtist((producerData as any).authorized === true);
-    }, [producerData]);
+        if (artistData) setIsArtist((artistData as any).authorized === true);
+    }, [artistData]);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 20);
@@ -88,8 +88,8 @@ export default function Navbar() {
                 {/* Center links */}
                 <nav className="hidden md:flex gap-9 absolute left-1/2 -translate-x-1/2">
                     {[
-                        { href: '/explore/batches', label: 'Galerie' },
-                        { href: '/explore/producers', label: 'Artistes' },
+                        { href: '/explore/editions', label: 'Galerie' },
+                        { href: '/explore/artists', label: 'Artistes' },
                         { href: '/about', label: 'À propos' },
                     ].map(({ href, label }) => (
                         <a key={href} href={href}
@@ -206,8 +206,8 @@ export default function Navbar() {
                         <PanelLink href="/" onClick={() => setIsOpen(false)}>Accueil</PanelLink>
 
                         <PanelDivider>Explorer</PanelDivider>
-                        <PanelLink href="/explore/batches" onClick={() => setIsOpen(false)}>Galerie d'œuvres</PanelLink>
-                        <PanelLink href="/explore/producers" onClick={() => setIsOpen(false)}>Artistes</PanelLink>
+                        <PanelLink href="/explore/editions" onClick={() => setIsOpen(false)}>Galerie d'œuvres</PanelLink>
+                        <PanelLink href="/explore/artists" onClick={() => setIsOpen(false)}>Artistes</PanelLink>
 
                         <PanelDivider>Informations</PanelDivider>
                         <PanelLink href="/about" onClick={() => setIsOpen(false)}>À propos</PanelLink>
@@ -223,16 +223,16 @@ export default function Navbar() {
                         {authenticated && (
                             <>
                                 <PanelDivider>Collectionneur</PanelDivider>
-                                <PanelLink href="/consumer" onClick={() => setIsOpen(false)}>Mes œuvres</PanelLink>
+                                <PanelLink href="/collector" onClick={() => setIsOpen(false)}>Mes œuvres</PanelLink>
                             </>
                         )}
 
                         {isArtist && (
                             <>
                                 <PanelDivider>Artiste</PanelDivider>
-                                <PanelLink href="/producer" onClick={() => setIsOpen(false)}>Mon profil</PanelLink>
-                                <PanelLink href="/producer/batches" onClick={() => setIsOpen(false)}>Mes œuvres</PanelLink>
-                                <PanelLink href="/producer/batches/create" onClick={() => setIsOpen(false)}>Certifier une œuvre</PanelLink>
+                                <PanelLink href="/artist" onClick={() => setIsOpen(false)}>Mon profil</PanelLink>
+                                <PanelLink href="/artist/editions" onClick={() => setIsOpen(false)}>Mes œuvres</PanelLink>
+                                <PanelLink href="/artist/editions/create" onClick={() => setIsOpen(false)}>Certifier une œuvre</PanelLink>
                             </>
                         )}
                     </div>

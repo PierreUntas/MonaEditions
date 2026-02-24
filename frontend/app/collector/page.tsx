@@ -15,11 +15,11 @@ interface OwnedToken {
     balance: bigint;
     title: string;
     metadata: string;
-    producer: string;
-    producerName: string;
+    artist: string;
+    artistName: string;
 }
 
-export default function ConsumerPage() {
+export default function CollectorPage() {
     const { address } = useAccount();
     const [ownedTokens, setOwnedTokens] = useState<OwnedToken[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +47,7 @@ export default function ConsumerPage() {
 
                 for (const log of logs) {
                     const tokenId = log.args.editionId as bigint;
-                    const producerAddress = log.args.artist as `0x${string}`;
+                    const artistAddress = log.args.artist as `0x${string}`;
 
                     const balance = await publicClient.readContract({
                         address: ARTWORK_TOKENIZATION_ADDRESS,
@@ -68,7 +68,7 @@ export default function ConsumerPage() {
                                 address: ARTWORK_REGISTRY_ADDRESS,
                                 abi: ARTWORK_REGISTRY_ABI,
                                 functionName: 'getArtist',
-                                args: [producerAddress]
+                                args: [artistAddress]
                             }) as Promise<any>
                         ]);
 
@@ -97,8 +97,8 @@ export default function ConsumerPage() {
                             balance,
                             title: artworkTitle,
                             metadata: editionInfo.metadata,
-                            producer: producerAddress,
-                            producerName: artistName
+                            artist: artistAddress,
+                            artistName: artistName
                         });
                     }
                 }
@@ -120,7 +120,7 @@ export default function ConsumerPage() {
         if (!selectedToken) return;
 
         const token = ownedTokens.find(t => t.tokenId === selectedToken);
-        if (token && address && token.producer.toLowerCase() === address.toLowerCase()) {
+        if (token && address && token.artist.toLowerCase() === address.toLowerCase()) {
             alert('❌ Vous ne pouvez pas laisser un avis sur vos propres œuvres');
             return;
         }
@@ -147,8 +147,8 @@ export default function ConsumerPage() {
         }
     };
 
-    const isOwnProducer = (token: OwnedToken) =>
-        address && token.producer.toLowerCase() === address.toLowerCase();
+    const isOwnArtist = (token: OwnedToken) =>
+        address && token.artist.toLowerCase() === address.toLowerCase();
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
@@ -176,7 +176,7 @@ export default function ConsumerPage() {
                             Vous ne possédez pas encore de certificat
                         </p>
                         <Link
-                            href="/consumer/claim"
+                            href="/collector/claim"
                             className="inline-block bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-8 border border-[#1c1917] hover:bg-[#292524] transition-all duration-200"
                         >
                             Réclamer mon premier certificat
@@ -195,9 +195,9 @@ export default function ConsumerPage() {
                                             ŒUVRE #{token.tokenId.toString()}
                                         </p>
                                         <p className="text-[13px] font-light text-[#78716c] mb-2">
-                                            Par {token.producerName}
+                                            Par {token.artistName}
                                         </p>
-                                        {isOwnProducer(token) && (
+                                        {isOwnArtist(token) && (
                                             <p className="text-[11px] font-medium text-[#1c1917] bg-[#ede9e3] px-3 py-1.5 border border-[#d6d0c8] inline-block tracking-[0.06em]">
                                                 🎨 Votre création
                                             </p>
@@ -215,12 +215,12 @@ export default function ConsumerPage() {
 
                                 <div className="flex gap-2">
                                     <Link
-                                        href={`/explore/batch/${token.tokenId}`}
+                                        href={`/explore/edition/${token.tokenId}`}
                                         className="flex-1 bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-6 border border-[#1c1917] hover:bg-[#292524] transition-all duration-200 text-center"
                                     >
                                         Voir les détails
                                     </Link>
-                                    {!isOwnProducer(token) && (
+                                    {!isOwnArtist(token) && (
                                         <button
                                             onClick={() => setSelectedToken(token.tokenId)}
                                             className="flex-1 bg-[#f5f3ef] text-[#1c1917] font-medium text-[12px] tracking-[0.06em] py-3 px-6 border border-[#d6d0c8] hover:border-[#1c1917] transition-all duration-200"
@@ -293,7 +293,7 @@ export default function ConsumerPage() {
 
                 <div className="flex justify-center mt-20">
                     <Link
-                        href="/consumer/claim"
+                        href="/collector/claim"
                         className="inline-block bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-8 border border-[#1c1917] hover:bg-[#292524] transition-all duration-200"
                     >
                         Réclamer un certificat

@@ -70,7 +70,7 @@ export default function Home() {
                         </div>
                         <div className="mb-6 text-center">
                             <a
-                                href="/explore/batches"
+                                href="/explore/editions"
                                 className="text-[12px] font-medium tracking-[0.06em] text-[#fafaf8] no-underline border border-[#1c1917] bg-[#1c1917] py-3.5 px-8 inline-block transition-all duration-200 cursor-pointer hover:bg-[#292524] hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(28,25,23,0.25)]"
                             >
                                 Explorer les œuvres

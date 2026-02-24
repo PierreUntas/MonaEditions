@@ -7,7 +7,7 @@ export default function ExplorePage() {
     const router = useRouter();
     
     useEffect(() => {
-        router.push('/explore/batches');
+        router.push('/explore/editions');
     }, [router]);
 
     return null;

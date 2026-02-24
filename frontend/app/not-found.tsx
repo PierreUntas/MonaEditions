@@ -39,7 +39,7 @@ export default function NotFound() {
                         </Link>
                         
                         <Link
-                            href="/explore/batches"
+                            href="/explore/editions"
                             className="px-6 py-3 bg-yellow-bee text-[#000000] font-[Olney_Light] rounded-lg opacity-70 hover:opacity-100 transition-all duration-300 border border-[#000000] cursor-pointer"
                         >
                             🔍 Explorer les lots

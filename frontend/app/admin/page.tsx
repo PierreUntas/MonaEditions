@@ -10,13 +10,13 @@ import { encodeFunctionData } from 'viem';
 
 export default function AdminPage() {
     const { address } = useAccount();
-    const [newProducerAddress, setNewProducerAddress] = useState('');
-    const [removeProducerAddress, setRemoveProducerAddress] = useState('');
-    const [checkProducerAddress, setCheckProducerAddress] = useState('');
+    const [newArtistAddress, setNewArtistAddress] = useState('');
+    const [removeArtistAddress, setRemoveArtistAddress] = useState('');
+    const [checkArtistAddress, setCheckArtistAddress] = useState('');
     const [isAdmin, setIsAdmin] = useState(false);
     const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
-    const [isAuthorizingProducer, setIsAuthorizingProducer] = useState(false);
-    const [isRevokingProducer, setIsRevokingProducer] = useState(false);
+    const [isAuthorizingArtist, setIsAuthorizingArtist] = useState(false);
+    const [isRevokingArtist, setIsRevokingArtist] = useState(false);
 
     const { sendTransaction } = useSendTransaction();
 
@@ -27,11 +27,11 @@ export default function AdminPage() {
         args: address ? [address] : undefined,
     });
 
-    const { data: producerData } = useReadContract({
+    const { data: artistData } = useReadContract({
         address: ARTWORK_REGISTRY_ADDRESS,
         abi: ARTWORK_REGISTRY_ABI,
         functionName: 'getArtist',
-        args: checkProducerAddress ? [checkProducerAddress as `0x${string}`] : undefined,
+        args: checkArtistAddress ? [checkArtistAddress as `0x${string}`] : undefined,
     });
 
     useEffect(() => {
@@ -43,18 +43,18 @@ export default function AdminPage() {
         }
     }, [isAdminResult, isLoadingAdmin]);
 
-    const isProducerAuthorized = producerData ? (producerData as any).authorized : undefined;
+    const isArtistAuthorized = artistData ? (artistData as any).authorized : undefined;
 
-    const handleAuthorizeProducer = async (e: React.FormEvent) => {
+    const handleAuthorizeArtist = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newProducerAddress) return;
+        if (!newArtistAddress) return;
 
-        setIsAuthorizingProducer(true);
+        setIsAuthorizingArtist(true);
         try {
             const data = encodeFunctionData({
                 abi: ARTWORK_REGISTRY_ABI,
                 functionName: 'authorizeArtist',
-                args: [newProducerAddress as `0x${string}`, true],
+                args: [newArtistAddress as `0x${string}`, true],
             });
 
             const txHash = await sendTransaction(
@@ -67,24 +67,24 @@ export default function AdminPage() {
                 }
             );
             
-            setNewProducerAddress('');
+            setNewArtistAddress('');
         } catch (error) {
-            console.error('Error authorizing producer:', error);
+            console.error('Error authorizing artist:', error);
         } finally {
-            setIsAuthorizingProducer(false);
+            setIsAuthorizingArtist(false);
         }
     };
 
-    const handleRevokeProducer = async (e: React.FormEvent) => {
+    const handleRevokeArtist = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!removeProducerAddress) return;
+        if (!removeArtistAddress) return;
 
-        setIsRevokingProducer(true);
+        setIsRevokingArtist(true);
         try {
             const data = encodeFunctionData({
                 abi: ARTWORK_REGISTRY_ABI,
                 functionName: 'authorizeArtist',
-                args: [removeProducerAddress as `0x${string}`, false],
+                args: [removeArtistAddress as `0x${string}`, false],
             });
 
             const txHash = await sendTransaction(
@@ -97,11 +97,11 @@ export default function AdminPage() {
                 }
             );
             
-            setRemoveProducerAddress('');
+            setRemoveArtistAddress('');
         } catch (error) {
-            console.error('Error revoking producer:', error);
+            console.error('Error revoking artist:', error);
         } finally {
-            setIsRevokingProducer(false);
+            setIsRevokingArtist(false);
         }
     };
 
@@ -155,20 +155,20 @@ export default function AdminPage() {
                     </h1>
                 </div>
 
-                {/* Authorize a producer */}
+                {/* Authorize an artist */}
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
                     <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
                         Autoriser un <em className="italic text-[#78716c]">Artiste</em>
                     </h2>
-                    <form onSubmit={handleAuthorizeProducer} className="space-y-4">
+                    <form onSubmit={handleAuthorizeArtist} className="space-y-4">
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Adresse de l'artiste
                             </label>
                             <input
                                 type="text"
-                                value={newProducerAddress}
-                                onChange={(e) => setNewProducerAddress(e.target.value)}
+                                value={newArtistAddress}
+                                onChange={(e) => setNewArtistAddress(e.target.value)}
                                 placeholder="0x..."
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] font-mono text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 pattern="^0x[a-fA-F0-9]{40}$"
@@ -177,28 +177,28 @@ export default function AdminPage() {
                         </div>
                         <button
                             type="submit"
-                            disabled={isAuthorizingProducer}
+                            disabled={isAuthorizingArtist}
                             className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
-                            {isAuthorizingProducer ? 'Autorisation en cours…' : 'Autoriser Artiste'}
+                            {isAuthorizingArtist ? 'Autorisation en cours…' : 'Autoriser Artiste'}
                         </button>
                     </form>
                 </div>
 
-                {/* Revoke a producer */}
+                {/* Revoke an artist */}
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
                     <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
                         Révoquer un <em className="italic text-[#78716c]">Artiste</em>
                     </h2>
-                    <form onSubmit={handleRevokeProducer} className="space-y-4">
+                    <form onSubmit={handleRevokeArtist} className="space-y-4">
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Adresse de l'artiste
                             </label>
                             <input
                                 type="text"
-                                value={removeProducerAddress}
-                                onChange={(e) => setRemoveProducerAddress(e.target.value)}
+                                value={removeArtistAddress}
+                                onChange={(e) => setRemoveArtistAddress(e.target.value)}
                                 placeholder="0x..."
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] font-mono text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 pattern="^0x[a-fA-F0-9]{40}$"
@@ -207,15 +207,15 @@ export default function AdminPage() {
                         </div>
                         <button
                             type="submit"
-                            disabled={isRevokingProducer}
+                            disabled={isRevokingArtist}
                             className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
-                            {isRevokingProducer ? 'Révocation en cours…' : 'Révoquer Artiste'}
+                            {isRevokingArtist ? 'Révocation en cours…' : 'Révoquer Artiste'}
                         </button>
                     </form>
                 </div>
 
-                {/* Check producer status */}
+                {/* Check artist status */}
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
                     <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
                         Vérifier le <em className="italic text-[#78716c]">Statut Artiste</em>
@@ -227,16 +227,16 @@ export default function AdminPage() {
                             </label>
                             <input
                                 type="text"
-                                value={checkProducerAddress}
-                                onChange={(e) => setCheckProducerAddress(e.target.value)}
+                                value={checkArtistAddress}
+                                onChange={(e) => setCheckArtistAddress(e.target.value)}
                                 placeholder="0x..."
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] font-mono text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 pattern="^0x[a-fA-F0-9]{40}$"
                             />
                         </div>
-                        {checkProducerAddress && isProducerAuthorized !== undefined && (
+                        {checkArtistAddress && isArtistAuthorized !== undefined && (
                             <div className="p-4 border border-[#d6d0c8] bg-[#f5f3ef] text-[14px] font-light text-[#1c1917]">
-                                {isProducerAuthorized ? '✓ Cette adresse est autorisée comme artiste' : '✗ Cette adresse n\'est pas autorisée comme artiste'}
+                                {isArtistAuthorized ? '✓ Cette adresse est autorisée comme artiste' : '✗ Cette adresse n\'est pas autorisée comme artiste'}
                             </div>
                         )}
                     </div>

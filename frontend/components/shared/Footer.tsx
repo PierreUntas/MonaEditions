@@ -11,7 +11,7 @@ const Footer = () => {
     const { address } = useAccount();
     const [isArtist, setIsArtist] = useState(false);
 
-    const { data: producerData } = useReadContract({
+    const { data: artistData } = useReadContract({
         address: ARTWORK_REGISTRY_ADDRESS,
         abi: ARTWORK_REGISTRY_ABI,
         functionName: 'getArtist',
@@ -19,8 +19,8 @@ const Footer = () => {
     });
 
     useEffect(() => {
-        if (producerData) setIsArtist((producerData as any).authorized === true);
-    }, [producerData]);
+        if (artistData) setIsArtist((artistData as any).authorized === true);
+    }, [artistData]);
 
     const colCount = 2 + (authenticated ? 1 : 0) + (isArtist ? 1 : 0);
     const gridClass = {
@@ -59,8 +59,8 @@ const Footer = () => {
                             Explorer
                         </p>
                         <nav className="flex flex-col gap-2.5">
-                            <FooterLink href="/explore/batches">Galerie d'œuvres</FooterLink>
-                            <FooterLink href="/explore/producers">Artistes</FooterLink>
+                            <FooterLink href="/explore/editions">Galerie d'œuvres</FooterLink>
+                            <FooterLink href="/explore/artists">Artistes</FooterLink>
                             <FooterLink href="/about">À propos</FooterLink>
                         </nav>
                     </div>
@@ -72,8 +72,8 @@ const Footer = () => {
                                 Collectionneur
                             </p>
                             <nav className="flex flex-col gap-2.5">
-                                <FooterLink href="/consumer">Mes certificats</FooterLink>
-                                <FooterLink href="/consumer/claim">Réclamer un certificat</FooterLink>
+                                <FooterLink href="/collector">Mes certificats</FooterLink>
+                                <FooterLink href="/collector/claim">Réclamer un certificat</FooterLink>
                             </nav>
                         </div>
                     )}
@@ -85,9 +85,9 @@ const Footer = () => {
                                 Espace artiste
                             </p>
                             <nav className="flex flex-col gap-2.5">
-                                <FooterLink href="/producer">Dashboard</FooterLink>
-                                <FooterLink href="/producer/batches">Mes œuvres</FooterLink>
-                                <FooterLink href="/producer/batches/create">Certifier une œuvre</FooterLink>
+                                <FooterLink href="/artist">Dashboard</FooterLink>
+                                <FooterLink href="/artist/editions">Mes œuvres</FooterLink>
+                                <FooterLink href="/artist/editions/create">Certifier une œuvre</FooterLink>
                             </nav>
                         </div>
                     )}

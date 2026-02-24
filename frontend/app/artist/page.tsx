@@ -10,7 +10,7 @@ import { useSendTransaction } from '@privy-io/react-auth';
 import { encodeFunctionData } from 'viem';
 import QRCode from 'qrcode';
 
-export default function ProducerPage() {
+export default function ArtistPage() {
     const { address } = useAccount();
     const [name, setName] = useState('');
     const [location, setLocation] = useState('');
@@ -41,7 +41,7 @@ export default function ProducerPage() {
     const { writeContract, isPending: isRegistering } = useWriteContract();
     const { sendTransaction } = useSendTransaction();
 
-    const { data: producerData, isLoading: isLoadingProducer } = useReadContract({
+    const { data: artistData, isLoading: isLoadingArtist } = useReadContract({
         address: ARTWORK_REGISTRY_ADDRESS,
         abi: ARTWORK_REGISTRY_ABI,
         functionName: 'getArtist',
@@ -77,12 +77,12 @@ export default function ProducerPage() {
         setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
     };
 
-    const downloadProducerPageQRCode = async () => {
+    const downloadArtistPageQRCode = async () => {
         if (!address || !isRegistered) return;
         setIsGeneratingQR(true);
         try {
-            const producerPageUrl = `https://www.beeblock.fr/explore/producer/${address}`;
-            const qrCodeDataUrl = await QRCode.toDataURL(producerPageUrl, {
+            const artistPageUrl = `https://www.beeblock.fr/explore/artist/${address}`;
+            const qrCodeDataUrl = await QRCode.toDataURL(artistPageUrl, {
                 width: 1000,
                 margin: 4,
                 color: { dark: '#000000', light: '#FFFFFF' },
@@ -93,14 +93,14 @@ export default function ProducerPage() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `QR_Producer_${name.replace(/\s+/g, '_')}_${address.slice(0, 8)}.png`;
+            a.download = `QR_Artist_${name.replace(/\s+/g, '_')}_${address.slice(0, 8)}.png`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            alert(`✅ QR Code de votre page producteur téléchargé avec succès !`);
+            alert(`✅ QR Code de votre page artiste téléchargé avec succès !`);
         } catch (error) {
-            console.error('Error generating producer page QR code:', error);
+            console.error('Error generating artist page QR code:', error);
             alert('❌ Erreur lors de la génération du QR code');
         } finally {
             setIsGeneratingQR(false);
@@ -151,18 +151,18 @@ export default function ProducerPage() {
     };
 
     useEffect(() => {
-        if (producerData) {
-            const artist = producerData as any;
+        if (artistData) {
+            const artist = artistData as any;
             setIsAuthorized(artist.authorized);
             setIsRegistered(artist.metadata && artist.metadata.length > 0);
             setIsCheckingAuthorization(false);
             if (artist.metadata) {
                 loadIPFSData(artist.metadata);
             }
-        } else if (!isLoadingProducer && producerData !== undefined) {
+        } else if (!isLoadingArtist && artistData !== undefined) {
             setIsCheckingAuthorization(false);
         }
-    }, [producerData, isLoadingProducer]);
+    }, [artistData, isLoadingArtist]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -234,14 +234,14 @@ export default function ProducerPage() {
 
             alert('✅ Informations enregistrées avec succès !');
         } catch (error) {
-            console.error('Error saving producer:', error);
+            console.error('Error saving artist:', error);
             alert('❌ Erreur lors de l\'enregistrement');
         } finally {
             setIsUploading(false);
         }
     };
 
-    if (isCheckingAuthorization || isLoadingProducer) {
+    if (isCheckingAuthorization || isLoadingArtist) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
                 <Navbar />
@@ -313,7 +313,7 @@ export default function ProducerPage() {
                             Téléchargez votre QR code pour le partager avec vos collectionneurs. Il pointe vers votre page artiste.
                         </p>
                         <button
-                            onClick={downloadProducerPageQRCode}
+                            onClick={downloadArtistPageQRCode}
                             disabled={isGeneratingQR}
                             className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >

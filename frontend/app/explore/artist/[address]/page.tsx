@@ -9,13 +9,13 @@ import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
 
-interface ProducerInfo {
+interface ArtistInfo {
     name: string;
     location: string;
     metadata: string;
 }
 
-interface ProducerIPFSData {
+interface ArtistIPFSData {
     name: string;
     location: string;
     website: string;
@@ -30,7 +30,7 @@ interface ProducerIPFSData {
     };
 }
 
-interface BatchIPFSData {
+interface EditionIPFSData {
     title: string;
     year: number;
     description: string;
@@ -41,12 +41,12 @@ interface BatchIPFSData {
     category: string;
 }
 
-interface BatchInfo {
+interface EditionInfo {
     tokenId: bigint;
     title: string;
     metadata: string;
     remainingTokens: bigint;
-    ipfsData?: BatchIPFSData;
+    ipfsData?: EditionIPFSData;
     averageRating?: number;
     commentsCount?: number;
 }
@@ -56,25 +56,25 @@ const ipfsToHttp = (url: string) =>
         ? `https://ipfs.io/ipfs/${url.replace('ipfs://', '')}`
         : url;
 
-export default function ProducerDetailsPage() {
+export default function ArtistDetailsPage() {
     const params = useParams();
-    const producerAddress = params.address as string;
+    const artistAddress = params.address as string;
 
-    const [producer, setProducer] = useState<ProducerInfo | null>(null);
-    const [producerIPFSData, setProducerIPFSData] = useState<ProducerIPFSData | null>(null);
-    const [batches, setBatches] = useState<BatchInfo[]>([]);
+    const [artist, setArtist] = useState<ArtistInfo | null>(null);
+    const [artistIPFSData, setArtistIPFSData] = useState<ArtistIPFSData | null>(null);
+    const [editions, setEditions] = useState<EditionInfo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
 
     useEffect(() => {
-        const fetchProducerDetails = async () => {
-            if (!publicClient || !producerAddress) { setIsLoading(false); return; }
+        const fetchArtistDetails = async () => {
+            if (!publicClient || !artistAddress) { setIsLoading(false); return; }
             try {
                 const artistData = await publicClient.readContract({
                     address: ARTWORK_REGISTRY_ADDRESS,
                     abi: ARTWORK_REGISTRY_ABI,
                     functionName: 'getArtist',
-                    args: [producerAddress as `0x${string}`]
+                    args: [artistAddress as `0x${string}`]
                 }) as any;
 
                 let artistName = 'Artiste anonyme';
@@ -83,18 +83,18 @@ export default function ProducerDetailsPage() {
                 if (artistData.metadata?.trim()) {
                     setIsLoadingIPFS(true);
                     try {
-                        const ipfsData = await getFromIPFSGateway(artistData.metadata) as ProducerIPFSData;
-                        setProducerIPFSData(ipfsData);
+                        const ipfsData = await getFromIPFSGateway(artistData.metadata) as ArtistIPFSData;
+                        setArtistIPFSData(ipfsData);
                         artistName = ipfsData.name || 'Artiste anonyme';
                         artistLocation = ipfsData.location || '';
                     } catch (e) {
-                        console.error('Error loading producer IPFS data:', e);
+                        console.error('Error loading artist IPFS data:', e);
                     } finally {
                         setIsLoadingIPFS(false);
                     }
                 }
 
-                setProducer({
+                setArtist({
                     name: artistName,
                     location: artistLocation,
                     metadata: artistData.metadata
@@ -103,17 +103,17 @@ export default function ProducerDetailsPage() {
                 const logs = await publicClient.getLogs({
                     address: ARTWORK_REGISTRY_ADDRESS,
                     event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'),
-                    args: { artist: producerAddress as `0x${string}` },
+                    args: { artist: artistAddress as `0x${string}` },
                     fromBlock: 9753823n,
                     toBlock: 'latest'
                 });
 
-                const batchesData: BatchInfo[] = [];
+                const editionsData: EditionInfo[] = [];
                 for (const log of logs) {
                     const tokenId = log.args.editionId as bigint;
                     const [editionInfo, balance] = await Promise.all([
                         publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [tokenId] }) as Promise<any>,
-                        publicClient.readContract({ address: ARTWORK_TOKENIZATION_ADDRESS, abi: ARTWORK_TOKENIZATION_ABI, functionName: 'balanceOf', args: [producerAddress as `0x${string}`, tokenId] }) as Promise<bigint>
+                        publicClient.readContract({ address: ARTWORK_TOKENIZATION_ADDRESS, abi: ARTWORK_TOKENIZATION_ABI, functionName: 'balanceOf', args: [artistAddress as `0x${string}`, tokenId] }) as Promise<bigint>
                     ]);
 
                     let artworkTitle = 'Œuvre sans titre';
@@ -126,38 +126,38 @@ export default function ProducerDetailsPage() {
                         }
                     }
 
-                    batchesData.push({ tokenId, title: artworkTitle, metadata: editionInfo.metadata, remainingTokens: balance });
+                    editionsData.push({ tokenId, title: artworkTitle, metadata: editionInfo.metadata, remainingTokens: balance });
                 }
 
-                batchesData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
-                setBatches(batchesData);
+                editionsData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
+                setEditions(editionsData);
 
-                for (const batch of batchesData) {
-                    const count = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviewsCount', args: [batch.tokenId] }) as bigint;
+                for (const edition of editionsData) {
+                    const count = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviewsCount', args: [edition.tokenId] }) as bigint;
                     let avgRating = 0;
                     if (count > 0n) {
-                        const comments = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviews', args: [batch.tokenId, 0n, count] }) as any[];
+                        const comments = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviews', args: [edition.tokenId, 0n, count] }) as any[];
                         avgRating = comments.reduce((a: number, c: any) => a + Number(c.rating), 0) / comments.length;
                     }
-                    if (batch.metadata?.trim()) {
+                    if (edition.metadata?.trim()) {
                         try {
-                            const ipfs = await getFromIPFSGateway(batch.metadata);
-                            setBatches(prev => prev.map(b => b.tokenId === batch.tokenId ? { ...b, ipfsData: ipfs, averageRating: avgRating, commentsCount: Number(count) } : b));
+                            const ipfs = await getFromIPFSGateway(edition.metadata);
+                            setEditions(prev => prev.map(e => e.tokenId === edition.tokenId ? { ...e, ipfsData: ipfs, averageRating: avgRating, commentsCount: Number(count) } : e));
                         } catch {
-                            setBatches(prev => prev.map(b => b.tokenId === batch.tokenId ? { ...b, averageRating: avgRating, commentsCount: Number(count) } : b));
+                            setEditions(prev => prev.map(e => e.tokenId === edition.tokenId ? { ...e, averageRating: avgRating, commentsCount: Number(count) } : e));
                         }
                     } else {
-                        setBatches(prev => prev.map(b => b.tokenId === batch.tokenId ? { ...b, averageRating: avgRating, commentsCount: Number(count) } : b));
+                        setEditions(prev => prev.map(e => e.tokenId === edition.tokenId ? { ...e, averageRating: avgRating, commentsCount: Number(count) } : e));
                     }
                 }
             } catch (e) {
-                console.error('Error loading producer details:', e);
+                console.error('Error loading artist details:', e);
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchProducerDetails();
-    }, [producerAddress]);
+        fetchArtistDetails();
+    }, [artistAddress]);
 
     if (isLoading) return (
         <div className="min-h-screen bg-[#f5f3ef]">
@@ -169,7 +169,7 @@ export default function ProducerDetailsPage() {
         </div>
     );
 
-    if (!producer) return (
+    if (!artist) return (
         <div className="min-h-screen bg-[#f5f3ef]">
             <Navbar />
             <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
@@ -178,7 +178,7 @@ export default function ProducerDetailsPage() {
         </div>
     );
 
-    const { socialMedia, exhibitions, portfolio } = producerIPFSData ?? {};
+    const { socialMedia, exhibitions, portfolio } = artistIPFSData ?? {};
     const hasSocialMedia = socialMedia && (socialMedia.instagram || socialMedia.twitter || socialMedia.facebook);
 
     return (
@@ -188,7 +188,7 @@ export default function ProducerDetailsPage() {
 
                 {/* Back */}
                 <Link
-                    href="/explore/producers"
+                    href="/explore/artists"
                     className="inline-flex items-center gap-2 text-[11px] font-medium tracking-[0.06em] text-[#78716c]
                         border border-[#d6d0c8] px-4 py-2 mb-12 no-underline
                         hover:border-[#1c1917] hover:text-[#1c1917] transition-all duration-200"
@@ -210,7 +210,7 @@ export default function ProducerDetailsPage() {
                         <div className="w-full aspect-[21/9] overflow-hidden bg-[#e7e3dc]">
                             <img
                                 src={ipfsToHttp(portfolio[0])}
-                                alt={producer.name}
+                                alt={artist.name}
                                 className="w-full h-full object-cover"
                             />
                         </div>
@@ -227,14 +227,14 @@ export default function ProducerDetailsPage() {
                                     </span>
                                 </div>
                                 <h1 className="font-serif text-[clamp(32px,5vw,52px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-2">
-                                    {producer.name}
+                                    {artist.name}
                                 </h1>
-                                <p className="text-[14px] font-light text-[#78716c]">{producer.location}</p>
+                                <p className="text-[14px] font-light text-[#78716c]">{artist.location}</p>
                             </div>
-                            {producerIPFSData?.logo && (
+                            {artistIPFSData?.logo && (
                                 <img
-                                    src={ipfsToHttp(producerIPFSData.logo)}
-                                    alt={`Logo ${producer.name}`}
+                                    src={ipfsToHttp(artistIPFSData.logo)}
+                                    alt={`Logo ${artist.name}`}
                                     className="w-20 h-20 object-contain flex-shrink-0 border border-[#e7e3dc] bg-[#f5f3ef]"
                                 />
                             )}
@@ -244,11 +244,11 @@ export default function ProducerDetailsPage() {
                         <div className="grid md:grid-cols-2 gap-8">
                             {/* Left — bio + exhibitions */}
                             <div className="flex flex-col gap-6">
-                                {producerIPFSData?.bio && (
+                                {artistIPFSData?.bio && (
                                     <div>
                                         <Label>À propos</Label>
                                         <p className="text-[14px] font-light text-[#1c1917] leading-[1.8]">
-                                            {producerIPFSData.bio}
+                                            {artistIPFSData.bio}
                                         </p>
                                     </div>
                                 )}
@@ -268,18 +268,18 @@ export default function ProducerDetailsPage() {
 
                             {/* Right — contact & links */}
                             <div className="flex flex-col gap-4">
-                                <InfoRow label="Localisation" value={producer.location} />
+                                <InfoRow label="Localisation" value={artist.location} />
 
-                                {producerIPFSData?.website && (
+                                {artistIPFSData?.website && (
                                     <div className="flex flex-col gap-1 pb-4 border-b border-[#f0ede8]">
                                         <Label>Site web</Label>
                                         <a
-                                            href={producerIPFSData.website}
+                                            href={artistIPFSData.website}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-[13px] font-light text-[#4a5240] underline underline-offset-2 hover:opacity-70 transition-opacity"
                                         >
-                                            {producerIPFSData.website}
+                                            {artistIPFSData.website}
                                         </a>
                                     </div>
                                 )}
@@ -324,7 +324,7 @@ export default function ProducerDetailsPage() {
 
                                 <div>
                                     <Label>Adresse Ethereum</Label>
-                                    <p className="text-[11px] font-mono text-[#a8a29e] break-all">{producerAddress}</p>
+                                    <p className="text-[11px] font-mono text-[#a8a29e] break-all">{artistAddress}</p>
                                 </div>
                             </div>
                         </div>
@@ -342,7 +342,7 @@ export default function ProducerDetailsPage() {
                                 <div key={i} className="aspect-square overflow-hidden bg-[#e7e3dc]">
                                     <img
                                         src={ipfsToHttp(photo)}
-                                        alt={`Photo ${i + 2} — ${producer.name}`}
+                                        alt={`Photo ${i + 2} — ${artist.name}`}
                                         className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-500"
                                     />
                                 </div>
@@ -358,12 +358,12 @@ export default function ProducerDetailsPage() {
                             Œuvres <em className="italic text-[#78716c]">certifiées</em>
                         </h2>
                         <span className="font-serif italic text-[36px] text-[#e7e3dc] leading-none">
-                            {batches.length}
+                            {editions.length}
                         </span>
                     </div>
                 </div>
 
-                {batches.length === 0 ? (
+                {editions.length === 0 ? (
                     <div className="border border-[#d6d0c8] bg-[#fafaf8] p-12 text-center">
                         <p className="font-serif italic text-[18px] text-[#a8a29e]">
                             Cet artiste n'a pas encore certifié d'œuvre.
@@ -371,17 +371,17 @@ export default function ProducerDetailsPage() {
                     </div>
                 ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#d6d0c8] border border-[#d6d0c8]">
-                        {batches.map((batch) => (
+                        {editions.map((edition) => (
                             <Link
-                                key={batch.tokenId.toString()}
-                                href={`/explore/batch/${batch.tokenId}`}
+                                key={edition.tokenId.toString()}
+                                href={`/explore/edition/${edition.tokenId}`}
                                 className="bg-[#fafaf8] p-5 flex flex-col gap-3 hover:bg-[#f5f3ef] transition-colors duration-200 no-underline group"
                             >
-                                {batch.ipfsData?.images?.[0] ? (
+                                {edition.ipfsData?.images?.[0] ? (
                                     <div className="w-full aspect-[4/3] overflow-hidden bg-[#e7e3dc]">
                                         <img
-                                            src={ipfsToHttp(batch.ipfsData.images[0])}
-                                            alt={batch.title}
+                                            src={ipfsToHttp(edition.ipfsData.images[0])}
+                                            alt={edition.title}
                                             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
                                         />
                                     </div>
@@ -393,13 +393,13 @@ export default function ProducerDetailsPage() {
 
                                 <div className="flex items-start justify-between gap-2">
                                     <div>
-                                        {batch.ipfsData?.category && (
+                                        {edition.ipfsData?.category && (
                                             <p className="text-[10px] font-medium tracking-[0.12em] uppercase text-[#a8a29e] mb-1">
-                                                {batch.ipfsData.category}
+                                                {edition.ipfsData.category}
                                             </p>
                                         )}
                                         <h3 className="font-serif text-[17px] font-normal text-[#1c1917] leading-tight">
-                                            {batch.title}
+                                            {edition.title}
                                         </h3>
                                     </div>
                                     <span className="text-[9px] font-medium tracking-[0.1em] uppercase text-[#4a5240] border border-[#4a5240] px-1.5 py-0.5 flex-shrink-0 mt-1">
@@ -407,29 +407,29 @@ export default function ProducerDetailsPage() {
                                     </span>
                                 </div>
 
-                                {batch.ipfsData?.technique && (
+                                {edition.ipfsData?.technique && (
                                     <p className="text-[12px] font-light text-[#78716c]">
-                                        {batch.ipfsData.technique}
-                                        {batch.ipfsData.dimensions ? ` — ${batch.ipfsData.dimensions}` : ''}
+                                        {edition.ipfsData.technique}
+                                        {edition.ipfsData.dimensions ? ` — ${edition.ipfsData.dimensions}` : ''}
                                     </p>
                                 )}
 
-                                {batch.ipfsData?.year && (
-                                    <p className="text-[11px] font-light text-[#a8a29e]">{batch.ipfsData.year}</p>
+                                {edition.ipfsData?.year && (
+                                    <p className="text-[11px] font-light text-[#a8a29e]">{edition.ipfsData.year}</p>
                                 )}
 
-                                {batch.commentsCount !== undefined && batch.commentsCount > 0 && (
+                                {edition.commentsCount !== undefined && edition.commentsCount > 0 && (
                                     <p className="text-[12px] font-light text-[#78716c]">
-                                        {batch.averageRating?.toFixed(1)} · {batch.commentsCount} avis vérifié{batch.commentsCount > 1 ? 's' : ''}
+                                        {edition.averageRating?.toFixed(1)} · {edition.commentsCount} avis vérifié{edition.commentsCount > 1 ? 's' : ''}
                                     </p>
                                 )}
 
                                 <div className="border-t border-[#e7e3dc] pt-3 flex items-center justify-between">
                                     <p className="text-[10px] font-mono text-[#a8a29e]">
-                                        #{batch.tokenId.toString()}
+                                        #{edition.tokenId.toString()}
                                     </p>
                                     <p className="text-[12px] font-light text-[#78716c]">
-                                        {batch.remainingTokens.toString()} exemplaire{Number(batch.remainingTokens) > 1 ? 's' : ''}
+                                        {edition.remainingTokens.toString()} exemplaire{Number(edition.remainingTokens) > 1 ? 's' : ''}
                                     </p>
                                 </div>
                             </Link>

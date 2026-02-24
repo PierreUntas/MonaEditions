@@ -24,7 +24,7 @@ Rendez-vous sur [https://www.pinata.cloud/](https://www.pinata.cloud/) et créez
 4. Configurez les permissions :
    - **Admin** : Cochez si vous voulez un accès complet (recommandé pour le développement)
    - Ou sélectionnez uniquement **pinFileToIPFS** et **pinJSONToIPFS** pour plus de sécurité
-5. Donnez un nom à votre clé (ex: "BeeBlock Dev")
+5. Donnez un nom à votre clé (ex: "Kigen Dev")
 6. Cliquez sur **Generate Key**
 7. **IMPORTANT** : Copiez immédiatement le JWT (vous ne pourrez plus le voir après)
 

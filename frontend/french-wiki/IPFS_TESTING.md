@@ -6,7 +6,7 @@ L'API `https://ipfs-api.web3pi.link` ne fonctionne plus (erreur 404).
 
 ## ✅ Solutions recommandées
 
-### Option 1: **Pinata** (Recommandé pour BeeBlock)
+### Option 1: **Pinata** (Recommandé pour Kigen)
 Service professionnel, gratuit jusqu'à 1GB.
 
 **Avantages :**
@@ -88,13 +88,13 @@ echo "Hello IPFS" > test.txt
 curl -X POST -F file=@test.txt https://ipfs.infura.io:5001/api/v0/add
 ```
 
-## 💡 Recommandation pour BeeBlock
+## 💡 Recommandation pour Kigen
 
 **Utilisez Pinata** car :
 1. Vous l'avez déjà dans vos dépendances (`pinata: ^2.5.1`)
 2. Fichier [PINATA_SETUP.md](PINATA_SETUP.md) déjà présent
 3. Adapté pour production
-4. Dashboard pour gérer les fichiers miel/batch
+4. Dashboard pour gérer les fichiers art/batch
 
 ## 🔧 Migration vers Pinata
 

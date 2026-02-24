@@ -10,7 +10,7 @@
 Créé [app/PrivyProvider.tsx](app/PrivyProvider.tsx) avec:
 - Authentification par email ET wallet
 - Configuration Wagmi intégrée
-- Thème personnalisé (accent: `#fbbf24` - jaune BeeBlock)
+- Thème personnalisé (accent: `#fbbf24` - jaune Kigen)
 - Support Sepolia
 - Création automatique de wallet pour les utilisateurs email
 
@@ -53,7 +53,7 @@ Créé:
 - ✅ **Login par Email** (code OTP par email)
 - ✅ **Login par Wallet** (MetaMask, Coinbase, etc.)
 - ✅ **Embedded Wallets** (création auto pour utilisateurs email)
-- ✅ **Thème personnalisé** (couleurs BeeBlock)
+- ✅ **Thème personnalisé** (couleurs Kigen)
 - ✅ **Support Sepolia** (votre réseau actuel)
 
 ## 📝 Notes importantes

@@ -1,4 +1,4 @@
-# 🚀 Guide IPFS Local pour BeeBlock
+# 🚀 Guide IPFS Local pour Kigen
 
 ## ✅ Installation effectuée
 
@@ -71,7 +71,7 @@ node scripts/test-ipfs-api.js
 curl -X POST http://127.0.0.1:5001/api/v0/version
 
 # Ajouter un fichier
-echo "Hello BeeBlock" > test.txt
+echo "Hello Kigen" > test.txt
 curl -X POST -F file=@test.txt http://127.0.0.1:5001/api/v0/add
 
 # Récupérer un fichier (remplacer HASH par le hash retourné)
@@ -241,7 +241,7 @@ curl http://127.0.0.1:5001/api/v0/id
 - 🔒 IPFS local n'a pas d'authentification par défaut
 - 📦 Les fichiers sont automatiquement partagés sur le réseau IPFS
 
-## 🎯 Pour BeeBlock
+## 🎯 Pour Kigen
 
 Le nœud local est idéal pour :
 - ✅ Développer les fonctionnalités de traçabilité

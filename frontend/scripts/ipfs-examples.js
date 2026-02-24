@@ -1,9 +1,9 @@
-// Local IPFS usage examples for BeeBlock
+// Local IPFS usage examples for Kigen
 // This file demonstrates how to upload and retrieve data
 
 const IPFS_API = process.env.IPFS_RPC || "http://127.0.0.1:5001";
 
-// Example 1: Upload a JSON object (honey batch data)
+// Example 1: Upload a JSON object (artwork batch data)
 async function uploadBatchData() {
     const batchData = {
         batchId: "BATCH-2026-001",
@@ -14,7 +14,7 @@ async function uploadBatchData() {
             longitude: 1.4442,
             address: "Toulouse, France"
         },
-        honeyType: "Miel de Lavande",
+        artworkType: "Peinture à l'huile",
         quantity: 50, // kg
         certifications: ["Bio", "Label Rouge"],
         analyses: {
@@ -65,7 +65,7 @@ async function getBatchData(hash) {
     return data;
 }
 
-// Example 3: Upload an image file (photo of the honey)
+// Example 3: Upload an image file (photo of the artwork)
 async function uploadImage(imagePath) {
     const fs = require('fs');
     const FormData = require('form-data'); // Requires: npm install form-data
@@ -89,11 +89,11 @@ async function uploadImage(imagePath) {
 // Exemple 4: Upload avec métadonnées (NFT-style)
 async function uploadBatchNFTMetadata() {
     const metadata = {
-        name: "Miel de Lavande - Batch #001",
+        name: "Peinture à l'huile - Batch #001",
         description: "Miel biologique récolté dans les champs de lavande de Provence",
         image: "ipfs://QmPreviousImageHash", // Hash d'une image déjà uploadée
         attributes: [
-            { trait_type: "Type", value: "Miel de Lavande" },
+            { trait_type: "Type", value: "Peinture à l'huile" },
             { trait_type: "Origine", value: "Provence, France" },
             { trait_type: "Année", value: "2026" },
             { trait_type: "Certification", value: "Bio" },
@@ -129,7 +129,7 @@ async function uploadBatchNFTMetadata() {
 // Lancer les exemples
 async function main() {
     try {
-        console.info("🐝 BeeBlock - IPFS examples\n");
+        console.info("🐝 Kigen - IPFS examples\n");
         console.info("=".repeat(50));
         
         // Test 1: Upload batch data

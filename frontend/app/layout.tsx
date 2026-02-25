@@ -1,19 +1,7 @@
 import PrivyProvider from "@/app/PrivyProvider";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Layout from "../components/shared/Layout";
-import { ThemeProvider } from "./context/ThemeContext";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Kigen - Certification d'Art sur Blockchain",
@@ -34,16 +22,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ThemeProvider>
-          <PrivyProvider>
-            <Layout>
-              {children}
-            </Layout>
-          </PrivyProvider>
-        </ThemeProvider>
+      <body className="antialiased">
+        <PrivyProvider>
+          <Layout>
+            {children}
+          </Layout>
+        </PrivyProvider>
       </body>
     </html>
   );

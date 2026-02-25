@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useReadContract } from 'wagmi';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
-import Image from 'next/image';
 
 export default function AdminPage() {
     const { address } = useAccount();

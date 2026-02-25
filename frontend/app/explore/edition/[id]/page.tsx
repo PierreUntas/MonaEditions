@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
-import { getFromIPFSGateway, getIPFSUrl } from '@/app/utils/ipfs';
+import { getFromIPFSGateway } from '@/app/utils/ipfs';
+import { ipfsToHttp } from '@/app/utils/file';
 import Link from 'next/link';
 import { publicClient } from '@/lib/client';
 
@@ -57,11 +58,6 @@ interface Comment {
     metadata: string;
 }
 
-const ipfsToHttp = (url: string) =>
-    url?.startsWith('ipfs://')
-        ? `https://ipfs.io/ipfs/${url.replace('ipfs://', '')}`
-        : url;
-
 export default function EditionDetailsPage() {
     const params = useParams();
     const editionId = params.id as string;
@@ -71,13 +67,18 @@ export default function EditionDetailsPage() {
     const [artist, setArtist] = useState<ArtistInfo | null>(null);
     const [artistIPFSData, setArtistIPFSData] = useState<ArtistIPFSData | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
+    
+    // Grouped loading states
+    const [loadingStates, setLoadingStates] = useState({
+        fetchingEdition: true,
+        loadingIPFS: false,
+    });
+    
     const [selectedImage, setSelectedImage] = useState<number>(0);
 
     useEffect(() => {
         const fetchEditionDetails = async () => {
-            if (!publicClient || !editionId) { setIsLoading(false); return; }
+            if (!publicClient || !editionId) { setLoadingStates(prev => ({ ...prev, fetchingEdition: false })); return; }
 
             try {
                 const tokenId = BigInt(editionId);
@@ -105,7 +106,7 @@ export default function EditionDetailsPage() {
 
                 let artworkTitle = 'Œuvre sans titre';
                 if (editionInfo.metadata?.trim()) {
-                    setIsLoadingIPFS(true);
+                    setLoadingStates(prev => ({ ...prev, loadingIPFS: true }));
                     try {
                         const ipfsData = await getFromIPFSGateway(editionInfo.metadata) as EditionIPFSData;
                         setEditionIPFSData(ipfsData);
@@ -113,7 +114,7 @@ export default function EditionDetailsPage() {
                     } catch (error) {
                         console.error('Error loading edition IPFS data:', error);
                     } finally {
-                        setIsLoadingIPFS(false);
+                        setLoadingStates(prev => ({ ...prev, loadingIPFS: false }));
                     }
                 }
 
@@ -161,7 +162,7 @@ export default function EditionDetailsPage() {
             } catch (error) {
                 console.error('Error loading edition details:', error);
             } finally {
-                setIsLoading(false);
+                setLoadingStates(prev => ({ ...prev, fetchingEdition: false }));
             }
         };
 
@@ -173,7 +174,7 @@ export default function EditionDetailsPage() {
         return (comments.reduce((acc, c) => acc + c.rating, 0) / comments.length).toFixed(1);
     };
 
-    if (isLoading) return (
+    if (loadingStates.fetchingEdition) return (
         <div className="min-h-screen bg-[#f5f3ef]">
             <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
                 <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
@@ -205,7 +206,7 @@ export default function EditionDetailsPage() {
                     ← Retour à l'exploration
                 </Link>
 
-                {isLoadingIPFS && (
+                {loadingStates.loadingIPFS && (
                     <p className="text-[12px] font-light text-[#a8a29e] tracking-[0.06em] mb-6 text-center">
                         Chargement des données IPFS…
                     </p>

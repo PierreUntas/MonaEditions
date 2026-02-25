@@ -21,19 +21,24 @@ interface OwnedToken {
 export default function CollectorPage() {
     const { address } = useAccount();
     const [ownedTokens, setOwnedTokens] = useState<OwnedToken[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    
+    // Grouped loading states
+    const [loadingStates, setLoadingStates] = useState({
+        fetchingTokens: true,
+        commenting: false,
+    });
+    
     const [selectedToken, setSelectedToken] = useState<bigint | null>(null);
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState('');
-    const [isCommenting, setIsCommenting] = useState(false);
 
     const { sendTransaction } = useSendTransaction();
 
     useEffect(() => {
         const fetchOwnedTokens = async () => {
-            if (!address || !publicClient) { setIsLoading(false); return; }
+            if (!address || !publicClient) { setLoadingStates(prev => ({ ...prev, fetchingTokens: false })); return; }
 
-            setIsLoading(true);
+            setLoadingStates(prev => ({ ...prev, fetchingTokens: true }));
             try {
                 const logs = await publicClient.getLogs({
                     address: ARTWORK_REGISTRY_ADDRESS,
@@ -107,7 +112,7 @@ export default function CollectorPage() {
             } catch (error) {
                 console.error('Error loading tokens:', error);
             } finally {
-                setIsLoading(false);
+                setLoadingStates(prev => ({ ...prev, fetchingTokens: false }));
             }
         };
 
@@ -120,11 +125,11 @@ export default function CollectorPage() {
 
         const token = ownedTokens.find(t => t.tokenId === selectedToken);
         if (token && address && token.artist.toLowerCase() === address.toLowerCase()) {
-            alert('❌ Vous ne pouvez pas laisser un avis sur vos propres œuvres');
+            alert('Vous ne pouvez pas laisser un avis sur vos propres œuvres');
             return;
         }
 
-        setIsCommenting(true);
+        setLoadingStates(prev => ({ ...prev, commenting: true }));
         try {
             const data = encodeFunctionData({
                 abi: ARTWORK_REGISTRY_ABI,
@@ -134,15 +139,15 @@ export default function CollectorPage() {
 
             await sendTransaction({ to: ARTWORK_REGISTRY_ADDRESS, data }, { sponsor: true });
 
-            alert('✅ Avis envoyé avec succès !');
+            alert('Avis envoyé avec succès !');
             setSelectedToken(null);
             setRating(5);
             setComment('');
         } catch (error) {
             console.error('Error adding comment:', error);
-            alert('❌ Erreur lors de l\'ajout du commentaire');
+            alert('Erreur lors de l\'ajout du commentaire');
         } finally {
-            setIsCommenting(false);
+            setLoadingStates(prev => ({ ...prev, commenting: false }));
         }
     };
 
@@ -163,7 +168,7 @@ export default function CollectorPage() {
                     </h1>
                 </div>
 
-                {isLoading || !address ? (
+                {loadingStates.fetchingTokens || !address ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-4">
                         <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
                         <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement de vos certificats…</p>
@@ -197,7 +202,7 @@ export default function CollectorPage() {
                                         </p>
                                         {isOwnArtist(token) && (
                                             <p className="text-[11px] font-medium text-[#1c1917] bg-[#ede9e3] px-3 py-1.5 border border-[#d6d0c8] inline-block tracking-[0.06em]">
-                                                🎨 Votre création
+                                                Votre création
                                             </p>
                                         )}
                                     </div>
@@ -278,10 +283,10 @@ export default function CollectorPage() {
                                     </button>
                                     <button
                                         type="submit"
-                                        disabled={isCommenting}
+                                        disabled={loadingStates.commenting}
                                         className="flex-1 bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-6 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                                     >
-                                        {isCommenting ? 'Envoi…' : 'Envoyer'}
+                                        {loadingStates.commenting ? 'Envoi…' : 'Envoyer'}
                                     </button>
                                 </div>
                             </form>

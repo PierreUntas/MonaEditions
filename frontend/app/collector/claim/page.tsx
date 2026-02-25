@@ -17,7 +17,12 @@ function ClaimTokenForm() {
     const [merkleProofInput, setMerkleProofInput] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
-    const [isPending, setIsPending] = useState(false);
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    
+    // Grouped loading states
+    const [loadingStates, setLoadingStates] = useState({
+        claiming: false,
+    });
 
     const { sendTransaction } = useSendTransaction();
 
@@ -29,6 +34,11 @@ function ClaimTokenForm() {
         if (editionIdParam) setEditionId(editionIdParam);
         if (secretKeyParam) setSecretKey(secretKeyParam);
         if (merkleProofParam) setMerkleProofInput(merkleProofParam);
+        
+        // Auto-expand advanced section if params are present
+        if (editionIdParam || secretKeyParam || merkleProofParam) {
+            setShowAdvanced(true);
+        }
     }, [searchParams]);
 
     const handleClaim = async (e: React.FormEvent) => {
@@ -37,16 +47,16 @@ function ClaimTokenForm() {
         setSuccess(false);
 
         if (!address) {
-            setError('❌ Veuillez connecter votre wallet');
+            setError('Veuillez connecter votre wallet');
             return;
         }
 
         if (!editionId || !secretKey || !merkleProofInput) {
-            setError('❌ Veuillez remplir tous les champs');
+            setError('Veuillez remplir tous les champs');
             return;
         }
 
-        setIsPending(true);
+        setLoadingStates(prev => ({ ...prev, claiming: true }));
         try {
             const merkleProof = merkleProofInput
                 .split(',')
@@ -70,15 +80,15 @@ function ClaimTokenForm() {
 
             // Transaction hash (internal): txHash
             setSuccess(true);
-            alert('✅ Token réclamé avec succès !');
+            alert('Token réclamé avec succès !');
             setEditionId('');
             setSecretKey('');
             setMerkleProofInput('');
         } catch (err: any) {
             console.error('Error claiming token:', err);
-            setError(`❌ Erreur: ${err.message || 'Clé invalide ou déjà utilisée'}`);
+            setError(`Erreur: ${err.message || 'Clé invalide ou déjà utilisée'}`);
         } finally {
-            setIsPending(false);
+            setLoadingStates(prev => ({ ...prev, claiming: false }));
         }
     };
 
@@ -107,55 +117,71 @@ function ClaimTokenForm() {
 
             <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6 mb-px">
                 <p className="text-[13px] font-light text-[#78716c] leading-[1.7]">
-                    💡 Scannez le QR code de l'œuvre afin que les champs se remplissent automatiquement. Ce certificat vous permettra d'émettre un avis sur l'œuvre.
+                    Scannez le QR code de l'œuvre afin que les champs se remplissent automatiquement. Ce certificat vous permettra d'émettre un avis sur l'œuvre.
                 </p>
             </div>
 
             <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
                 <form onSubmit={handleClaim} className="space-y-6">
+                    
+                    {/* Advanced parameters toggle */}
                     <div>
-                        <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                            Numéro de l'œuvre *
-                        </label>
-                        <input
-                            type="number"
-                            value={editionId}
-                            onChange={(e) => setEditionId(e.target.value)}
-                            className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
-                            placeholder="Ex: 1"
-                            required
-                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowAdvanced(!showAdvanced)}
+                            className="text-[12px] font-normal tracking-[0.06em] text-[#78716c] hover:text-[#1c1917] transition-colors underline"
+                        >
+                            {showAdvanced ? '− Masquer les détails techniques' : '+ Afficher les détails techniques'}
+                        </button>
                     </div>
 
-                    <div>
-                        <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                            Clé secrète *
-                        </label>
-                        <input
-                            type="text"
-                            value={secretKey}
-                            onChange={(e) => setSecretKey(e.target.value)}
-                            className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
-                            placeholder="Ex: abc123def456..."
-                            required
-                        />
-                    </div>
+                    {showAdvanced && (
+                        <div className="space-y-6 pb-6 border-b border-[#d6d0c8]">
+                            <div>
+                                <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                    Numéro de l'œuvre *
+                                </label>
+                                <input
+                                    type="number"
+                                    value={editionId}
+                                    onChange={(e) => setEditionId(e.target.value)}
+                                    className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                    placeholder="Ex: 1"
+                                    required
+                                />
+                            </div>
 
-                    <div>
-                        <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                            Preuve Merkle (séparée par des virgules) *
-                        </label>
-                        <textarea
-                            value={merkleProofInput}
-                            onChange={(e) => setMerkleProofInput(e.target.value)}
-                            className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors font-mono text-[11px] min-h-[100px]"
-                            placeholder="Ex: 0x123...,0xabc...,0xdef..."
-                            required
-                        />
-                        <p className="text-[11px] text-[#a8a29e] mt-2 font-light">
-                            Format : hash1,hash2,hash3 (avec 0x devant chaque hash)
-                        </p>
-                    </div>
+                            <div>
+                                <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                    Clé secrète *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={secretKey}
+                                    onChange={(e) => setSecretKey(e.target.value)}
+                                    className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                    placeholder="Ex: abc123def456..."
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                    Preuve Merkle (séparée par des virgules) *
+                                </label>
+                                <textarea
+                                    value={merkleProofInput}
+                                    onChange={(e) => setMerkleProofInput(e.target.value)}
+                                    className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors font-mono text-[11px] min-h-[100px]"
+                                    placeholder="Ex: 0x123...,0xabc...,0xdef..."
+                                    required
+                                />
+                                <p className="text-[11px] text-[#a8a29e] mt-2 font-light">
+                                    Format : hash1,hash2,hash3 (avec 0x devant chaque hash)
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     {error && (
                         <div className="border border-[#d6d0c8] bg-[#ede9e3] p-4">
@@ -165,16 +191,16 @@ function ClaimTokenForm() {
 
                     {success && (
                         <div className="border border-[#d6d0c8] bg-[#ede9e3] p-4">
-                            <p className="text-[13px] font-light text-[#1c1917]">✅ Certificat réclamé avec succès !</p>
+                            <p className="text-[13px] font-light text-[#1c1917]">Certificat réclamé avec succès !</p>
                         </div>
                     )}
 
                     <button
                         type="submit"
-                        disabled={isPending}
+                        disabled={loadingStates.claiming}
                         className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                     >
-                        {isPending ? 'Transaction en cours…' : 'Réclamer mon certificat'}
+                        {loadingStates.claiming ? 'Transaction en cours…' : 'Réclamer mon certificat'}
                     </button>
                 </form>
             </div>

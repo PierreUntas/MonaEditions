@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
+import { ipfsToHttp } from '@/app/utils/file';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
@@ -32,20 +33,20 @@ interface ArtistInfo {
     editionCount: number;
 }
 
-const ipfsToHttp = (url: string) =>
-    url?.startsWith('ipfs://')
-        ? `https://ipfs.io/ipfs/${url.replace('ipfs://', '')}`
-        : url;
-
 export default function ArtistsPage() {
     const [artists, setArtists] = useState<ArtistInfo[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
+    
+    // Grouped loading states
+    const [loadingStates, setLoadingStates] = useState({
+        fetchingArtists: true,
+        loadingIPFS: false,
+    });
+    
     const [filterArtist, setFilterArtist] = useState<string>('all');
 
     useEffect(() => {
         const fetchAllArtists = async () => {
-            if (!publicClient) { setIsLoading(false); return; }
+            if (!publicClient) { setLoadingStates(prev => ({ ...prev, fetchingArtists: false })); return; }
             try {
                 const logs = await publicClient.getLogs({
                     address: ARTWORK_REGISTRY_ADDRESS,
@@ -88,10 +89,10 @@ export default function ArtistsPage() {
                     .sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
 
                 setArtists(valid);
-                setIsLoading(false);
+                setLoadingStates(prev => ({ ...prev, fetchingArtists: false }));
 
                 // Load full IPFS data (bio, portfolio, socialMedia, etc.)
-                setIsLoadingIPFS(true);
+                setLoadingStates(prev => ({ ...prev, loadingIPFS: true }));
                 const ipfsResults = await Promise.all(valid.map(async (p) => {
                     if (!p.metadata?.trim()) return null;
                     try { return { address: p.address, ipfsData: await getFromIPFSGateway(p.metadata) as ArtistIPFSData }; }
@@ -105,10 +106,10 @@ export default function ArtistsPage() {
                     });
                     return updated;
                 });
-                setIsLoadingIPFS(false);
+                setLoadingStates(prev => ({ ...prev, loadingIPFS: false }));
             } catch (e) {
                 console.error('Error loading artists:', e);
-                setIsLoading(false);
+                setLoadingStates(prev => ({ ...prev, fetchingArtists: false }));
             }
         };
         fetchAllArtists();
@@ -155,13 +156,13 @@ export default function ArtistsPage() {
                     ))}
                 </div>
 
-                {isLoadingIPFS && (
+                {loadingStates.loadingIPFS && (
                     <p className="text-[12px] font-light text-[#a8a29e] tracking-[0.06em] mb-6">
                         Chargement des données IPFS…
                     </p>
                 )}
 
-                {isLoading ? (
+                {loadingStates.fetchingArtists ? (
                     <div className="flex flex-col items-center justify-center py-32 gap-4">
                         <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
                         <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement des artistes…</p>
@@ -257,14 +258,5 @@ function FilterBtn({ active, onClick, children }: { active: boolean; onClick: ()
         >
             {children}
         </button>
-    );
-}
-
-function MetaRow({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="flex items-baseline gap-2">
-            <span className="text-[9px] font-medium tracking-[0.12em] uppercase text-[#a8a29e] w-16 flex-shrink-0">{label}</span>
-            <span className="text-[12px] font-light text-[#78716c] truncate">{value}</span>
-        </div>
     );
 }

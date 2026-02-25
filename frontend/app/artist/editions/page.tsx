@@ -33,8 +33,12 @@ export default function ArtistEditionsPage() {
     const [editions, setEditions] = useState<EditionInfo[]>([]);
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isCheckingAuthorization, setIsCheckingAuthorization] = useState(true);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
+    
+    // Grouped loading states
+    const [loadingStates, setLoadingStates] = useState({
+        fetchingEditions: false,
+        loadingIPFS: false,
+    });
 
     const { data: artistData, isLoading: isLoadingArtist } = useReadContract({
         address: ARTWORK_REGISTRY_ADDRESS,
@@ -57,7 +61,7 @@ export default function ArtistEditionsPage() {
         const fetchEditions = async () => {
             if (!address || !isAuthorized || !publicClient) return;
 
-            setIsLoading(true);
+            setLoadingStates(prev => ({ ...prev, fetchingEditions: true }));
             try {
                 const logs = await publicClient.getLogs({
                     address: ARTWORK_REGISTRY_ADDRESS,
@@ -102,7 +106,7 @@ export default function ArtistEditionsPage() {
                 editionsData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
                 setEditions(editionsData);
 
-                setIsLoadingIPFS(true);
+                setLoadingStates(prev => ({ ...prev, loadingIPFS: true }));
                 for (const edition of editionsData) {
                     if (edition.metadata) {
                         try {
@@ -113,12 +117,12 @@ export default function ArtistEditionsPage() {
                         }
                     }
                 }
-                setIsLoadingIPFS(false);
+                setLoadingStates(prev => ({ ...prev, loadingIPFS: false }));
 
             } catch (error) {
                 console.error('Error loading editions:', error);
             } finally {
-                setIsLoading(false);
+                setLoadingStates(prev => ({ ...prev, fetchingEditions: false }));
             }
         };
 
@@ -178,7 +182,7 @@ export default function ArtistEditionsPage() {
                     </Link>
                 </div>
 
-                {isLoading ? (
+                {loadingStates.fetchingEditions ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-4">
                         <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
                         <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement de vos œuvres…</p>
@@ -189,7 +193,7 @@ export default function ArtistEditionsPage() {
                     </div>
                 ) : (
                     <>
-                        {isLoadingIPFS && (
+                        {loadingStates.loadingIPFS && (
                             <div className="text-center text-[13px] font-light text-[#a8a29e] mb-4 tracking-[0.06em]">
                                 Chargement des données IPFS…
                             </div>

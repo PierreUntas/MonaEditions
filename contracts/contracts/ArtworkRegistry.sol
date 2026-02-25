@@ -234,9 +234,6 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
     /// @dev Thrown when the review limit per user per edition is reached
     error ReviewLimitReached();
 
-    /// @dev Thrown when a string parameter length is invalid
-    error InvalidStringLength();
-
     /// @dev Thrown when an IPFS CID format is invalid
     error InvalidIPFSCID();
 
@@ -530,6 +527,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
         );
 
         claimedKeys[_editionId][leaf] = true;
+        edition.hasBeenClaimed = true;
 
         artworkTokenization.safeTransferFrom(
             artist,
@@ -538,8 +536,6 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
             1,
             ""
         );
-
-        edition.hasBeenClaimed = true;
 
         emit CertificateClaimed(msg.sender, _editionId);
     }
@@ -614,31 +610,31 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
     /**
      * @dev Returns all reviews for a specific edition (paginated)
      * @param _editionId ID of the edition
-     * @param offset Starting index for pagination
+     * @param startIndex Starting index for pagination
      * @param limit Maximum number of reviews to return (capped at MAX_REVIEWS_QUERY)
      * @return Array of reviews
      *
-     * @notice Returns empty array if offset is beyond total reviews
+     * @notice Returns empty array if startIndex is beyond total reviews
      */
     function getEditionReviews(
         uint _editionId,
-        uint offset,
+        uint startIndex,
         uint limit
     ) external view returns (Review[] memory) {
         require(limit <= MAX_REVIEWS_QUERY, QueryLimitTooHigh());
 
         uint total = editionReviews[_editionId].length;
 
-        if (offset >= total) {
+        if (startIndex >= total) {
             return new Review[](0);
         }
 
-        uint end = offset + limit > total ? total : offset + limit;
-        uint resultLength = end - offset;
+        uint end = startIndex + limit > total ? total : startIndex + limit;
+        uint resultLength = end - startIndex;
 
         Review[] memory result = new Review[](resultLength);
         for (uint i = 0; i < resultLength; i++) {
-            result[i] = editionReviews[_editionId][offset + i];
+            result[i] = editionReviews[_editionId][startIndex + i];
         }
 
         return result;

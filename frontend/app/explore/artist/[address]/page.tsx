@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
+import { ipfsToHttp } from '@/app/utils/file';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
@@ -50,11 +51,6 @@ interface EditionInfo {
     commentsCount?: number;
 }
 
-const ipfsToHttp = (url: string) =>
-    url?.startsWith('ipfs://')
-        ? `https://ipfs.io/ipfs/${url.replace('ipfs://', '')}`
-        : url;
-
 export default function ArtistDetailsPage() {
     const params = useParams();
     const artistAddress = params.address as string;
@@ -62,12 +58,16 @@ export default function ArtistDetailsPage() {
     const [artist, setArtist] = useState<ArtistInfo | null>(null);
     const [artistIPFSData, setArtistIPFSData] = useState<ArtistIPFSData | null>(null);
     const [editions, setEditions] = useState<EditionInfo[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
+    
+    // Grouped loading states
+    const [loadingStates, setLoadingStates] = useState({
+        fetchingArtist: true,
+        loadingIPFS: false,
+    });
 
     useEffect(() => {
         const fetchArtistDetails = async () => {
-            if (!publicClient || !artistAddress) { setIsLoading(false); return; }
+            if (!publicClient || !artistAddress) { setLoadingStates(prev => ({ ...prev, fetchingArtist: false })); return; }
             try {
                 const artistData = await publicClient.readContract({
                     address: ARTWORK_REGISTRY_ADDRESS,
@@ -80,7 +80,7 @@ export default function ArtistDetailsPage() {
                 let artistLocation = '';
 
                 if (artistData.metadata?.trim()) {
-                    setIsLoadingIPFS(true);
+                    setLoadingStates(prev => ({ ...prev, loadingIPFS: true }));
                     try {
                         const ipfsData = await getFromIPFSGateway(artistData.metadata) as ArtistIPFSData;
                         setArtistIPFSData(ipfsData);
@@ -89,7 +89,7 @@ export default function ArtistDetailsPage() {
                     } catch (e) {
                         console.error('Error loading artist IPFS data:', e);
                     } finally {
-                        setIsLoadingIPFS(false);
+                        setLoadingStates(prev => ({ ...prev, loadingIPFS: false }));
                     }
                 }
 
@@ -152,13 +152,13 @@ export default function ArtistDetailsPage() {
             } catch (e) {
                 console.error('Error loading artist details:', e);
             } finally {
-                setIsLoading(false);
+                setLoadingStates(prev => ({ ...prev, fetchingArtist: false }));
             }
         };
         fetchArtistDetails();
     }, [artistAddress]);
 
-    if (isLoading) return (
+    if (loadingStates.fetchingArtist) return (
         <div className="min-h-screen bg-[#f5f3ef]">
             <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
                 <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
@@ -192,7 +192,7 @@ export default function ArtistDetailsPage() {
                     ← Retour aux artistes
                 </Link>
 
-                {isLoadingIPFS && (
+                {loadingStates.loadingIPFS && (
                     <p className="text-[12px] font-light text-[#a8a29e] tracking-[0.06em] mb-6">
                         Chargement des données IPFS…
                     </p>

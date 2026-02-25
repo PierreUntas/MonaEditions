@@ -5,12 +5,16 @@ import { useState } from 'react';
 export default function ContactPage() {
     const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
     const [sent, setSent] = useState(false);
-    const [sending, setSending] = useState(false);
     const [error, setError] = useState('');
+    
+    // Grouped loading states
+    const [loadingStates, setLoadingStates] = useState({
+        sending: false,
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setSending(true);
+        setLoadingStates(prev => ({ ...prev, sending: true }));
         setError('');
 
         try {
@@ -30,7 +34,7 @@ export default function ContactPage() {
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Une erreur est survenue');
         } finally {
-            setSending(false);
+            setLoadingStates(prev => ({ ...prev, sending: false }));
         }
     };
 
@@ -118,10 +122,10 @@ export default function ContactPage() {
                             </div>
                             <button
                                 type="submit"
-                                disabled={sending}
+                                disabled={loadingStates.sending}
                                 className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] hover:bg-[#292524] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {sending ? '⏳ Envoi en cours…' : 'Envoyer le message'}
+                                {loadingStates.sending ? 'Envoi en cours…' : 'Envoyer le message'}
                             </button>
                         </form>
                     </div>

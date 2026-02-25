@@ -7,6 +7,27 @@ const ipfsCache = new Map<string, any>();
 // Public IPFS gateway (fast and reliable)
 const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
 
+// Helper function to parse error responses
+async function parseErrorResponse(response: Response, defaultMessage: string): Promise<string> {
+    let errorMessage = `${defaultMessage}: ${response.statusText}`;
+    try {
+        const errorData = await response.json();
+        if (errorData.error) {
+            errorMessage = errorData.error;
+        } else if (errorData.details) {
+            errorMessage = `${errorData.error || defaultMessage}: ${errorData.details}`;
+        }
+    } catch {
+        try {
+            const errorText = await response.text();
+            if (errorText) {
+                errorMessage = `${defaultMessage}: ${errorText}`;
+            }
+        } catch {}
+    }
+    return errorMessage;
+}
+
 export async function uploadToIPFS(data: any): Promise<string> {
     const formData = new FormData();
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
@@ -18,22 +39,7 @@ export async function uploadToIPFS(data: any): Promise<string> {
     });
 
     if (!response.ok) {
-        let errorMessage = `IPFS upload error: ${response.statusText}`;
-        try {
-            const errorData = await response.json();
-            if (errorData.error) {
-                errorMessage = errorData.error;
-            } else if (errorData.details) {
-                errorMessage = `${errorData.error || 'IPFS upload error'}: ${errorData.details}`;
-            }
-        } catch {
-            try {
-                const errorText = await response.text();
-                if (errorText) {
-                    errorMessage = `IPFS upload error: ${errorText}`;
-                }
-            } catch {}
-        }
+        const errorMessage = await parseErrorResponse(response, 'IPFS upload error');
         throw new Error(errorMessage);
     }
 
@@ -51,22 +57,7 @@ export async function uploadFileToIPFS(file: File): Promise<string> {
     });
 
     if (!response.ok) {
-        let errorMessage = `IPFS file upload error: ${response.statusText}`;
-        try {
-            const errorData = await response.json();
-            if (errorData.error) {
-                errorMessage = errorData.error;
-            } else if (errorData.details) {
-                errorMessage = `${errorData.error || 'IPFS file upload error'}: ${errorData.details}`;
-            }
-        } catch {
-            try {
-                const errorText = await response.text();
-                if (errorText) {
-                    errorMessage = `IPFS file upload error: ${errorText}`;
-                }
-            } catch {}
-        }
+        const errorMessage = await parseErrorResponse(response, 'IPFS file upload error');
         throw new Error(errorMessage);
     }
 
@@ -85,7 +76,6 @@ function cleanCID(cid: string): string {
 export async function getFromIPFSGateway(cid: string): Promise<any> {
     const cleanCid = cleanCID(cid);
     if (ipfsCache.has(cleanCid)) {
-        // Cache hit (internal): cleanCid
         return ipfsCache.get(cleanCid);
     }
 
@@ -106,7 +96,6 @@ export async function getFromIPFSGateway(cid: string): Promise<any> {
 
         const data = await response.json();
         ipfsCache.set(cleanCid, data);
-        // Gateway success (internal): cleanCid
         return data;
     } catch (error) {
         clearTimeout(timeoutId);

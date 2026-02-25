@@ -5,6 +5,7 @@ import { useAccount, useWriteContract, useReadContract } from 'wagmi';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 import { BASE_URL } from '@/config/constants';
 import { uploadToIPFS, getFromIPFSGateway } from '@/app/utils/ipfs';
+import { base64ToBlob, downloadFile, fileToBase64, gatewayUrlToIpfsUri } from '@/app/utils/file';
 import { useSendTransaction } from '@privy-io/react-auth';
 import { encodeFunctionData } from 'viem';
 import QRCode from 'qrcode';
@@ -16,9 +17,14 @@ export default function ArtistPage() {
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isCheckingAuthorization, setIsCheckingAuthorization] = useState(true);
     const [isRegistered, setIsRegistered] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
-    const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+    
+    // Grouped loading states
+    const [loadingStates, setLoadingStates] = useState({
+        uploading: false,
+        loadingIPFS: false,
+        generatingQR: false,
+    });
+    
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string>('');
     const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -78,7 +84,7 @@ export default function ArtistPage() {
 
     const downloadArtistPageQRCode = async () => {
         if (!address || !isRegistered) return;
-        setIsGeneratingQR(true);
+        setLoadingStates(prev => ({ ...prev, generatingQR: true }));
         try {
             const artistPageUrl = `${BASE_URL}/explore/artist/${address}`;
             const qrCodeDataUrl = await QRCode.toDataURL(artistPageUrl, {
@@ -88,26 +94,20 @@ export default function ArtistPage() {
                 errorCorrectionLevel: 'H'
             });
             const base64Data = qrCodeDataUrl.split(',')[1];
-            const blob = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'image/png' });
+            const blob = base64ToBlob(base64Data);
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `QR_Artist_${name.replace(/\s+/g, '_')}_${address.slice(0, 8)}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            alert(`✅ QR Code de votre page artiste téléchargé avec succès !`);
+            downloadFile(url, `QR_Artist_${name.replace(/\s+/g, '_')}_${address.slice(0, 8)}.png`);
+            alert('QR Code de votre page artiste téléchargé avec succès !');
         } catch (error) {
             console.error('Error generating artist page QR code:', error);
-            alert('❌ Erreur lors de la génération du QR code');
+            alert('Erreur lors de la génération du QR code');
         } finally {
-            setIsGeneratingQR(false);
+            setLoadingStates(prev => ({ ...prev, generatingQR: false }));
         }
     };
 
     const loadIPFSData = async (cid: string) => {
-        setIsLoadingIPFS(true);
+        setLoadingStates(prev => ({ ...prev, loadingIPFS: true }));
         try {
             const ipfsData = await getFromIPFSGateway(cid);
             if (ipfsData) {
@@ -145,7 +145,7 @@ export default function ArtistPage() {
         } catch (error) {
             console.error('Error loading IPFS data:', error);
         } finally {
-            setIsLoadingIPFS(false);
+            setLoadingStates(prev => ({ ...prev, loadingIPFS: false }));
         }
     };
 
@@ -165,38 +165,28 @@ export default function ArtistPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsUploading(true);
+        setLoadingStates(prev => ({ ...prev, uploading: true }));
 
         try {
             // Upload logo if a new file was selected, otherwise keep existing
             let logoUrl: string | undefined = logoPreview.startsWith('https://ipfs.io/ipfs/')
-                ? `ipfs://${logoPreview.replace('https://ipfs.io/ipfs/', '')}`
+                ? gatewayUrlToIpfsUri(logoPreview)
                 : undefined;
 
             if (logoFile) {
-                logoUrl = await new Promise<string>((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result as string);
-                    reader.readAsDataURL(logoFile);
-                });
+                logoUrl = await fileToBase64(logoFile);
             }
 
             // Convert newly added local files to base64
             const newPhotoUrls = await Promise.all(
-                photoFiles.map(file =>
-                    new Promise<string>((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result as string);
-                        reader.readAsDataURL(file);
-                    })
-                )
+                photoFiles.map(file => fileToBase64(file))
             );
 
             // Preserve existing IPFS photos that weren't removed by the user
             // They are stored in photoPreviews as resolved gateway URLs
             const existingIpfsPhotos = photoPreviews
                 .filter(preview => preview.startsWith('https://ipfs.io/ipfs/'))
-                .map(preview => `ipfs://${preview.replace('https://ipfs.io/ipfs/', '')}`);
+                .map(preview => gatewayUrlToIpfsUri(preview));
 
             const artistMetadata: {
                 name: string;
@@ -231,12 +221,12 @@ export default function ArtistPage() {
                 { sponsor: true }
             );
 
-            alert('✅ Informations enregistrées avec succès !');
+            alert('Informations enregistrées avec succès !');
         } catch (error) {
             console.error('Error saving artist:', error);
-            alert('❌ Erreur lors de l\'enregistrement');
+            alert('Erreur lors de l\'enregistrement');
         } finally {
-            setIsUploading(false);
+            setLoadingStates(prev => ({ ...prev, uploading: false }));
         }
     };
 
@@ -293,7 +283,7 @@ export default function ArtistPage() {
                     </h1>
                 </div>
 
-                {isLoadingIPFS && (
+                {loadingStates.loadingIPFS && (
                     <p className="text-[12px] font-light text-[#a8a29e] tracking-[0.06em] mb-6 text-center">
                         Chargement des données IPFS…
                     </p>
@@ -302,17 +292,17 @@ export default function ArtistPage() {
                 {isRegistered && (
                     <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6 mb-px">
                         <p className="text-[14px] font-medium text-[#1c1917] mb-2">
-                            🏷️ QR Code de votre page artiste
+                            QR Code de votre page artiste
                         </p>
                         <p className="text-[13px] font-light text-[#78716c] mb-4 leading-[1.7]">
                             Téléchargez votre QR code pour le partager avec vos collectionneurs. Il pointe vers votre page artiste.
                         </p>
                         <button
                             onClick={downloadArtistPageQRCode}
-                            disabled={isGeneratingQR}
+                            disabled={loadingStates.generatingQR}
                             className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
-                            {isGeneratingQR ? '🔄 Génération…' : '📥 Télécharger mon QR Code'}
+                            {loadingStates.generatingQR ? 'Génération…' : 'Télécharger mon QR Code'}
                         </button>
                     </div>
                 )}
@@ -377,7 +367,7 @@ export default function ArtistPage() {
                                 onClick={() => logoInputRef.current?.click()}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] hover:bg-[#e7e3dc] transition-colors text-left"
                             >
-                                {logoFile ? `📎 ${logoFile.name}` : '🖼️ Choisir un logo'}
+                                {logoFile ? logoFile.name : 'Choisir un logo'}
                             </button>
                             {logoPreview && (
                                 <div className="mt-3">
@@ -408,8 +398,8 @@ export default function ArtistPage() {
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] hover:bg-[#e7e3dc] transition-colors text-left"
                             >
                                 {photoFiles.length > 0
-                                    ? `📷 ${photoFiles.length} photo${photoFiles.length > 1 ? 's' : ''} sélectionnée${photoFiles.length > 1 ? 's' : ''}`
-                                    : '📷 Sélectionner des photos'}
+                                    ? `${photoFiles.length} photo${photoFiles.length > 1 ? 's' : ''} sélectionnée${photoFiles.length > 1 ? 's' : ''}`
+                                    : 'Sélectionner des photos'}
                             </button>
                             {photoPreviews.length > 0 && (
                                 <div className="mt-3 grid grid-cols-3 gap-2">
@@ -502,10 +492,10 @@ export default function ArtistPage() {
 
                         <button
                             type="submit"
-                            disabled={isRegistering || isUploading || isLoadingIPFS}
+                            disabled={isRegistering || loadingStates.uploading || loadingStates.loadingIPFS}
                             className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
-                            {isUploading
+                            {loadingStates.uploading
                                 ? 'Upload IPFS en cours…'
                                 : isRegistering
                                     ? 'Enregistrement en cours…'

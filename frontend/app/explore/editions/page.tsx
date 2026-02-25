@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
+import { ipfsToHttp } from '@/app/utils/file';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
@@ -36,23 +37,23 @@ interface ArtistInfo {
     location: string;
 }
 
-const ipfsToHttp = (url: string) =>
-    url?.startsWith('ipfs://')
-        ? `https://ipfs.io/ipfs/${url.replace('ipfs://', '')}`
-        : url;
-
 function ExplorePageContent() {
     const searchParams = useSearchParams();
     const categoryFromUrl = searchParams.get('category');
     const [editions, setEditions] = useState<EditionInfo[]>([]);
     const [artists, setArtists] = useState<Map<string, ArtistInfo>>(new Map());
-    const [isLoading, setIsLoading] = useState(true);
-    const [isLoadingIPFS, setIsLoadingIPFS] = useState(false);
+    
+    // Grouped loading states
+    const [loadingStates, setLoadingStates] = useState({
+        fetchingEditions: true,
+        loadingIPFS: false,
+    });
+    
     const [filterCategory, setFilterCategory] = useState<string>(categoryFromUrl || 'all');
 
     useEffect(() => {
         const fetchAllEditions = async () => {
-            if (!publicClient) { setIsLoading(false); return; }
+            if (!publicClient) { setLoadingStates(prev => ({ ...prev, fetchingEditions: false })); return; }
             try {
                 const logs = await publicClient.getLogs({
                     address: ARTWORK_REGISTRY_ADDRESS,
@@ -109,10 +110,10 @@ function ExplorePageContent() {
                 editionsData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
                 setEditions(editionsData);
                 setArtists(artistsMap);
-                setIsLoading(false);
+                setLoadingStates(prev => ({ ...prev, fetchingEditions: false }));
 
                 // Load full IPFS data for each artwork (images, category, technique, etc.)
-                setIsLoadingIPFS(true);
+                setLoadingStates(prev => ({ ...prev, loadingIPFS: true }));
                 const ipfsResults = await Promise.all(editionsData.map(async (edition) => {
                     if (!edition.metadata) return null;
                     try { return { tokenId: edition.tokenId, ipfsData: await getFromIPFSGateway(edition.metadata) as EditionIPFSData }; }
@@ -145,10 +146,10 @@ function ExplorePageContent() {
                     });
                     return updated;
                 });
-                setIsLoadingIPFS(false);
+                setLoadingStates(prev => ({ ...prev, loadingIPFS: false }));
             } catch (e) {
                 console.error('Error loading editions:', e);
-                setIsLoading(false);
+                setLoadingStates(prev => ({ ...prev, fetchingEditions: false }));
             }
         };
         fetchAllEditions();
@@ -199,13 +200,13 @@ function ExplorePageContent() {
                     ))}
                 </div>
 
-                {isLoadingIPFS && (
+                {loadingStates.loadingIPFS && (
                     <p className="text-[12px] font-light text-[#a8a29e] tracking-[0.06em] mb-6">
                         Chargement des données IPFS…
                     </p>
                 )}
 
-                {isLoading ? (
+                {loadingStates.fetchingEditions ? (
                     <div className="flex flex-col items-center justify-center py-32 gap-4">
                         <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
                         <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement des œuvres…</p>

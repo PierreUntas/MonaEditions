@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
+import { BASE_URL } from '@/config/constants';
 import { uploadToIPFS, uploadFileToIPFS } from '@/app/utils/ipfs';
 import { MerkleTree } from 'merkletreejs';
 import { keccak256, encodeFunctionData, decodeEventLog, createPublicClient, http } from 'viem';
@@ -11,23 +12,47 @@ import { useSendTransaction } from '@privy-io/react-auth';
 import QRCode from 'qrcode';
 import * as XLSX from 'xlsx';
 
+// Utility functions
+const base64ToBlob = (base64Data: string, type: string = 'image/png'): Blob => {
+    return new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type });
+};
+
+const downloadFile = (url: string, filename: string): void => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+};
+
+const getMerkleProofForKey = (key: string, merkleTree: MerkleTree): string => {
+    const leaf = keccak256(Buffer.from(key));
+    const proof = merkleTree.getHexProof(leaf);
+    return proof.join(',');
+};
+
 export default function CreateEditionPage() {
-    const BASE_URL = 'https://www.kigen.art';
-    
     const { address } = useAccount();
     const [amount, setAmount] = useState('');
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isCheckingAuthorization, setIsCheckingAuthorization] = useState(true);
     const [isApproved, setIsApproved] = useState(false);
-    const [isApproving, setIsApproving] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const [isUploadingImage, setIsUploadingImage] = useState(false);
-    const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+    
+    // Grouped loading states
+    const [loadingStates, setLoadingStates] = useState({
+        approving: false,
+        uploading: false,
+        uploadingImage: false,
+        creating: false,
+        generatingQR: false,
+    });
+    
     const [secretKeys, setSecretKeys] = useState<string[]>([]);
     const [merkleRoot, setMerkleRoot] = useState<string>('');
     const [merkleTree, setMerkleTree] = useState<MerkleTree | null>(null);
     const [createdEditionId, setCreatedEditionId] = useState<string | null>(null);
-    const [isCreating, setIsCreating] = useState(false);
     const [hasDownloadedKeys, setHasDownloadedKeys] = useState(false);
     const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -76,12 +101,12 @@ export default function CreateEditionPage() {
     useEffect(() => {
         if (approvalStatus !== undefined) {
             setIsApproved(approvalStatus as boolean);
-            if (approvalStatus && isApproving) {
-                setIsApproving(false);
+            if (approvalStatus && loadingStates.approving) {
+                setLoadingStates(prev => ({ ...prev, approving: false }));
                 alert('Approbation confirmée ! Vous pouvez maintenant créer des œuvres.');
             }
         }
-    }, [approvalStatus, isApproving]);
+    }, [approvalStatus, loadingStates.approving]);
 
     // Warn the user if they try to leave without downloading the keys
     useEffect(() => {
@@ -135,7 +160,7 @@ export default function CreateEditionPage() {
         const files = Array.from(e.target.files || []);
         if (!files.length) return;
 
-        setIsUploadingImage(true);
+        setLoadingStates(prev => ({ ...prev, uploadingImage: true }));
         try {
             const newCids: string[] = [];
             for (const file of files) {
@@ -148,7 +173,7 @@ export default function CreateEditionPage() {
             console.error('Error uploading image:', error);
             alert('Erreur lors de l\'upload de l\'image');
         } finally {
-            setIsUploadingImage(false);
+            setLoadingStates(prev => ({ ...prev, uploadingImage: false }));
             // Reset input so the same file can be re-selected if needed
             if (imageInputRef.current) imageInputRef.current.value = '';
         }
@@ -168,7 +193,7 @@ export default function CreateEditionPage() {
 
     const downloadEditionPageQRCode = async () => {
         if (!createdEditionId || createdEditionId === 'pending' || createdEditionId === 'confirmed') return;
-        setIsGeneratingQR(true);
+        setLoadingStates(prev => ({ ...prev, generatingQR: true }));
         try {
             const editionPageUrl = `${BASE_URL}/explore/edition/${createdEditionId}`;
             const qrCodeDataUrl = await QRCode.toDataURL(editionPageUrl, {
@@ -177,35 +202,27 @@ export default function CreateEditionPage() {
                 errorCorrectionLevel: 'H'
             });
             const base64Data = qrCodeDataUrl.split(',')[1];
-            const blob = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'image/png' });
+            const blob = base64ToBlob(base64Data);
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `QR_Edition_Page_${createdEditionId}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            downloadFile(url, `QR_Edition_Page_${createdEditionId}.png`);
             setHasDownloadedKeys(true); // Mark as downloaded
             alert(`QR Code de la page du lot téléchargé avec succès !`);
         } catch (error) {
             console.error('Error generating edition page QR code:', error);
             alert('Erreur lors de la génération du QR code de la page');
         } finally {
-            setIsGeneratingQR(false);
+            setLoadingStates(prev => ({ ...prev, generatingQR: false }));
         }
     };
 
     const downloadExcelWithQRCodes = async () => {
         if (secretKeys.length === 0 || !merkleTree || !createdEditionId) return;
-        setIsGeneratingQR(true);
+        setLoadingStates(prev => ({ ...prev, generatingQR: true }));
         try {
             const excelData = [];
             for (let index = 0; index < secretKeys.length; index++) {
                 const key = secretKeys[index];
-                const leaf = keccak256(Buffer.from(key));
-                const proof = merkleTree.getHexProof(leaf);
-                const merkleProofParam = proof.join(',');
+                const merkleProofParam = getMerkleProofForKey(key, merkleTree);
                 const claimUrl = `${BASE_URL}/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
                 excelData.push({
@@ -242,21 +259,19 @@ export default function CreateEditionPage() {
             console.error('Error generating Excel with QR codes:', error);
             alert('Erreur lors de la génération du fichier Excel avec QR codes');
         } finally {
-            setIsGeneratingQR(false);
+            setLoadingStates(prev => ({ ...prev, generatingQR: false }));
         }
     };
 
     const downloadQRCodesZip = async () => {
         if (secretKeys.length === 0 || !merkleTree || !createdEditionId) return;
-        setIsGeneratingQR(true);
+        setLoadingStates(prev => ({ ...prev, generatingQR: true }));
         try {
             const JSZip = (await import('jszip')).default;
             const zip = new JSZip();
             for (let index = 0; index < secretKeys.length; index++) {
                 const key = secretKeys[index];
-                const leaf = keccak256(Buffer.from(key));
-                const proof = merkleTree.getHexProof(leaf);
-                const merkleProofParam = proof.join(',');
+                const merkleProofParam = getMerkleProofForKey(key, merkleTree);
                 const claimUrl = `${BASE_URL}/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
                 const base64Data = qrCodeDataUrl.split(',')[1];
@@ -267,26 +282,20 @@ export default function CreateEditionPage() {
             }
             const content = await zip.generateAsync({ type: 'blob' });
             const url = URL.createObjectURL(content);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `qr-codes-claim-edition-${createdEditionId}-${Date.now()}.zip`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            downloadFile(url, `qr-codes-claim-edition-${createdEditionId}-${Date.now()}.zip`);
             setHasDownloadedKeys(true); // Mark as downloaded
             alert(`${secretKeys.length} QR codes téléchargés avec succès !`);
         } catch (error) {
             console.error('Error generating QR codes:', error);
             alert('Erreur lors de la génération des QR codes');
         } finally {
-            setIsGeneratingQR(false);
+            setLoadingStates(prev => ({ ...prev, generatingQR: false }));
         }
     };
 
     const handleApprove = async () => {
         try {
-            setIsApproving(true);
+            setLoadingStates(prev => ({ ...prev, approving: true }));
             const data = encodeFunctionData({
                 abi: ARTWORK_TOKENIZATION_ABI,
                 functionName: 'setApprovalForAll',
@@ -298,15 +307,15 @@ export default function CreateEditionPage() {
                 const result = await refetchApproval();
                 if (result.data === true) {
                     clearInterval(checkApproval);
-                    setIsApproving(false);
+                    setLoadingStates(prev => ({ ...prev, approving: false }));
                     setIsApproved(true);
                 }
             }, 3000);
-            setTimeout(() => { clearInterval(checkApproval); setIsApproving(false); }, 60000);
+            setTimeout(() => { clearInterval(checkApproval); setLoadingStates(prev => ({ ...prev, approving: false })); }, 60000);
         } catch (error) {
             console.error('Error during approval:', error);
             alert('Erreur lors de l\'approbation. Veuillez réessayer.');
-            setIsApproving(false);
+            setLoadingStates(prev => ({ ...prev, approving: false }));
         }
     };
 
@@ -321,7 +330,7 @@ export default function CreateEditionPage() {
             return;
         }
 
-        setIsUploading(true);
+        setLoadingStates(prev => ({ ...prev, uploading: true }));
         try {
             // IPFS object matching the target structure
             const artworkMetadata: {
@@ -346,8 +355,7 @@ export default function CreateEditionPage() {
 
             const cid = await uploadToIPFS(artworkMetadata);
 
-            setIsUploading(false);
-            setIsCreating(true);
+            setLoadingStates(prev => ({ ...prev, uploading: false, creating: true }));
 
             const data = encodeFunctionData({
                 abi: ARTWORK_REGISTRY_ABI,
@@ -396,8 +404,7 @@ export default function CreateEditionPage() {
             console.error('Error creating artwork:', error);
             alert('Erreur lors de la création de l\'œuvre');
         } finally {
-            setIsUploading(false);
-            setIsCreating(false);
+            setLoadingStates(prev => ({ ...prev, uploading: false, creating: false }));
         }
     };
 
@@ -447,10 +454,10 @@ export default function CreateEditionPage() {
                             </div>
                             <button
                                 onClick={handleApprove}
-                                disabled={isApproving}
+                                disabled={loadingStates.approving}
                                 className="bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-6 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200 whitespace-nowrap"
                             >
-                                {isApproving ? 'En cours…' : 'Approuver'}
+                                {loadingStates.approving ? 'En cours…' : 'Approuver'}
                             </button>
                         </div>
                     </div>
@@ -592,10 +599,10 @@ export default function CreateEditionPage() {
                             <button
                                 type="button"
                                 onClick={() => imageInputRef.current?.click()}
-                                disabled={isUploadingImage}
+                                disabled={loadingStates.uploadingImage}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] hover:bg-[#e7e3dc] transition-colors disabled:opacity-50 text-left"
                             >
-                                {isUploadingImage ? 'Upload en cours…' : 'Ajouter des images (upload IPFS)'}
+                                {loadingStates.uploadingImage ? 'Upload en cours…' : 'Ajouter des images (upload IPFS)'}
                             </button>
                             {editionData.images.length > 0 && (
                                 <ul className="mt-3 space-y-1">
@@ -644,12 +651,12 @@ export default function CreateEditionPage() {
 
                         <button
                             type="submit"
-                            disabled={isCreating || isUploading || !merkleRoot || !isApproved}
+                            disabled={loadingStates.creating || loadingStates.uploading || !merkleRoot || !isApproved}
                             className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
-                            {isUploading
+                            {loadingStates.uploading
                                 ? 'Upload IPFS…'
-                                : isCreating
+                                : loadingStates.creating
                                     ? 'Création en cours…'
                                     : 'Créer l\'œuvre'}
                         </button>
@@ -683,10 +690,10 @@ export default function CreateEditionPage() {
                                 </p>
                                 <button
                                     onClick={downloadEditionPageQRCode}
-                                    disabled={isGeneratingQR}
+                                    disabled={loadingStates.generatingQR}
                                     className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                                 >
-                                    {isGeneratingQR ? 'Génération…' : 'Télécharger QR Code Œuvre'}
+                                    {loadingStates.generatingQR ? 'Génération…' : 'Télécharger QR Code Œuvre'}
                                 </button>
                             </div>
                         )}
@@ -701,17 +708,17 @@ export default function CreateEditionPage() {
                             <div className="space-y-2">
                                 <button
                                     onClick={downloadExcelWithQRCodes}
-                                    disabled={isGeneratingQR}
+                                    disabled={loadingStates.generatingQR}
                                     className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                                 >
-                                    {isGeneratingQR ? 'Génération en cours…' : 'Télécharger Excel avec QR codes'}
+                                    {loadingStates.generatingQR ? 'Génération en cours…' : 'Télécharger Excel avec QR codes'}
                                 </button>
                                 <button
                                     onClick={downloadQRCodesZip}
-                                    disabled={isGeneratingQR}
+                                    disabled={loadingStates.generatingQR}
                                     className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                                 >
-                                    {isGeneratingQR ? 'Génération en cours…' : 'Télécharger QR codes (ZIP)'}
+                                    {loadingStates.generatingQR ? 'Génération en cours…' : 'Télécharger QR codes (ZIP)'}
                                 </button>
                             </div>
                         </div>

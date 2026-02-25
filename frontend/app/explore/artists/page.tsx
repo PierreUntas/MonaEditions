@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
-import Navbar from '@/components/shared/Navbar';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
@@ -119,7 +118,6 @@ export default function ArtistsPage() {
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
-            <Navbar />
             <div className="max-w-6xl mx-auto px-6 pt-28 pb-20">
 
                 {/* Header */}

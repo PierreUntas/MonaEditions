@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from 'react';
 import { useAccount } from 'wagmi';
 import { useSearchParams } from 'next/navigation';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
-import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
 import { useSendTransaction } from '@privy-io/react-auth';
 import { encodeFunctionData } from 'viem';
@@ -194,7 +193,6 @@ function ClaimTokenForm() {
 export default function ClaimTokenPage() {
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
-            <Navbar />
             <Suspense fallback={
                 <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
                     <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />

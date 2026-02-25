@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
 import { uploadToIPFS, uploadFileToIPFS } from '@/app/utils/ipfs';
-import Navbar from '@/components/shared/Navbar';
 import { MerkleTree } from 'merkletreejs';
 import { keccak256, encodeFunctionData, decodeEventLog, createPublicClient, http } from 'viem';
 import { sepolia } from 'viem/chains';
@@ -13,6 +12,8 @@ import QRCode from 'qrcode';
 import * as XLSX from 'xlsx';
 
 export default function CreateEditionPage() {
+    const BASE_URL = 'https://www.kigen.art';
+    
     const { address } = useAccount();
     const [amount, setAmount] = useState('');
     const [isAuthorized, setIsAuthorized] = useState(false);
@@ -77,17 +78,17 @@ export default function CreateEditionPage() {
             setIsApproved(approvalStatus as boolean);
             if (approvalStatus && isApproving) {
                 setIsApproving(false);
-                alert('✅ Approbation confirmée ! Vous pouvez maintenant créer des œuvres.');
+                alert('Approbation confirmée ! Vous pouvez maintenant créer des œuvres.');
             }
         }
     }, [approvalStatus, isApproving]);
 
-    // Avertir l'utilisateur s'il essaie de quitter sans avoir téléchargé les clés
+    // Warn the user if they try to leave without downloading the keys
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
             if (createdEditionId && secretKeys.length > 0 && !hasDownloadedKeys) {
                 e.preventDefault();
-                e.returnValue = '⚠️ ATTENTION : Vous n\'avez pas téléchargé les clés secrètes ! Si vous quittez maintenant, vous les perdrez définitivement.';
+                e.returnValue = 'ATTENTION : Vous n\'avez pas téléchargé les clés secrètes ! Si vous quittez maintenant, vous les perdrez définitivement.';
                 return e.returnValue;
             }
         };
@@ -142,10 +143,10 @@ export default function CreateEditionPage() {
                 newCids.push(`ipfs://${cid}`);
             }
             setEditionData(prev => ({ ...prev, images: [...prev.images, ...newCids] }));
-            alert(`✅ ${newCids.length} image${newCids.length > 1 ? 's uploadées' : ' uploadée'} sur IPFS !`);
+            alert(`${newCids.length} image${newCids.length > 1 ? 's uploadées' : ' uploadée'} sur IPFS !`);
         } catch (error) {
             console.error('Error uploading image:', error);
-            alert('❌ Erreur lors de l\'upload de l\'image');
+            alert('Erreur lors de l\'upload de l\'image');
         } finally {
             setIsUploadingImage(false);
             // Reset input so the same file can be re-selected if needed
@@ -169,7 +170,7 @@ export default function CreateEditionPage() {
         if (!createdEditionId || createdEditionId === 'pending' || createdEditionId === 'confirmed') return;
         setIsGeneratingQR(true);
         try {
-            const editionPageUrl = `https://www.kigen.art/explore/edition/${createdEditionId}`;
+            const editionPageUrl = `${BASE_URL}/explore/edition/${createdEditionId}`;
             const qrCodeDataUrl = await QRCode.toDataURL(editionPageUrl, {
                 width: 1000, margin: 4,
                 color: { dark: '#000000', light: '#FFFFFF' },
@@ -185,11 +186,11 @@ export default function CreateEditionPage() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            setHasDownloadedKeys(true); // Marquer comme téléchargé
-            alert(`✅ QR Code de la page du lot téléchargé avec succès !`);
+            setHasDownloadedKeys(true); // Mark as downloaded
+            alert(`QR Code de la page du lot téléchargé avec succès !`);
         } catch (error) {
             console.error('Error generating edition page QR code:', error);
-            alert('❌ Erreur lors de la génération du QR code de la page');
+            alert('Erreur lors de la génération du QR code de la page');
         } finally {
             setIsGeneratingQR(false);
         }
@@ -205,7 +206,7 @@ export default function CreateEditionPage() {
                 const leaf = keccak256(Buffer.from(key));
                 const proof = merkleTree.getHexProof(leaf);
                 const merkleProofParam = proof.join(',');
-                const claimUrl = `https://www.kigen.art/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
+                const claimUrl = `${BASE_URL}/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
                 excelData.push({
                     'Index': index + 1,
@@ -235,11 +236,11 @@ export default function CreateEditionPage() {
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Secret Keys');
             XLSX.writeFile(wb, `secret-keys-edition-${createdEditionId}-${Date.now()}.xlsx`);
-            setHasDownloadedKeys(true); // Marquer comme téléchargé
-            alert(`✅ Fichier Excel avec ${secretKeys.length} QR codes généré avec succès !`);
+            setHasDownloadedKeys(true); // Mark as downloaded
+            alert(`Fichier Excel avec ${secretKeys.length} QR codes généré avec succès !`);
         } catch (error) {
             console.error('Error generating Excel with QR codes:', error);
-            alert('❌ Erreur lors de la génération du fichier Excel avec QR codes');
+            alert('Erreur lors de la génération du fichier Excel avec QR codes');
         } finally {
             setIsGeneratingQR(false);
         }
@@ -256,7 +257,7 @@ export default function CreateEditionPage() {
                 const leaf = keccak256(Buffer.from(key));
                 const proof = merkleTree.getHexProof(leaf);
                 const merkleProofParam = proof.join(',');
-                const claimUrl = `https://www.kigen.art/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
+                const claimUrl = `${BASE_URL}/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
                 const base64Data = qrCodeDataUrl.split(',')[1];
                 zip.file(`QR_Claim_${createdEditionId}_${(index + 1).toString().padStart(5, '0')}.png`, base64Data, { base64: true });
@@ -273,11 +274,11 @@ export default function CreateEditionPage() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            setHasDownloadedKeys(true); // Marquer comme téléchargé
-            alert(`✅ ${secretKeys.length} QR codes téléchargés avec succès !`);
+            setHasDownloadedKeys(true); // Mark as downloaded
+            alert(`${secretKeys.length} QR codes téléchargés avec succès !`);
         } catch (error) {
             console.error('Error generating QR codes:', error);
-            alert('❌ Erreur lors de la génération des QR codes');
+            alert('Erreur lors de la génération des QR codes');
         } finally {
             setIsGeneratingQR(false);
         }
@@ -292,7 +293,7 @@ export default function CreateEditionPage() {
                 args: [ARTWORK_REGISTRY_ADDRESS, true]
             });
             await sendTransaction({ to: ARTWORK_TOKENIZATION_ADDRESS, data }, { sponsor: true });
-            alert('⏳ Approbation en cours... La transaction doit être confirmée sur la blockchain (~12 sec). Attendez la confirmation avant de créer votre lot.');
+            alert('Approbation en cours... La transaction doit être confirmée sur la blockchain (~12 sec). Attendez la confirmation avant de créer votre lot.');
             const checkApproval = setInterval(async () => {
                 const result = await refetchApproval();
                 if (result.data === true) {
@@ -304,7 +305,7 @@ export default function CreateEditionPage() {
             setTimeout(() => { clearInterval(checkApproval); setIsApproving(false); }, 60000);
         } catch (error) {
             console.error('Error during approval:', error);
-            alert('❌ Erreur lors de l\'approbation. Veuillez réessayer.');
+            alert('Erreur lors de l\'approbation. Veuillez réessayer.');
             setIsApproving(false);
         }
     };
@@ -316,7 +317,7 @@ export default function CreateEditionPage() {
             return;
         }
         if (!isApproved) {
-            alert('⚠️ Vous devez d\'abord approuver le contrat');
+            alert('Vous devez d\'abord approuver le contrat');
             return;
         }
 
@@ -359,7 +360,7 @@ export default function CreateEditionPage() {
                 { sponsor: true }
             );
 
-            alert('⏳ Transaction envoyée ! En attente de confirmation...');
+            alert('Transaction envoyée ! En attente de confirmation...');
 
             const publicClientInstance = createPublicClient({
                 chain: sepolia,
@@ -385,15 +386,15 @@ export default function CreateEditionPage() {
                 }) as any;
                 const editionId = decoded.args.editionId?.toString();
                 setCreatedEditionId(editionId);
-                alert(`✅ Œuvre créée avec succès ! ID : ${editionId}`);
+                alert(`Œuvre créée avec succès ! ID : ${editionId}`);
             } else {
-                console.error('❌ NewArtworkEdition event not found in logs');
-                alert('⚠️ Transaction confirmée mais impossible de récupérer l\'ID de l\'œuvre. Vérifiez la console.');
+                console.error('NewArtworkEdition event not found in logs');
+                alert('Transaction confirmée mais impossible de récupérer l\'ID de l\'œuvre. Vérifiez la console.');
                 setCreatedEditionId('confirmed');
             }
         } catch (error) {
             console.error('Error creating artwork:', error);
-            alert('❌ Erreur lors de la création de l\'œuvre');
+            alert('Erreur lors de la création de l\'œuvre');
         } finally {
             setIsUploading(false);
             setIsCreating(false);
@@ -403,7 +404,6 @@ export default function CreateEditionPage() {
     if (isCheckingAuthorization || isLoadingArtist) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
-                <Navbar />
                 <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
                     <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
                     <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Vérification des permissions…</p>
@@ -415,7 +415,6 @@ export default function CreateEditionPage() {
     if (!address) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
-                <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
                     <p className="font-serif italic text-[22px] text-[#a8a29e]">Veuillez connecter votre wallet</p>
                 </div>
@@ -426,7 +425,6 @@ export default function CreateEditionPage() {
     if (!isAuthorized) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
-                <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
                     <p className="font-serif italic text-[22px] text-[#a8a29e] text-center max-w-md px-6">
                         Accès refusé : vous n'êtes pas autorisé comme artiste
@@ -438,14 +436,13 @@ export default function CreateEditionPage() {
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
-            <Navbar />
             <div className="max-w-3xl mx-auto px-6 pt-28 pb-20">
 
                 {isAuthorized && !isApproved && (
                     <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6 mb-px">
                         <div className="flex items-center justify-between gap-4">
                             <div>
-                                <p className="text-[14px] font-medium text-[#1c1917] mb-1">⚠️ Action requise</p>
+                                <p className="text-[14px] font-medium text-[#1c1917] mb-1">Action requise</p>
                                 <p className="text-[13px] font-light text-[#78716c]">Vous devez approuver le contrat avant de créer des œuvres.</p>
                             </div>
                             <button
@@ -453,7 +450,7 @@ export default function CreateEditionPage() {
                                 disabled={isApproving}
                                 className="bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3 px-6 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200 whitespace-nowrap"
                             >
-                                {isApproving ? '⏳ En cours…' : '✅ Approuver'}
+                                {isApproving ? 'En cours…' : 'Approuver'}
                             </button>
                         </div>
                     </div>
@@ -461,16 +458,16 @@ export default function CreateEditionPage() {
 
                 {createdEditionId && (
                     <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6 mb-px">
-                        <p className="text-[14px] font-medium text-[#1c1917] mb-1">✅ Œuvre créée avec succès !</p>
+                        <p className="text-[14px] font-medium text-[#1c1917] mb-1">Œuvre créée avec succès !</p>
                         <p className="text-[13px] font-light text-[#78716c]">ID de l'œuvre : <span className="font-mono">{createdEditionId}</span></p>
                         {!hasDownloadedKeys && (
                             <p className="text-[14px] font-medium text-[#dc2626] mt-3 leading-[1.7]">
-                                ⚠️ IMPORTANT : Vous devez télécharger les clés secrètes maintenant. Une fois cette page fermée, vous ne pourrez plus les récupérer !
+                                IMPORTANT : Vous devez télécharger les clés secrètes maintenant. Une fois cette page fermée, vous ne pourrez plus les récupérer !
                             </p>
                         )}
                         {hasDownloadedKeys && (
                             <p className="text-[13px] font-light text-[#16a34a] mt-2">
-                                ✅ Clés secrètes téléchargées avec succès
+                                Clés secrètes téléchargées avec succès
                             </p>
                         )}
                     </div>
@@ -490,7 +487,7 @@ export default function CreateEditionPage() {
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
                     <form onSubmit={handleSubmit} className="space-y-6">
 
-                        {/* Titre */}
+                        {/* Title */}
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Titre de l'œuvre *
@@ -505,7 +502,7 @@ export default function CreateEditionPage() {
                             />
                         </div>
 
-                        {/* Année */}
+                        {/* Year */}
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Année de création *
@@ -521,7 +518,7 @@ export default function CreateEditionPage() {
                             />
                         </div>
 
-                        {/* Catégorie */}
+                        {/* Category */}
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Catégorie
@@ -598,7 +595,7 @@ export default function CreateEditionPage() {
                                 disabled={isUploadingImage}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] hover:bg-[#e7e3dc] transition-colors disabled:opacity-50 text-left"
                             >
-                                {isUploadingImage ? '📤 Upload en cours…' : '🖼️ Ajouter des images (upload IPFS)'}
+                                {isUploadingImage ? 'Upload en cours…' : 'Ajouter des images (upload IPFS)'}
                             </button>
                             {editionData.images.length > 0 && (
                                 <ul className="mt-3 space-y-1">
@@ -618,7 +615,7 @@ export default function CreateEditionPage() {
                             )}
                         </div>
 
-                        {/* Nombre d'exemplaires */}
+                        {/* Number of copies */}
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                 Taille de l'édition (nombre d'exemplaires) *
@@ -637,7 +634,7 @@ export default function CreateEditionPage() {
 
                         {merkleRoot && (
                             <div className="border border-[#d6d0c8] bg-[#ede9e3] p-4">
-                                <p className="text-[13px] font-medium text-[#1c1917] mb-2">✅ Merkle Root généré</p>
+                                <p className="text-[13px] font-medium text-[#1c1917] mb-2">Merkle Root généré</p>
                                 <p className="text-[11px] font-mono text-[#78716c] break-all">{merkleRoot}</p>
                                 <p className="text-[12px] font-light text-[#78716c] mt-2">
                                     {secretKeys.length} clé{secretKeys.length > 1 ? 's' : ''} secrète{secretKeys.length > 1 ? 's' : ''} générée{secretKeys.length > 1 ? 's' : ''}
@@ -651,35 +648,35 @@ export default function CreateEditionPage() {
                             className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
                             {isUploading
-                                ? '📤 Upload IPFS…'
+                                ? 'Upload IPFS…'
                                 : isCreating
-                                    ? '⏳ Création en cours…'
-                                    : '✨ Créer l\'œuvre'}
+                                    ? 'Création en cours…'
+                                    : 'Créer l\'œuvre'}
                         </button>
                     </form>
                 </div>
 
-                {/* Post-création : QR codes */}
+                {/* Post-creation: QR codes */}
                 {createdEditionId && secretKeys.length > 0 && merkleTree && (
                     <div className="space-y-px">
                         {!hasDownloadedKeys && (
                             <div className="border-2 border-[#dc2626] bg-[#fef2f2] p-6 mb-px">
                                 <p className="text-[16px] font-bold text-[#dc2626] mb-3">
-                                    🚨 ACTION REQUISE - TÉLÉCHARGEMENT OBLIGATOIRE
+                                    ACTION REQUISE - TÉLÉCHARGEMENT OBLIGATOIRE
                                 </p>
                                 <p className="text-[14px] font-medium text-[#991b1b] mb-2 leading-[1.7]">
                                     Les clés secrètes ne sont disponibles que maintenant. Si vous quittez cette page sans les télécharger, 
                                     vos collectionneurs ne pourront JAMAIS réclamer leurs certificats.
                                 </p>
                                 <p className="text-[13px] font-medium text-[#991b1b] leading-[1.7]">
-                                    ⚠️ Téléchargez au moins un des formats ci-dessous avant de quitter !
+                                    Téléchargez au moins un des formats ci-dessous avant de quitter !
                                 </p>
                             </div>
                         )}
                         {createdEditionId !== 'pending' && createdEditionId !== 'confirmed' && (
                             <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6">
                                 <p className="text-[14px] font-medium text-[#1c1917] mb-2">
-                                    🏷️ QR Code pour l'étiquette de l'œuvre
+                                    QR Code pour l'étiquette de l'œuvre
                                 </p>
                                 <p className="text-[13px] font-light text-[#78716c] mb-4 leading-[1.7]">
                                     Ce QR code pointe vers la page de l'œuvre et peut être apposé au dos.
@@ -689,14 +686,14 @@ export default function CreateEditionPage() {
                                     disabled={isGeneratingQR}
                                     className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                                 >
-                                    {isGeneratingQR ? '🔄 Génération…' : '📥 Télécharger QR Code Œuvre'}
+                                    {isGeneratingQR ? 'Génération…' : 'Télécharger QR Code Œuvre'}
                                 </button>
                             </div>
                         )}
 
                         <div className="border border-[#d6d0c8] bg-[#fafaf8] p-6">
                             <p className="text-[14px] font-medium text-[#1c1917] mb-2">
-                                🎟️ QR Codes pour les collectionneurs
+                                QR Codes pour les collectionneurs
                             </p>
                             <p className="text-[13px] font-light text-[#78716c] mb-4 leading-[1.7]">
                                 Ces QR codes permettent aux collectionneurs de réclamer leur certificat numérique.
@@ -707,14 +704,14 @@ export default function CreateEditionPage() {
                                     disabled={isGeneratingQR}
                                     className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                                 >
-                                    {isGeneratingQR ? '🔄 Génération en cours…' : '📊 Télécharger Excel avec QR codes'}
+                                    {isGeneratingQR ? 'Génération en cours…' : 'Télécharger Excel avec QR codes'}
                                 </button>
                                 <button
                                     onClick={downloadQRCodesZip}
                                     disabled={isGeneratingQR}
                                     className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                                 >
-                                    {isGeneratingQR ? '🔄 Génération en cours…' : '📦 Télécharger QR codes (ZIP)'}
+                                    {isGeneratingQR ? 'Génération en cours…' : 'Télécharger QR codes (ZIP)'}
                                 </button>
                             </div>
                         </div>

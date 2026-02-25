@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Envoyer l'email via Resend
+    // Send email via Resend
     const { data, error } = await resend.emails.send({
-      from: 'Kigen Contact <onboarding@resend.dev>', // Utiliser votre domaine vérifié en production
-      to: ['pierre.untas@gmail.com'], // Email de destination
+      from: 'Kigen Contact <onboarding@resend.dev>', // Use your verified domain in production
+      to: ['pierre.untas@gmail.com'], // Destination email
       replyTo: email,
       subject: `[Kigen Contact] ${subject}`,
       html: `

@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
-import Navbar from '@/components/shared/Navbar';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
@@ -163,7 +162,6 @@ function ExplorePageContent() {
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
-            <Navbar />
             <div className="max-w-6xl mx-auto px-6 pt-28 pb-20">
 
                 {/* Header */}
@@ -310,7 +308,6 @@ export default function ExplorePage() {
     return (
         <Suspense fallback={
             <div className="min-h-screen bg-[#f5f3ef]">
-                <Navbar />
                 <div className="max-w-[960px] mx-auto px-6 pt-28 pb-20">
                     <div className="flex flex-col items-center justify-center py-12 gap-4">
                         <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />

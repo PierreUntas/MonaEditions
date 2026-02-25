@@ -1,6 +1,5 @@
 "use client"
 
-import Navbar from "../components/shared/Navbar";
 import { usePrivy } from '@privy-io/react-auth';
 
 export default function Home() {
@@ -8,8 +7,6 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
-            <Navbar />
-
             <div className="max-width-[860px] mx-auto px-6 pt-28 pb-20">
                 {/* Header */}
                 <div className="text-center mb-[72px]">

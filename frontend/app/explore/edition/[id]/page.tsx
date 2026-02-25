@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway, getIPFSUrl } from '@/app/utils/ipfs';
-import Navbar from '@/components/shared/Navbar';
 import Link from 'next/link';
 import { publicClient } from '@/lib/client';
 
@@ -176,7 +175,6 @@ export default function EditionDetailsPage() {
 
     if (isLoading) return (
         <div className="min-h-screen bg-[#f5f3ef]">
-            <Navbar />
             <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
                 <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
                 <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement des détails de l'œuvre…</p>
@@ -186,7 +184,6 @@ export default function EditionDetailsPage() {
 
     if (!edition || !artist) return (
         <div className="min-h-screen bg-[#f5f3ef]">
-            <Navbar />
             <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
                 <p className="font-serif italic text-[22px] text-[#a8a29e]">Œuvre introuvable</p>
             </div>
@@ -197,7 +194,6 @@ export default function EditionDetailsPage() {
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
-            <Navbar />
             <div className="max-w-4xl mx-auto px-6 pt-28 pb-20">
 
                 <Link

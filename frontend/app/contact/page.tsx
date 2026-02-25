@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Navbar from '@/components/shared/Navbar';
 
 export default function ContactPage() {
     const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
@@ -37,7 +36,6 @@ export default function ContactPage() {
 
     return (
         <div className="min-h-screen bg-[#f5f3ef] flex flex-col">
-            <Navbar />
             <div className="max-w-2xl mx-auto px-6 pt-28 pb-20 flex-1">
 
                 <div className="text-center mb-12">

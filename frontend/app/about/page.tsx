@@ -1,7 +1,5 @@
 "use client"
 
-import Navbar from '@/components/shared/Navbar';
-
 const sectors = [
   { 
     label: 'Peinture',
@@ -79,8 +77,6 @@ const techs = [
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-[#f5f3ef] text-[#1c1917]">
-      <Navbar />
-
       <div className="max-w-[860px] mx-auto px-6 pt-28 pb-20">
 
         {/* Header */}

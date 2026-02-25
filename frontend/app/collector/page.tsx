@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
-import Navbar from '@/components/shared/Navbar';
 import Link from 'next/link';
 import { parseAbiItem, encodeFunctionData } from 'viem';
 import { publicClient } from '@/lib/client';
@@ -152,7 +151,6 @@ export default function CollectorPage() {
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
-            <Navbar />
             <div className="max-w-[860px] mx-auto px-6 pt-28 pb-20">
                 <div className="text-center mb-12">
                     <img 

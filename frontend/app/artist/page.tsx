@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useAccount, useWriteContract, useReadContract } from 'wagmi';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 import { uploadToIPFS, getFromIPFSGateway } from '@/app/utils/ipfs';
-import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
 import { useSendTransaction } from '@privy-io/react-auth';
 import { encodeFunctionData } from 'viem';
@@ -244,7 +243,6 @@ export default function ArtistPage() {
     if (isCheckingAuthorization || isLoadingArtist) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
-                <Navbar />
                 <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
                     <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
                     <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Vérification des permissions…</p>
@@ -256,7 +254,6 @@ export default function ArtistPage() {
     if (!address) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
-                <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
                     <p className="font-serif italic text-[22px] text-[#a8a29e]">
                         Veuillez connecter votre wallet
@@ -269,7 +266,6 @@ export default function ArtistPage() {
     if (!isAuthorized) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
-                <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
                     <p className="font-serif italic text-[22px] text-[#a8a29e] text-center max-w-md px-6">
                         Accès refusé : vous n'êtes pas autorisé comme artiste
@@ -281,7 +277,6 @@ export default function ArtistPage() {
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
-            <Navbar />
             <div className="max-w-2xl mx-auto px-6 pt-28 pb-20">
                 <div className="text-center mb-12">
                     <img 

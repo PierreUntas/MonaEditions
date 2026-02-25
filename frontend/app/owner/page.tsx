@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useReadContract } from 'wagmi';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
-import Navbar from '@/components/shared/Navbar';
 import Image from 'next/image';
 
 export default function AdminPage() {
@@ -77,7 +76,6 @@ export default function AdminPage() {
     if (isCheckingOwner || isLoadingOwner) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
-                <Navbar />
                 <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
                     <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
                     <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Vérification des permissions…</p>
@@ -89,7 +87,6 @@ export default function AdminPage() {
     if (!address) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
-                <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
                     <p className="font-serif italic text-[22px] text-[#a8a29e]">Veuillez connecter votre wallet</p>
                 </div>
@@ -100,7 +97,6 @@ export default function AdminPage() {
     if (!isOwner) {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
-                <Navbar />
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
                     <p className="font-serif italic text-[22px] text-[#a8a29e] text-center max-w-md px-6">
                         Accès refusé : vous n'êtes pas le propriétaire du contrat
@@ -112,7 +108,6 @@ export default function AdminPage() {
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">
-            <Navbar />
             <div className="max-w-2xl mx-auto px-6 pt-28 pb-20">
                 <div className="text-center mb-12">
                     <img 

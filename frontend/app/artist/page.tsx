@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAccount, useWriteContract, useReadContract } from 'wagmi';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
+import { BASE_URL } from '@/config/constants';
 import { uploadToIPFS, getFromIPFSGateway } from '@/app/utils/ipfs';
-import Image from 'next/image';
 import { useSendTransaction } from '@privy-io/react-auth';
 import { encodeFunctionData } from 'viem';
 import QRCode from 'qrcode';
@@ -80,7 +80,7 @@ export default function ArtistPage() {
         if (!address || !isRegistered) return;
         setIsGeneratingQR(true);
         try {
-            const artistPageUrl = `https://www.kigen.art/explore/artist/${address}`;
+            const artistPageUrl = `${BASE_URL}/explore/artist/${address}`;
             const qrCodeDataUrl = await QRCode.toDataURL(artistPageUrl, {
                 width: 1000,
                 margin: 4,

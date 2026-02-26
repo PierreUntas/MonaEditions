@@ -173,10 +173,10 @@ describe("ArtworkRegistry", function () {
                 .to.emit(artworkRegistry, "NewArtworkEdition")
                 .withArgs(await artist.getAddress(), 1);
 
-                const artworkEdition = await artworkRegistry.getArtworkEdition(1);
+            const artworkEdition = await artworkRegistry.getArtworkEdition(1);
 
-                expect(artworkEdition.metadata).to.equal(fakeCID);
-                expect(artworkEdition.merkleRoot).to.equal(edition.merkleRoot);
+            expect(artworkEdition.metadata).to.equal(fakeCID);
+            expect(artworkEdition.merkleRoot).to.equal(edition.merkleRoot);
         })
 
         it("Should not allow non-authorized artist to create an artwork edition", async function () {
@@ -211,5 +211,116 @@ describe("ArtworkRegistry", function () {
             expect(artworkEdition2.metadata).to.equal(fakeCID);
             expect(artworkEdition2.merkleRoot).to.equal(edition2.merkleRoot);
         })
+    })
+
+    describe("Certificate Claiming", function () {
+        let edition: any;
+        let editionId: any;
+
+        const fakeCID = "QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest"
+
+        beforeEach(async function () {
+            edition = generateSecretKeys(5);
+            editionId = 1;
+
+            await artworkRegistry.addAdmin(admin.getAddress());
+            await artworkRegistry.connect(admin).authorizeArtist(artist.getAddress(), true);
+            await artworkTokenization.connect(artist).setApprovalForAll(artworkRegistry.getAddress(), true);
+            await artworkRegistry.connect(artist).createArtworkEdition(fakeCID, 5, edition.merkleRoot);
+
+        })
+
+        it("Should allow to claim a certificate with valid proof", async function () {
+            const keyData = edition.keyWithProofs[0];
+
+            await expect(artworkRegistry.connect(collector).claimCertificate(editionId, keyData.secretKey, keyData.proof))
+                .to.emit(artworkRegistry, "CertificateClaimed")
+                .withArgs(collector.getAddress(), editionId);
+
+            const collectorBalance = await artworkTokenization.balanceOf(collector.getAddress(), editionId);
+            expect(collectorBalance).to.equal(1);
+
+            const isClaimed = await artworkRegistry.isKeyClaimed(editionId, keyData.secretKey);
+            expect(isClaimed).to.equal(true);
+        })
+
+        it("Should not allow to claim a certificate with invalid proof", async function () {
+            const keyData = edition.keyWithProofs[0];
+            const invalidProof = edition.keyWithProofs[1].proof; // Using proof from another key
+
+            await expect(artworkRegistry.connect(collector).claimCertificate(editionId, keyData.secretKey, invalidProof)).to.revertedWithCustomError(artworkRegistry, "InvalidMerkleProof");
+        })
+
+        it("Should not allow to claim a certificate with already claimed key", async function () {
+            const keyData = edition.keyWithProofs[0];
+
+            await artworkRegistry.connect(collector).claimCertificate(editionId, keyData.secretKey, keyData.proof);
+
+            await expect(artworkRegistry.connect(collector2).claimCertificate(editionId, keyData.secretKey, keyData.proof)).to.revertedWithCustomError(artworkRegistry, "KeyAlreadyClaimed");
+        })
+
+        it("Should not allow to claim a certificate for non-existing edition", async function () {
+            const keyData = edition.keyWithProofs[0];
+            const nonExistingEditionId = 999;
+
+            await expect(artworkRegistry.connect(collector).claimCertificate(nonExistingEditionId, keyData.secretKey, keyData.proof)).to.revertedWithCustomError(artworkRegistry, "EditionDoesNotExist");
+        })
+        
+        it("Should not allow to claim when all certificates are claimed", async function () {
+
+            for (let i = 0; i < edition.keyWithProofs.length; i++) {
+                const keyData = edition.keyWithProofs[i];
+                await artworkRegistry.connect(collector).claimCertificate(editionId, keyData.secretKey, keyData.proof);
+            }
+
+            const remainingBalance = await artworkTokenization.balanceOf(artist.getAddress(), editionId);
+            expect(remainingBalance).to.equal(0);
+
+            const newKeyData = generateSecretKeys(1).keyWithProofs[0];
+
+            await expect(artworkRegistry.connect(collector2).claimCertificate(editionId, newKeyData.secretKey, newKeyData.proof)).to.revertedWithCustomError(artworkRegistry, "NoCertificateLeft");
+
+        })
+
+        it("Should not allow to claim a certificate with a invalid key", async function () {
+            const invalidKey = ethers.hexlify(ethers.randomBytes(32));
+            const validProof = edition.keyWithProofs[0].proof;
+
+            await expect(artworkRegistry.connect(collector).claimCertificate(editionId, invalidKey, validProof)).to.revertedWithCustomError(artworkRegistry, "InvalidMerkleProof");
+        })
+    })
+
+    describe("Reviews", function () {
+        let editionId: number;
+        let edition: any;
+        const fakeCID = "QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest"
+
+        beforeEach(async function () {
+            edition = generateSecretKeys(5);
+            editionId = 1;
+
+            await artworkRegistry.addAdmin(admin.getAddress());
+            await artworkRegistry.connect(admin).authorizeArtist(artist.getAddress(), true);
+            await artworkTokenization.connect(artist).setApprovalForAll(artworkRegistry.getAddress(), true);
+            await artworkRegistry.connect(artist).createArtworkEdition(fakeCID, 5, edition.merkleRoot);
+        })
+
+        it("Should allow to add a review to an artwork edition", async function () {
+            const keyData = edition.keyWithProofs[0];
+            await artworkRegistry.connect(collector).claimCertificate(editionId, keyData.secretKey, keyData.proof);
+            
+            const fakeCID = "QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest";
+            await expect(artworkRegistry.connect(collector).addReview(editionId, 5, fakeCID))
+                .to.emit(artworkRegistry, "NewReview")
+                .withArgs(await collector.getAddress(), editionId, 5);
+
+            const reviews = await artworkRegistry.getEditionReviews(editionId, 0, 99);
+            expect(reviews.length).to.equal(1);
+            expect(reviews[0].collector).to.equal(await collector.getAddress());
+            expect(reviews[0].editionId).to.equal(editionId);
+            expect(reviews[0].rating).to.equal(5);
+            expect(reviews[0].metadata).to.equal(fakeCID);
+        })
+    
     })
 })  

@@ -383,4 +383,40 @@ describe("ArtworkRegistry", function () {
             await expect(artworkTokenization.connect(artist).mintArtworkEdition(artist.getAddress(), 5, "")).to.revertedWithCustomError(artworkTokenization, "OwnableUnauthorizedAccount");
         })
     })
+
+    describe("Advanced Cases", function () {
+        beforeEach(async function () {
+            await artworkRegistry.addAdmin(admin.getAddress());
+            await artworkRegistry.connect(admin).authorizeArtist(artist.getAddress(), true);
+            await artworkTokenization.connect(artist).setApprovalForAll(await artworkRegistry.getAddress(), true);
+            await artworkRegistry.connect(artist).setArtistInfo("QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest");
+        })
+
+        it("Should be gas efficient when creating an artwork edition with many certificates (10000)", async function () {
+            const edition = generateSecretKeys(10000);
+            const tx = await artworkRegistry.connect(artist).createArtworkEdition("QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest", 1000, edition.merkleRoot);
+            const receipt = await tx.wait();
+            const gasUsed = receipt.gasUsed;
+            
+            expect(gasUsed).to.be.lessThan(300000);
+        })
+
+        it("Should handle artist transfering certificates manually", async function () {
+            const edition = generateSecretKeys(5);
+            const editionId = 1;
+
+            await artworkRegistry.connect(artist).createArtworkEdition("QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest", 5, edition.merkleRoot);
+
+            await artworkTokenization.connect(artist).safeTransferFrom(
+                artist.getAddress(),
+                collector.getAddress(),
+                editionId,
+                1,
+                "0x"
+            );
+
+            const balance = await artworkTokenization.balanceOf(collector.getAddress(), editionId);
+            expect(balance).to.equal(1);
+        })
+    })
 })

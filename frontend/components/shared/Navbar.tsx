@@ -3,64 +3,58 @@
 import { useState, useEffect } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAccount, useReadContract } from "wagmi";
-import { HONEY_TRACE_STORAGE_ADDRESS, HONEY_TRACE_STORAGE_ABI } from '@/config/contracts';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
     const { login, logout, authenticated, user } = usePrivy();
     const { address } = useAccount();
 
-    // State for roles
     const [isOwner, setIsOwner] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
-    const [isProducer, setIsProducer] = useState(false);
+    const [isArtist, setIsArtist] = useState(false);
 
-    // Get the user's wallet
-    const wallet = user?.wallet || user?.linkedAccounts?.find((account: any) => account.type === 'wallet');
+    const wallet = user?.wallet || user?.linkedAccounts?.find((a: any) => a.type === 'wallet');
     const walletAddress = (wallet as any)?.address;
 
-    // Check if the user is the owner
     const { data: ownerAddress } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
         functionName: 'owner',
     });
-
-    // Check if the user is admin
     const { data: isAdminResult } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
         functionName: 'isAdmin',
         args: address ? [address] : undefined,
     });
-
-    // Check if the user is an authorized producer
-    const { data: producerData } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
-        functionName: 'getProducer',
+    const { data: artistData } = useReadContract({
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
+        functionName: 'getArtist',
         args: address ? [address] : undefined,
     });
 
-    // Update roles
     useEffect(() => {
-        if (address && ownerAddress) {
+        if (address && ownerAddress)
             setIsOwner(address.toLowerCase() === (ownerAddress as string).toLowerCase());
-        }
     }, [address, ownerAddress]);
 
     useEffect(() => {
-        if (isAdminResult !== undefined) {
-            setIsAdmin(isAdminResult as boolean);
-        }
+        if (isAdminResult !== undefined) setIsAdmin(isAdminResult as boolean);
     }, [isAdminResult]);
 
     useEffect(() => {
-        if (producerData) {
-            setIsProducer((producerData as any).authorized === true);
-        }
-    }, [producerData]);
+        if (artistData) setIsArtist((artistData as any).authorized === true);
+    }, [artistData]);
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', onScroll);
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
 
     const copyAddress = () => {
         if (walletAddress) {
@@ -72,183 +66,218 @@ export default function Navbar() {
 
     return (
         <>
-            {/* Logo */}
-            <a href="/" className="fixed top-6 left-6 z-50 cursor-pointer">
-                <img
-                    src="/logo-png-noir.png"
-                    alt="Logo"
-                    className="h-10 w-auto opacity-70 hover:opacity-100 transition-opacity"
-                />
-            </a>
+            {/* Top bar */}
+            <header
+                className={`fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-10 transition-all duration-300
+                    bg-[#f5f3ef]/95 backdrop-blur-md
+                    ${scrolled ? 'border-b border-[#d6d0c8] shadow-sm' : 'border-b border-transparent'}`}
+            >
+                {/* Logo */}
+                <a href="/" className="flex items-center gap-2.5 group no-underline">
+                    <img 
+                        src="/logo-kigen.png" 
+                        alt="Kigen Logo" 
+                        className="w-[34px] h-[34px] object-contain flex-shrink-0"
+                    />
+                    <div className="flex flex-col leading-none">
+                        <span className="font-serif text-[17px] text-[#1c1917] tracking-[0.01em]">Kigen</span>
+                       
+                    </div>
+                </a>
+
+                {/* Center links */}
+                <nav className="hidden md:flex gap-9 absolute left-1/2 -translate-x-1/2">
+                    {[
+                        { href: '/explore/editions', label: 'Galerie' },
+                        { href: '/explore/artists', label: 'Artistes' },
+                        { href: '/about', label: 'À propos' },
+                    ].map(({ href, label }) => (
+                        <a key={href} href={href}
+                            className="text-xs font-normal tracking-[0.06em] text-[#78716c] no-underline
+                                pb-0.5 border-b border-transparent
+                                hover:text-[#1c1917] hover:border-[#1c1917] transition-all duration-200">
+                            {label}
+                        </a>
+                    ))}
+                </nav>
+
+                {/* Right */}
+                <div className="flex items-center gap-2.5">
+                    {authenticated ? (
+                        <div
+                            onClick={() => setIsOpen(!isOpen)}
+                            className="w-8 h-8 border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center
+                                font-serif italic text-sm text-[#78716c] cursor-pointer
+                                hover:border-[#1c1917] hover:text-[#1c1917] transition-all duration-200">
+                            {user?.email?.address?.[0]?.toUpperCase() ?? '?'}
+                        </div>
+                    ) : (
+                        <button
+                            onClick={login}
+                            className="text-[11px] font-medium tracking-[0.08em] text-[#1c1917] bg-transparent
+                                border border-[#d6d0c8] px-[18px] py-[7px] cursor-pointer
+                                hover:bg-[#1c1917] hover:text-[#f5f3ef] hover:border-[#1c1917] transition-all duration-200">
+                            Connexion
+                        </button>
+                    )}
+
+                    {/* Hamburger */}
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="w-8 h-8 border border-[#d6d0c8] bg-[#fafaf8] flex flex-col items-center justify-center gap-1
+                            cursor-pointer hover:border-[#1c1917] transition-all duration-200 p-0"
+                        aria-label="Menu"
+                    >
+                        <span className={`block w-3.5 h-px bg-[#78716c] transition-all duration-250
+                            ${isOpen ? 'translate-y-[5px] rotate-45' : ''}`} />
+                        <span className={`block w-3.5 h-px bg-[#78716c] transition-all duration-250
+                            ${isOpen ? 'opacity-0' : ''}`} />
+                        <span className={`block w-3.5 h-px bg-[#78716c] transition-all duration-250
+                            ${isOpen ? '-translate-y-[5px] -rotate-45' : ''}`} />
+                    </button>
+                </div>
+            </header>
 
             {/* Backdrop */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+                    className="fixed inset-0 z-40 bg-[#1c1917]/40 backdrop-blur-sm"
                     onClick={() => setIsOpen(false)}
                 />
             )}
 
-            {/* Menu Button */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="fixed top-6 right-6 z-50 w-10 h-10 bg-gray-bee/60 rounded-full shadow-xl hover:bg-gray-bee hover:shadow-2xl hover:scale-110 transition-all cursor-pointer border-2 border-black/10 flex items-center justify-center"
-            >
-                <div className="relative w-5 h-5">
-                    <span className={`absolute left-0 top-1.5 block w-5 h-0.5 bg-black transition-all duration-300 ${isOpen ? 'rotate-45 top-2.5' : ''}`}></span>
-                    <span className={`absolute left-0 top-2.5 block w-5 h-0.5 bg-black transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></span>
-                    <span className={`absolute left-0 top-3.5 block w-5 h-0.5 bg-black transition-all duration-300 ${isOpen ? '-rotate-45 top-2.5' : ''}`}></span>
-                </div>
-            </button>
+            {/* Slide panel */}
+            <nav className={`fixed top-0 right-0 h-screen w-[300px] z-50 bg-[#f5f3ef] border-l border-[#d6d0c8]
+                flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+                ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
-            {/* Slide Menu */}
-            <nav className={`fixed top-0 right-0 h-screen w-80 bg-gray-bee/60 backdrop-blur-md shadow-2xl z-40 transform transition-transform duration-300 overflow-y-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-                <div className="flex flex-col min-h-full pt-24 pb-8 px-6">
-                    {/* Login section */}
-                    <div className="mb-6 pb-4 border-b border-black/10">
+                <div className="flex flex-col h-full pt-20">
+
+                    {/* Auth section */}
+                    <div className="px-6 pb-5 border-b border-[#d6d0c8]">
                         {authenticated ? (
-                            <div className="space-y-3">
-                                <div className="py-3 px-4 bg-black/5 rounded-lg">
-                                    <p className="text-xs font-[Olney_Light] text-black/40 mb-1">CONNECTÉ EN TANT QUE</p>
+                            <div className="space-y-2.5">
+                                <div className="border border-[#d6d0c8] bg-[#fafaf8] p-3.5">
+                                    <p className="text-[9px] font-medium tracking-[0.15em] uppercase text-[#a8a29e] mb-1.5">
+                                        Connecté
+                                    </p>
                                     {user?.email?.address && (
-                                        <p className="text-sm text-black font-medium truncate">{user.email.address}</p>
+                                        <p className="text-[13px] text-[#1c1917] truncate mb-1">
+                                            {user.email.address}
+                                        </p>
                                     )}
                                     {walletAddress && (
                                         <button
                                             onClick={copyAddress}
-                                            className="text-xs text-black/60 hover:text-black font-mono mt-1 flex items-center gap-2 transition-colors w-full"
-                                            title="Copier l'adresse complète"
-                                        >
+                                            className="text-[11px] font-mono text-[#78716c] bg-transparent border-0 p-0
+                                                cursor-pointer flex items-center gap-2 w-full">
                                             <span>{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
-                                            <span className="text-[10px] ml-auto">{copied ? '✓ Copié' : '📋'}</span>
+                                            <span className="ml-auto text-[#4a5240]">{copied ? '✓' : '⧉'}</span>
                                         </button>
                                     )}
-                                    {/* Roles display */}
-                                    {(isOwner || isAdmin || isProducer) && (
-                                        <div className="mt-2 pt-2 border-t border-black/10">
-                                            <p className="text-[10px] text-black/40 mb-1">RÔLES</p>
-                                            <div className="flex flex-wrap gap-1">
-                                                {isOwner && (
-                                                    <span className="text-[10px] bg-purple-400/30 text-purple-900 px-2 py-0.5 rounded">
-                                                        Propriétaire
-                                                    </span>
-                                                )}
-                                                {isAdmin && (
-                                                    <span className="text-[10px] bg-blue-400/30 text-blue-900 px-2 py-0.5 rounded">
-                                                        Administrateur
-                                                    </span>
-                                                )}
-                                                {isProducer && (
-                                                    <span className="text-[10px] bg-green-400/30 text-green-900 px-2 py-0.5 rounded">
-                                                        Producteur
-                                                    </span>
-                                                )}
-                                            </div>
+                                    {(isOwner || isAdmin || isArtist) && (
+                                        <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2.5 border-t border-[#e7e3dc]">
+                                            {isOwner && <RoleBadge>Propriétaire</RoleBadge>}
+                                            {isAdmin && <RoleBadge>Administrateur</RoleBadge>}
+                                            {isArtist && <RoleBadge>Artiste</RoleBadge>}
                                         </div>
                                     )}
                                 </div>
                                 <button
-                                    onClick={() => {
-                                        logout();
-                                        setIsOpen(false);
-                                    }}
-                                    className="w-full py-3 px-4 bg-amber-400 hover:bg-amber-500 text-black font-[Olney_Light] font-medium rounded-lg transition-all duration-300 cursor-pointer"
-                                >
+                                    onClick={() => { logout(); setIsOpen(false); }}
+                                    className="w-full text-xs font-normal text-[#78716c] bg-transparent
+                                        border border-[#d6d0c8] py-2.5 cursor-pointer
+                                        hover:border-[#1c1917] hover:text-[#1c1917] transition-all duration-200">
                                     Déconnexion
                                 </button>
                             </div>
                         ) : (
                             <button
-                                onClick={() => {
-                                    login();
-                                    setIsOpen(false);
-                                }}
-                                className="w-full py-3 px-4 bg-amber-400 hover:bg-amber-500 text-black font-[Olney_Light] font-medium rounded-lg transition-all duration-300 cursor-pointer"
-                            >
+                                onClick={() => { login(); setIsOpen(false); }}
+                                className="w-full text-xs font-medium tracking-[0.06em] text-[#f5f3ef] bg-[#1c1917]
+                                    border-0 py-3 cursor-pointer hover:opacity-80 transition-opacity duration-200">
                                 Se connecter
                             </button>
                         )}
                     </div>
 
-                    <div className="flex-1 space-y-2">
-                        {/* Public links - always visible */}
-                        <a href="/" className="block py-4 px-5 text-black font-[Olney_Light] text-lg hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
-                            Accueil
-                        </a>
+                    {/* Nav links */}
+                    <div className="flex-1 px-6 py-4 overflow-y-auto space-y-0.5">
+                        <PanelLink href="/" onClick={() => setIsOpen(false)}>Accueil</PanelLink>
 
-                        {/* Explorer section */}
-                        <div className="my-4 border-t border-black/10"></div>
-                        <div className="space-y-2">
-                            <p className="text-xs font-[Olney_Light] text-black/40 px-5 mb-2">EXPLORER</p>
-                            <a href="/explore/batches" className="block py-3 px-5 text-black font-[Olney_Light] hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
-                                Lots de miel
-                            </a>
-                            <a href="/explore/producers" className="block py-3 px-5 text-black font-[Olney_Light] hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
-                                Producteurs
-                            </a>
-                        </div>
-                        <div className="my-4 border-t border-black/10"></div>
-                        <a href="/about" className="block py-4 px-5 text-black font-[Olney_Light] text-lg hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
-                            À propos
-                        </a>
+                        <PanelDivider>Explorer</PanelDivider>
+                        <PanelLink href="/explore/editions" onClick={() => setIsOpen(false)}>Galerie d'œuvres</PanelLink>
+                        <PanelLink href="/explore/artists" onClick={() => setIsOpen(false)}>Artistes</PanelLink>
 
-                        {/* Administration section - visible for Owner and Admin only */}
+                        <PanelDivider>Informations</PanelDivider>
+                        <PanelLink href="/about" onClick={() => setIsOpen(false)}>À propos</PanelLink>
+
                         {(isOwner || isAdmin) && (
                             <>
-                                <div className="my-4 border-t border-black/10"></div>
-                                <div className="space-y-2">
-                                    <p className="text-xs font-[Olney_Light] text-black/40 px-5 mb-2">ADMINISTRATION</p>
-
-                                    {isOwner && (
-                                        <a href="/owner" className="block py-3 px-5 text-black font-[Olney_Light] hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
-                                            Propriétaire
-                                        </a>
-                                    )}
-
-                                    {isAdmin && (
-                                        <a href="/admin" className="block py-3 px-5 text-black font-[Olney_Light] hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
-                                            Administrateur
-                                        </a>
-                                    )}
-                                </div>
+                                <PanelDivider>Administration</PanelDivider>
+                                {isOwner && <PanelLink href="/owner" onClick={() => setIsOpen(false)}>Propriétaire</PanelLink>}
+                                {isAdmin && <PanelLink href="/admin" onClick={() => setIsOpen(false)}>Administrateur</PanelLink>}
                             </>
                         )}
 
-                        {/* Consumer section - visible for all authenticated users */}
                         {authenticated && (
                             <>
-                                <div className="my-4 border-t border-black/10"></div>
-                                <div className="space-y-2">
-                                    <p className="text-xs font-[Olney_Light] text-black/40 px-5 mb-2">CONSOMMATEUR</p>
-                                    <a href="/consumer" className="block py-3 px-5 text-black font-[Olney_Light] hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
-                                        Mes Produits
-                                    </a>
-                                </div>
+                                <PanelDivider>Collectionneur</PanelDivider>
+                                <PanelLink href="/collector" onClick={() => setIsOpen(false)}>Mes œuvres</PanelLink>
                             </>
                         )}
 
-                        {/* Producer section - visible for authorized producers only */}
-                        {isProducer && (
+                        {isArtist && (
                             <>
-                                <div className="my-4 border-t border-black/10"></div>
-                                <div className="space-y-2">
-                                    <p className="text-xs font-[Olney_Light] text-black/40 px-5 mb-2">PRODUCTEUR</p>
-                                    <a href="/producer" className="block py-3 px-5 text-black font-[Olney_Light] hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
-                                        Dashboard
-                                    </a>
-                                    <a href="/producer/batches" className="block py-3 px-5 text-black font-[Olney_Light] text-sm hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
-                                        Mes Lots
-                                    </a>
-                                    <a href="/producer/batches/create" className="block py-3 px-5 text-black font-[Olney_Light] text-sm hover:bg-black/10 rounded-xl transition-all cursor-pointer hover:translate-x-2">
-                                        Créer un Lot
-                                    </a>
-                                </div>
+                                <PanelDivider>Artiste</PanelDivider>
+                                <PanelLink href="/artist" onClick={() => setIsOpen(false)}>Mon profil</PanelLink>
+                                <PanelLink href="/artist/editions" onClick={() => setIsOpen(false)}>Mes œuvres</PanelLink>
+                                <PanelLink href="/artist/editions/create" onClick={() => setIsOpen(false)}>Certifier une œuvre</PanelLink>
                             </>
                         )}
                     </div>
 
+                    {/* Panel footer */}
+                    <div className="px-6 py-4 border-t border-[#d6d0c8] flex items-center justify-between">
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                        <span className="flex items-center gap-1.5 text-[10px] font-light text-[#a8a29e]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#4a5240] inline-block" />
+                            Sepolia · Actif
+                        </span>
+                    </div>
                 </div>
             </nav>
         </>
+    );
+}
+
+function PanelLink({ href, children, onClick }: { href: string; children: React.ReactNode; onClick?: () => void }) {
+    return (
+        <a href={href} onClick={onClick}
+            className="block text-[13px] font-light text-[#78716c] no-underline
+                px-3 py-2.5 border-l border-transparent
+                hover:text-[#1c1917] hover:border-l-[#1c1917] hover:pl-4 hover:bg-[#1c1917]/[0.03]
+                transition-all duration-150">
+            {children}
+        </a>
+    );
+}
+
+function PanelDivider({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="pt-4 pb-1.5 px-3">
+            <p className="text-[9px] font-medium tracking-[0.15em] uppercase text-[#a8a29e]">
+                {children}
+            </p>
+        </div>
+    );
+}
+
+function RoleBadge({ children }: { children: React.ReactNode }) {
+    return (
+        <span className="text-[10px] font-medium tracking-[0.06em] text-[#4a5240]
+            border border-[#4a5240] px-2 py-0.5">
+            {children}
+        </span>
     );
 }

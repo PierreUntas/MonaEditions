@@ -19,13 +19,13 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
     const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
     
     if (!appId) {
-        console.error("⚠️ NEXT_PUBLIC_PRIVY_APP_ID is not defined in .env.local");
+        console.error("NEXT_PUBLIC_PRIVY_APP_ID is not defined in .env");
         return (
             <div className="flex items-center justify-center min-h-screen bg-yellow-50">
                 <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
                     <h2 className="text-2xl font-bold text-red-600 mb-4">Configuration manquante</h2>
                     <p className="text-gray-700 mb-4">
-                        Veuillez configurer <code className="bg-gray-100 px-2 py-1 rounded">NEXT_PUBLIC_PRIVY_APP_ID</code> dans votre fichier <code className="bg-gray-100 px-2 py-1 rounded">.env.local</code>
+                        Veuillez configurer <code className="bg-gray-100 px-2 py-1 rounded">NEXT_PUBLIC_PRIVY_APP_ID</code> dans votre fichier <code className="bg-gray-100 px-2 py-1 rounded">.env</code>
                     </p>
                     <p className="text-sm text-gray-600">
                         Obtenez votre App ID sur <a href="https://console.privy.io" target="_blank" className="text-blue-600 hover:underline">console.privy.io</a>
@@ -39,11 +39,11 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
         <PrivyProviderCore
             appId={appId}
             config={{
-                loginMethods: ["email", "wallet", "google", "twitter", "discord"],
+                loginMethods: ["email", "wallet"],
                 appearance: {
                     theme: "light",
                     accentColor: "#fbbf24",
-                    logo: "/logo-png-noir.png",
+                    logo: "/originlink-logo.png",
                 },
                 // embeddedWallets: {
                 //     createOnLogin: "users-without-wallets",

@@ -2,36 +2,34 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
-import { HONEY_TRACE_STORAGE_ADDRESS, HONEY_TRACE_STORAGE_ABI } from '@/config/contracts';
-import Navbar from '@/components/shared/Navbar';
-import Image from 'next/image';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 import { useSendTransaction } from '@privy-io/react-auth';
 import { encodeFunctionData } from 'viem';
 
 export default function AdminPage() {
     const { address } = useAccount();
-    const [newProducerAddress, setNewProducerAddress] = useState('');
-    const [removeProducerAddress, setRemoveProducerAddress] = useState('');
-    const [checkProducerAddress, setCheckProducerAddress] = useState('');
+    const [newArtistAddress, setNewArtistAddress] = useState('');
+    const [removeArtistAddress, setRemoveArtistAddress] = useState('');
+    const [checkArtistAddress, setCheckArtistAddress] = useState('');
     const [isAdmin, setIsAdmin] = useState(false);
     const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
-    const [isAuthorizingProducer, setIsAuthorizingProducer] = useState(false);
-    const [isRevokingProducer, setIsRevokingProducer] = useState(false);
+    const [isAuthorizingArtist, setIsAuthorizingArtist] = useState(false);
+    const [isRevokingArtist, setIsRevokingArtist] = useState(false);
 
     const { sendTransaction } = useSendTransaction();
 
     const { data: isAdminResult, isLoading: isLoadingAdmin } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
         functionName: 'isAdmin',
         args: address ? [address] : undefined,
     });
 
-    const { data: producerData } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
-        functionName: 'getProducer',
-        args: checkProducerAddress ? [checkProducerAddress as `0x${string}`] : undefined,
+    const { data: artistData } = useReadContract({
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
+        functionName: 'getArtist',
+        args: checkArtistAddress ? [checkArtistAddress as `0x${string}`] : undefined,
     });
 
     useEffect(() => {
@@ -43,23 +41,23 @@ export default function AdminPage() {
         }
     }, [isAdminResult, isLoadingAdmin]);
 
-    const isProducerAuthorized = producerData ? (producerData as any).authorized : undefined;
+    const isArtistAuthorized = artistData ? (artistData as any).authorized : undefined;
 
-    const handleAuthorizeProducer = async (e: React.FormEvent) => {
+    const handleAuthorizeArtist = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newProducerAddress) return;
+        if (!newArtistAddress) return;
 
-        setIsAuthorizingProducer(true);
+        setIsAuthorizingArtist(true);
         try {
             const data = encodeFunctionData({
-                abi: HONEY_TRACE_STORAGE_ABI,
-                functionName: 'authorizeProducer',
-                args: [newProducerAddress as `0x${string}`, true],
+                abi: ARTWORK_REGISTRY_ABI,
+                functionName: 'authorizeArtist',
+                args: [newArtistAddress as `0x${string}`, true],
             });
 
             const txHash = await sendTransaction(
                 {
-                    to: HONEY_TRACE_STORAGE_ADDRESS,
+                    to: ARTWORK_REGISTRY_ADDRESS,
                     data: data,
                 },
                 {
@@ -67,29 +65,29 @@ export default function AdminPage() {
                 }
             );
             
-            setNewProducerAddress('');
+            setNewArtistAddress('');
         } catch (error) {
-            console.error('Error authorizing producer:', error);
+            console.error('Error authorizing artist:', error);
         } finally {
-            setIsAuthorizingProducer(false);
+            setIsAuthorizingArtist(false);
         }
     };
 
-    const handleRevokeProducer = async (e: React.FormEvent) => {
+    const handleRevokeArtist = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!removeProducerAddress) return;
+        if (!removeArtistAddress) return;
 
-        setIsRevokingProducer(true);
+        setIsRevokingArtist(true);
         try {
             const data = encodeFunctionData({
-                abi: HONEY_TRACE_STORAGE_ABI,
-                functionName: 'authorizeProducer',
-                args: [removeProducerAddress as `0x${string}`, false],
+                abi: ARTWORK_REGISTRY_ABI,
+                functionName: 'authorizeArtist',
+                args: [removeArtistAddress as `0x${string}`, false],
             });
 
             const txHash = await sendTransaction(
                 {
-                    to: HONEY_TRACE_STORAGE_ADDRESS,
+                    to: ARTWORK_REGISTRY_ADDRESS,
                     data: data,
                 },
                 {
@@ -97,24 +95,21 @@ export default function AdminPage() {
                 }
             );
             
-            setRemoveProducerAddress('');
+            setRemoveArtistAddress('');
         } catch (error) {
-            console.error('Error revoking producer:', error);
+            console.error('Error revoking artist:', error);
         } finally {
-            setIsRevokingProducer(false);
+            setIsRevokingArtist(false);
         }
     };
 
     // Loading state while checking permissions
     if (isCheckingAdmin || isLoadingAdmin) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
-                <Navbar />
-                <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <div className="text-center">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black/70 mb-4"></div>
-                        <p className="text-[#000000] font-[Olney_Light] text-xl opacity-70">Vérification des permissions...</p>
-                    </div>
+            <div className="min-h-screen bg-[#f5f3ef]">
+                <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
+                    <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
+                    <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Vérification des permissions…</p>
                 </div>
             </div>
         );
@@ -122,10 +117,9 @@ export default function AdminPage() {
 
     if (!address) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
-                <Navbar />
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="text-center text-[#000000] font-[Olney_Light] text-xl opacity-70">Veuillez connecter votre wallet</p>
+                    <p className="font-serif italic text-[22px] text-[#a8a29e]">Veuillez connecter votre wallet</p>
                 </div>
             </div>
         );
@@ -133,105 +127,121 @@ export default function AdminPage() {
 
     if (!isAdmin) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
-                <Navbar />
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="text-center text-[#000000] font-[Olney_Light] text-xl opacity-70">Accès refusé : vous n'êtes pas admin</p>
+                    <p className="font-serif italic text-[22px] text-[#a8a29e]">Accès refusé : vous n'êtes pas admin</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-yellow-bee pt-14">
-            <Navbar />
-            <div className="container mx-auto p-6 max-w-xl">
-                <h1 className="text-4xl font-[Carbon_Phyber] mb-6 text-center text-[#000000]">Gestion des Producteurs</h1>
+        <div className="min-h-screen bg-[#f5f3ef]">
+            <div className="max-w-2xl mx-auto px-6 pt-28 pb-20">
+                <div className="text-center mb-12">
+                    <img 
+                        src="/logo-kigen.png" 
+                        alt="Kigen Logo" 
+                        className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+                    />
+                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
+                        Gestion des <em className="italic text-[#78716c]">Artistes</em>
+                    </h1>
+                </div>
 
-                {/* Authorize a producer */}
-                <div className="bg-yellow-bee rounded-lg p-4 mb-4 opacity-70">
-                    <h2 className="text-xl font-[Carbon_bl] mb-3 text-[#000000]">Autoriser un Producteur</h2>
-                    <form onSubmit={handleAuthorizeProducer} className="space-y-3">
+                {/* Authorize an artist */}
+                <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
+                    <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                        Autoriser un <em className="italic text-[#78716c]">Artiste</em>
+                    </h2>
+                    <form onSubmit={handleAuthorizeArtist} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">Adresse du producteur</label>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Adresse de l'artiste
+                            </label>
                             <input
                                 type="text"
-                                value={newProducerAddress}
-                                onChange={(e) => setNewProducerAddress(e.target.value)}
+                                value={newArtistAddress}
+                                onChange={(e) => setNewArtistAddress(e.target.value)}
                                 placeholder="0x..."
-                                className="w-full px-3 py-1.5 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] font-mono text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 pattern="^0x[a-fA-F0-9]{40}$"
                                 required
                             />
                         </div>
                         <button
                             type="submit"
-                            disabled={isAuthorizingProducer}
-                            className="w-full bg-[#666666] text-white font-[Olney_Light] py-1.5 px-4 rounded-lg text-sm disabled:opacity-50 hover:bg-[#555555] transition-colors border border-[#000000]"
+                            disabled={isAuthorizingArtist}
+                            className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
-                            {isAuthorizingProducer ? 'Autorisation en cours...' : 'Autoriser Producteur'}
+                            {isAuthorizingArtist ? 'Autorisation en cours…' : 'Autoriser Artiste'}
                         </button>
                     </form>
                 </div>
 
-                {/* Revoke a producer */}
-                <div className="bg-yellow-bee rounded-lg p-4 mb-4 opacity-70">
-                    <h2 className="text-xl font-[Carbon_bl] mb-3 text-[#000000]">Révoquer un Producteur</h2>
-                    <form onSubmit={handleRevokeProducer} className="space-y-3">
+                {/* Revoke an artist */}
+                <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
+                    <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                        Révoquer un <em className="italic text-[#78716c]">Artiste</em>
+                    </h2>
+                    <form onSubmit={handleRevokeArtist} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">Adresse du producteur</label>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Adresse de l'artiste
+                            </label>
                             <input
                                 type="text"
-                                value={removeProducerAddress}
-                                onChange={(e) => setRemoveProducerAddress(e.target.value)}
+                                value={removeArtistAddress}
+                                onChange={(e) => setRemoveArtistAddress(e.target.value)}
                                 placeholder="0x..."
-                                className="w-full px-3 py-1.5 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] font-mono text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 pattern="^0x[a-fA-F0-9]{40}$"
                                 required
                             />
                         </div>
                         <button
                             type="submit"
-                            disabled={isRevokingProducer}
-                            className="w-full bg-[#666666] text-white font-[Olney_Light] py-1.5 px-4 rounded-lg text-sm disabled:opacity-50 hover:bg-[#555555] transition-colors border border-[#000000]"
+                            disabled={isRevokingArtist}
+                            className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
-                            {isRevokingProducer ? 'Révocation en cours...' : 'Révoquer Producteur'}
+                            {isRevokingArtist ? 'Révocation en cours…' : 'Révoquer Artiste'}
                         </button>
                     </form>
                 </div>
 
-                {/* Check producer status */}
-                <div className="bg-yellow-bee rounded-lg p-4 opacity-70">
-                    <h2 className="text-xl font-[Carbon_bl] mb-3 text-[#000000]">Vérifier le Statut Producteur</h2>
-                    <div className="space-y-3">
+                {/* Check artist status */}
+                <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
+                    <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                        Vérifier le <em className="italic text-[#78716c]">Statut Artiste</em>
+                    </h2>
+                    <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">Adresse à vérifier</label>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Adresse à vérifier
+                            </label>
                             <input
                                 type="text"
-                                value={checkProducerAddress}
-                                onChange={(e) => setCheckProducerAddress(e.target.value)}
+                                value={checkArtistAddress}
+                                onChange={(e) => setCheckArtistAddress(e.target.value)}
                                 placeholder="0x..."
-                                className="w-full px-3 py-1.5 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] font-mono text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 pattern="^0x[a-fA-F0-9]{40}$"
                             />
                         </div>
-                        {checkProducerAddress && isProducerAuthorized !== undefined && (
-                            <div className="p-3 rounded-lg font-[Olney_Light] text-sm border border-[#000000] text-[#000000]">
-                                {isProducerAuthorized ? '✓ Cette adresse est autorisée comme producteur' : '✗ Cette adresse n\'est pas autorisée comme producteur'}
+                        {checkArtistAddress && isArtistAuthorized !== undefined && (
+                            <div className="p-4 border border-[#d6d0c8] bg-[#f5f3ef] text-[14px] font-light text-[#1c1917]">
+                                {isArtistAuthorized ? '✓ Cette adresse est autorisée comme artiste' : '✗ Cette adresse n\'est pas autorisée comme artiste'}
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Logo */}
-                <div className="flex justify-center mt-8 mb-6">
-                    <Image
-                        src="/logo-png-noir.png"
-                        alt="Logo"
-                        width={120}
-                        height={120}
-                        className="opacity-70"
-                    />
+                {/* Footer mark */}
+                <div className="flex justify-center mt-20">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-px h-12 bg-[#d6d0c8]" />
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                    </div>
                 </div>
             </div>
         </div>

@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useReadContract } from 'wagmi';
-import { HONEY_TRACE_STORAGE_ADDRESS, HONEY_TRACE_STORAGE_ABI } from '@/config/contracts';
-import Navbar from '@/components/shared/Navbar';
-import Image from 'next/image';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 
 export default function AdminPage() {
     const { address } = useAccount();
@@ -18,14 +16,14 @@ export default function AdminPage() {
     const { writeContract: writeRemoveAdmin, isPending: isRemovingAdmin } = useWriteContract();
 
     const { data: ownerAddress, isLoading: isLoadingOwner } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
         functionName: 'owner',
     });
 
     const { data: isAdminResult, refetch: refetchIsAdmin } = useReadContract({
-        address: HONEY_TRACE_STORAGE_ADDRESS,
-        abi: HONEY_TRACE_STORAGE_ABI,
+        address: ARTWORK_REGISTRY_ADDRESS,
+        abi: ARTWORK_REGISTRY_ABI,
         functionName: 'isAdmin',
         args: checkAdminAddress ? [checkAdminAddress as `0x${string}`] : undefined,
     });
@@ -45,8 +43,8 @@ export default function AdminPage() {
 
         try {
             await writeContract({
-                address: HONEY_TRACE_STORAGE_ADDRESS,
-                abi: HONEY_TRACE_STORAGE_ABI,
+                address: ARTWORK_REGISTRY_ADDRESS,
+                abi: ARTWORK_REGISTRY_ABI,
                 functionName: 'addAdmin',
                 args: [newAdminAddress as `0x${string}`],
             });
@@ -62,8 +60,8 @@ export default function AdminPage() {
 
         try {
             await writeRemoveAdmin({
-                address: HONEY_TRACE_STORAGE_ADDRESS,
-                abi: HONEY_TRACE_STORAGE_ABI,
+                address: ARTWORK_REGISTRY_ADDRESS,
+                abi: ARTWORK_REGISTRY_ABI,
                 functionName: 'removeAdmin',
                 args: [removeAdminAddress as `0x${string}`],
             });
@@ -76,13 +74,10 @@ export default function AdminPage() {
     // Loading state while checking permissions
     if (isCheckingOwner || isLoadingOwner) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
-                <Navbar />
-                <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <div className="text-center">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black/70 mb-4"></div>
-                        <p className="text-[#000000] font-[Olney_Light] text-xl opacity-70">Vérification des permissions...</p>
-                    </div>
+            <div className="min-h-screen bg-[#f5f3ef]">
+                <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] gap-4">
+                    <div className="w-8 h-8 border border-[#d6d0c8] border-t-[#1c1917] rounded-full animate-spin" />
+                    <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Vérification des permissions…</p>
                 </div>
             </div>
         );
@@ -90,10 +85,9 @@ export default function AdminPage() {
 
     if (!address) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
-                <Navbar />
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="text-center text-[#000000] font-[Olney_Light] text-xl opacity-70">Veuillez connecter votre wallet</p>
+                    <p className="font-serif italic text-[22px] text-[#a8a29e]">Veuillez connecter votre wallet</p>
                 </div>
             </div>
         );
@@ -101,33 +95,46 @@ export default function AdminPage() {
 
     if (!isOwner) {
         return (
-            <div className="min-h-screen bg-yellow-bee">
-                <Navbar />
+            <div className="min-h-screen bg-[#f5f3ef]">
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="text-center text-[#000000] font-[Olney_Light] text-xl opacity-70">Accès refusé : vous n'êtes pas le propriétaire du contrat</p>
+                    <p className="font-serif italic text-[22px] text-[#a8a29e] text-center max-w-md px-6">
+                        Accès refusé : vous n'êtes pas le propriétaire du contrat
+                    </p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-yellow-bee pt-14">
-            <Navbar />
-            <div className="container mx-auto p-6 max-w-xl">
-                <h1 className="text-4xl font-[Carbon_Phyber] mb-6 text-center text-[#000000]">Gestion des Admins</h1>
+        <div className="min-h-screen bg-[#f5f3ef]">
+            <div className="max-w-2xl mx-auto px-6 pt-28 pb-20">
+                <div className="text-center mb-12">
+                    <img 
+                        src="/logo-kigen.png" 
+                        alt="Kigen Logo" 
+                        className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+                    />
+                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
+                        Gestion des <em className="italic text-[#78716c]">Admins</em>
+                    </h1>
+                </div>
 
                 {/* Add an admin */}
-                <div className="bg-yellow-bee rounded-lg p-4 mb-4 opacity-70">
-                    <h2 className="text-xl font-[Carbon_bl] mb-3 text-[#000000]">Ajouter un Admin</h2>
-                    <form onSubmit={handleAddAdmin} className="space-y-3">
+                <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
+                    <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                        Ajouter un <em className="italic text-[#78716c]">Admin</em>
+                    </h2>
+                    <form onSubmit={handleAddAdmin} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">Adresse de l'admin</label>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Adresse de l'admin
+                            </label>
                             <input
                                 type="text"
                                 value={newAdminAddress}
                                 onChange={(e) => setNewAdminAddress(e.target.value)}
                                 placeholder="0x..."
-                                className="w-full px-3 py-1.5 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] font-mono text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 pattern="^0x[a-fA-F0-9]{40}$"
                                 required
                             />
@@ -135,25 +142,29 @@ export default function AdminPage() {
                         <button
                             type="submit"
                             disabled={isAddingAdmin}
-                            className="w-full bg-[#666666] text-white font-[Olney_Light] py-1.5 px-4 rounded-lg text-sm disabled:opacity-50 hover:bg-[#555555] transition-colors border border-[#000000]"
+                            className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
-                            {isAddingAdmin ? 'Ajout en cours...' : 'Ajouter Admin'}
+                            {isAddingAdmin ? 'Ajout en cours…' : 'Ajouter Admin'}
                         </button>
                     </form>
                 </div>
 
                 {/* Remove an admin */}
-                <div className="bg-yellow-bee rounded-lg p-4 mb-4 opacity-70">
-                    <h2 className="text-xl font-[Carbon_bl] mb-3 text-[#000000]">Retirer un Admin</h2>
-                    <form onSubmit={handleRemoveAdmin} className="space-y-3">
+                <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
+                    <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                        Retirer un <em className="italic text-[#78716c]">Admin</em>
+                    </h2>
+                    <form onSubmit={handleRemoveAdmin} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">Adresse de l'admin</label>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Adresse de l'admin
+                            </label>
                             <input
                                 type="text"
                                 value={removeAdminAddress}
                                 onChange={(e) => setRemoveAdminAddress(e.target.value)}
                                 placeholder="0x..."
-                                className="w-full px-3 py-1.5 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] font-mono text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 pattern="^0x[a-fA-F0-9]{40}$"
                                 required
                             />
@@ -161,45 +172,46 @@ export default function AdminPage() {
                         <button
                             type="submit"
                             disabled={isRemovingAdmin}
-                            className="w-full bg-[#666666] text-white font-[Olney_Light] py-1.5 px-4 rounded-lg text-sm disabled:opacity-50 hover:bg-[#555555] transition-colors border border-[#000000]"
+                            className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
-                            {isRemovingAdmin ? 'Suppression en cours...' : 'Retirer Admin'}
+                            {isRemovingAdmin ? 'Suppression en cours…' : 'Retirer Admin'}
                         </button>
                     </form>
                 </div>
 
                 {/* Check admin status */}
-                <div className="bg-yellow-bee rounded-lg p-4 opacity-70">
-                    <h2 className="text-xl font-[Carbon_bl] mb-3 text-[#000000]">Vérifier le Statut Admin</h2>
-                    <div className="space-y-3">
+                <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
+                    <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                        Vérifier le <em className="italic text-[#78716c]">Statut Admin</em>
+                    </h2>
+                    <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-[Olney_Light] mb-1.5 text-[#000000]">Adresse à vérifier</label>
+                            <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
+                                Adresse à vérifier
+                            </label>
                             <input
                                 type="text"
                                 value={checkAdminAddress}
                                 onChange={(e) => setCheckAdminAddress(e.target.value)}
                                 placeholder="0x..."
-                                className="w-full px-3 py-1.5 bg-yellow-bee border border-[#000000] rounded-lg font-[Olney_Light] text-sm text-[#000000] placeholder:text-[#000000]/50"
+                                className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] font-mono text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 pattern="^0x[a-fA-F0-9]{40}$"
                             />
                         </div>
                         {checkAdminAddress && isAdminResult !== undefined && (
-                            <div className="p-3 rounded-lg font-[Olney_Light] text-sm border border-[#000000] text-[#000000]">
+                            <div className="p-4 border border-[#d6d0c8] bg-[#f5f3ef] text-[14px] font-light text-[#1c1917]">
                                 {isAdminResult ? '✓ Cette adresse est admin' : '✗ Cette adresse n\'est pas admin'}
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Logo */}
-                <div className="flex justify-center mt-8 mb-6">
-                    <Image
-                        src="/logo-png-noir.png"
-                        alt="Logo"
-                        width={120}
-                        height={120}
-                        className="opacity-70"
-                    />
+                {/* Footer mark */}
+                <div className="flex justify-center mt-20">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-px h-12 bg-[#d6d0c8]" />
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                    </div>
                 </div>
             </div>
         </div>

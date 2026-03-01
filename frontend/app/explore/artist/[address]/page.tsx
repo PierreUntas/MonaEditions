@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import { ipfsToHttp } from '@/app/utils/file';
+import { getCategoryLabel } from '@/app/utils/categories';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
@@ -391,7 +392,7 @@ export default function ArtistDetailsPage() {
                                     <div>
                                         {edition.ipfsData?.category && (
                                             <p className="text-[10px] font-medium tracking-[0.12em] uppercase text-[#a8a29e] mb-1">
-                                                {edition.ipfsData.category}
+                                                {getCategoryLabel(edition.ipfsData.category)}
                                             </p>
                                         )}
                                         <h3 className="font-serif text-[17px] font-normal text-[#1c1917] leading-tight">

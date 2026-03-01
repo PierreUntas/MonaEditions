@@ -6,6 +6,7 @@ import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_AD
 import { BASE_URL } from '@/config/constants';
 import { uploadToIPFS, uploadFileToIPFS } from '@/app/utils/ipfs';
 import { base64ToBlob, downloadFile } from '@/app/utils/file';
+import { CATEGORIES_EN, CATEGORIES_FR } from '@/app/utils/categories';
 import { MerkleTree } from 'merkletreejs';
 import { keccak256, encodeFunctionData, decodeEventLog, createPublicClient, http } from 'viem';
 import { sepolia } from 'viem/chains';
@@ -45,11 +46,6 @@ export default function CreateEditionPage() {
     const imageInputRef = useRef<HTMLInputElement>(null);
 
     const { sendTransaction } = useSendTransaction();
-
-    const CATEGORIES = [
-        'Painting', 'Drawing', 'Sculpture', 'Photography', 'Digital Art',
-        'Print', 'Textile', 'Ceramics', 'Mixed Media', 'Installation', 'Video', 'Other'
-    ];
 
     const [editionData, setEditionData] = useState({
         title: '',
@@ -524,8 +520,8 @@ export default function CreateEditionPage() {
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] focus:outline-none focus:border-[#1c1917] transition-colors"
                             >
                                 <option value="">Sélectionner une catégorie</option>
-                                {CATEGORIES.map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
+                                {CATEGORIES_EN.map(cat => (
+                                    <option key={cat} value={cat}>{CATEGORIES_FR[cat]}</option>
                                 ))}
                             </select>
                         </div>
@@ -540,7 +536,7 @@ export default function CreateEditionPage() {
                                 value={editionData.technique}
                                 onChange={(e) => setEditionData({ ...editionData, technique: e.target.value })}
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
-                                placeholder="Ex: Oil on canvas, Watercolour, Bronze..."
+                                placeholder="Ex : Huile sur toile, Aquarelle, Bronze..."
                             />
                         </div>
 

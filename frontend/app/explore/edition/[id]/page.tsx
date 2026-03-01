@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import { ipfsToHttp } from '@/app/utils/file';
+import { getCategoryLabel } from '@/app/utils/categories';
 import Link from 'next/link';
 import { publicClient } from '@/lib/client';
 
@@ -218,7 +219,7 @@ export default function EditionDetailsPage() {
                         <div>
                             {editionIPFSData?.category && (
                                 <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-[#a8a29e] border border-[#d6d0c8] px-2 py-0.5 mb-3 inline-block">
-                                    {editionIPFSData.category}
+                                    {getCategoryLabel(editionIPFSData.category)}
                                 </span>
                             )}
                             <h1 className="font-serif text-[clamp(32px,5vw,42px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-1">

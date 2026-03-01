@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
+import { getCategoryLabel } from '@/app/utils/categories';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
@@ -216,7 +217,7 @@ export default function ArtistEditionsPage() {
                                                 </p>
                                                 {edition.ipfsData?.category && (
                                                     <p className="text-[13px] font-light text-[#78716c]">
-                                                        {edition.ipfsData.category}
+                                                        {getCategoryLabel(edition.ipfsData.category)}
                                                     </p>
                                                 )}
                                                 {edition.ipfsData?.technique && (

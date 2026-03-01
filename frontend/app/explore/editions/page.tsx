@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import { ipfsToHttp } from '@/app/utils/file';
+import { getCategoryLabel } from '@/app/utils/categories';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient } from '@/lib/client';
@@ -195,7 +196,7 @@ function ExplorePageContent() {
                     </FilterBtn>
                     {uniqueCategories.map(cat => (
                         <FilterBtn key={cat} active={filterCategory === cat} onClick={() => setFilterCategory(cat)}>
-                            {cat} ({editions.filter(b => b.ipfsData?.category === cat).length})
+                            {getCategoryLabel(cat)} ({editions.filter(b => b.ipfsData?.category === cat).length})
                         </FilterBtn>
                     ))}
                 </div>
@@ -244,7 +245,7 @@ function ExplorePageContent() {
                                         <div>
                                             {edition.ipfsData?.category && (
                                                 <p className="text-[10px] font-medium tracking-[0.12em] uppercase text-[#a8a29e] mb-1">
-                                                    {edition.ipfsData.category}
+                                                    {getCategoryLabel(edition.ipfsData.category)}
                                                 </p>
                                             )}
                                             <h3 className="font-serif text-[18px] font-normal text-[#1c1917] leading-tight">

@@ -12,7 +12,7 @@ function generateSecretKeys(amount: number) {
         secretKeys.push(ethers.hexlify(ethers.randomBytes(32)))
     }
 
-    const leaves = secretKeys.map(key => keccak256(ethers.toUtf8Bytes(key))) // ou ethers.getBytes(key)
+    const leaves = secretKeys.map(key => keccak256(ethers.toUtf8Bytes(key)))
 
     const merkleTree = new MerkleTree(leaves, keccak256, { sortPairs: true });
     const merkleRoot = merkleTree.getHexRoot();

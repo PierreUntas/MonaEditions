@@ -151,7 +151,11 @@ export default function CreateEditionPage() {
                 const cid = await uploadFileToIPFS(file);
                 newCids.push(`ipfs://${cid}`);
             }
-            setEditionData(prev => ({ ...prev, images: [...prev.images, ...newCids] }));
+            setEditionData(prev => {
+                const updated = { ...prev, images: [...prev.images, ...newCids] };
+                console.log('Images uploadées:', updated.images.length);
+                return updated;
+            });
             alert(`${newCids.length} image${newCids.length > 1 ? 's uploadées' : ' uploadée'} sur IPFS !`);
         } catch (error) {
             console.error('Error uploading image:', error);
@@ -189,7 +193,6 @@ export default function CreateEditionPage() {
             const blob = base64ToBlob(base64Data);
             const url = URL.createObjectURL(blob);
             downloadFile(url, `QR_Edition_Page_${createdEditionId}.png`);
-            setHasDownloadedKeys(true); // Mark as downloaded
             alert(`QR Code de la page du lot téléchargé avec succès !`);
         } catch (error) {
             console.error('Error generating edition page QR code:', error);
@@ -307,6 +310,10 @@ export default function CreateEditionPage() {
         e.preventDefault();
         if (!editionData.title || !amount || !merkleRoot) {
             alert('Veuillez remplir tous les champs obligatoires');
+            return;
+        }
+        if (editionData.images.length === 0) {
+            alert('Vous devez ajouter au moins une image de l\'œuvre');
             return;
         }
         if (!isApproved) {
@@ -570,7 +577,7 @@ export default function CreateEditionPage() {
                         {/* Images */}
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                Images de l'œuvre
+                                Images de l'œuvre *
                             </label>
                             <input
                                 type="file"
@@ -635,14 +642,18 @@ export default function CreateEditionPage() {
 
                         <button
                             type="submit"
-                            disabled={loadingStates.creating || loadingStates.uploading || !merkleRoot || !isApproved}
+                            disabled={loadingStates.creating || loadingStates.uploading || loadingStates.uploadingImage || !merkleRoot || !isApproved || editionData.images.length === 0}
                             className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
                         >
-                            {loadingStates.uploading
-                                ? 'Upload IPFS…'
-                                : loadingStates.creating
-                                    ? 'Création en cours…'
-                                    : 'Créer l\'œuvre'}
+                            {loadingStates.uploadingImage
+                                ? 'Upload image en cours…'
+                                : loadingStates.uploading
+                                    ? 'Upload IPFS…'
+                                    : loadingStates.creating
+                                        ? 'Création en cours…'
+                                        : editionData.images.length === 0
+                                            ? 'Ajoutez au moins une image'
+                                            : 'Créer l\'œuvre'}
                         </button>
                     </form>
                 </div>

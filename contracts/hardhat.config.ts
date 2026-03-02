@@ -37,8 +37,45 @@ export default defineConfig({
             url: process.env.SEPOLIA_RPC_URL || "",
             accounts: process.env.SEPOLIA_PRIVATE_KEY ? [process.env.SEPOLIA_PRIVATE_KEY] : [],
         },
+        // Base Mainnet
+        base: {
+            type: "http",
+            chainType: "op",
+            url: process.env.BASE_RPC_URL || "https://mainnet.base.org",
+            accounts: process.env.BASE_PRIVATE_KEY ? [process.env.BASE_PRIVATE_KEY] : [],
+            gasPrice: "auto",
+        },
+        // Base Sepolia (testnet)
+        baseSepolia: {
+            type: "http",
+            chainType: "op",
+            url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
+            accounts: process.env.BASE_SEPOLIA_PRIVATE_KEY ? [process.env.BASE_SEPOLIA_PRIVATE_KEY] : [],
+            gasPrice: "auto",
+        },
     },
-    // etherscan: {
-    //     apiKey: process.env.ETHERSCAN_API_KEY,
-    // },
+    etherscan: {
+        apiKey: {
+            base: process.env.BASESCAN_API_KEY || "",
+            baseSepolia: process.env.BASESCAN_API_KEY || "",
+        },
+        customChains: [
+            {
+                network: "base",
+                chainId: 8453,
+                urls: {
+                    apiURL: "https://api.basescan.org/api",
+                    browserURL: "https://basescan.org"
+                }
+            },
+            {
+                network: "baseSepolia",
+                chainId: 84532,
+                urls: {
+                    apiURL: "https://api-sepolia.basescan.org/api",
+                    browserURL: "https://sepolia.basescan.org"
+                }
+            }
+        ]
+    },
 });

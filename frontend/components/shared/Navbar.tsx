@@ -10,7 +10,7 @@ export default function Navbar() {
     const [copied, setCopied] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const { login, logout, authenticated, user } = usePrivy();
-    const { address } = useAccount();
+    const { address, chain } = useAccount();
 
     const [isOwner, setIsOwner] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -18,6 +18,23 @@ export default function Navbar() {
 
     const wallet = user?.wallet || user?.linkedAccounts?.find((a: any) => a.type === 'wallet');
     const walletAddress = (wallet as any)?.address;
+    const chainId = (wallet as any)?.chainId;
+    
+    const activeAddress = walletAddress || address;
+    
+    const getNetworkName = (id: string | number | undefined) => {
+        if (!id) return chain?.name || 'Non connecté';
+        const numId = typeof id === 'string' ? parseInt(id.replace('eip155:', '')) : id;
+        switch(numId) {
+            case 8453: return 'Base';
+            case 84532: return 'Base Sepolia';
+            case 11155111: return 'Sepolia';
+            case 1: return 'Ethereum';
+            default: return `Chain ${numId}`;
+        }
+    };
+    
+    const networkName = getNetworkName(chainId);
 
     const { data: ownerAddress } = useReadContract({
         address: ARTWORK_REGISTRY_ADDRESS,
@@ -28,19 +45,19 @@ export default function Navbar() {
         address: ARTWORK_REGISTRY_ADDRESS,
         abi: ARTWORK_REGISTRY_ABI,
         functionName: 'isAdmin',
-        args: address ? [address] : undefined,
+        args: activeAddress ? [activeAddress] : undefined,
     });
     const { data: artistData } = useReadContract({
         address: ARTWORK_REGISTRY_ADDRESS,
         abi: ARTWORK_REGISTRY_ABI,
         functionName: 'getArtist',
-        args: address ? [address] : undefined,
+        args: activeAddress ? [activeAddress] : undefined,
     });
 
     useEffect(() => {
-        if (address && ownerAddress)
-            setIsOwner(address.toLowerCase() === (ownerAddress as string).toLowerCase());
-    }, [address, ownerAddress]);
+        if (activeAddress && ownerAddress)
+            setIsOwner(activeAddress.toLowerCase() === (ownerAddress as string).toLowerCase());
+    }, [activeAddress, ownerAddress]);
 
     useEffect(() => {
         if (isAdminResult !== undefined) setIsAdmin(isAdminResult as boolean);
@@ -242,7 +259,7 @@ export default function Navbar() {
                         <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
                         <span className="flex items-center gap-1.5 text-[10px] font-light text-[#a8a29e]">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#4a5240] inline-block" />
-                            Sepolia · Actif
+                            {networkName}
                         </span>
                     </div>
                 </div>

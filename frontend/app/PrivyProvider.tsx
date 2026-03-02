@@ -9,13 +9,14 @@ import { http, createConfig } from "wagmi";
 const queryClient = new QueryClient();
 
 const isProduction = process.env.NEXT_PUBLIC_ENVIRONMENT === 'production';
-const activeChain = isProduction ? base : baseSepolia;
 
 const wagmiConfig = createConfig({
-    chains: [activeChain],
+    chains: [base, baseSepolia],
     transports: {
-        [activeChain.id]: http(),
+        [base.id]: http(),
+        [baseSepolia.id]: http(),
     },
+    ...(isProduction ? { defaultChain: base } : { defaultChain: baseSepolia }),
 });
 
 export default function PrivyProvider({ children }: { children: React.ReactNode }) {
@@ -51,8 +52,8 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
                 // embeddedWallets: {
                 //     createOnLogin: "users-without-wallets",
                 // },
-                defaultChain: activeChain,
-                supportedChains: [activeChain],
+                defaultChain: isProduction ? base : baseSepolia,
+                supportedChains: [base, baseSepolia],
             }}
         >
             <QueryClientProvider client={queryClient}>

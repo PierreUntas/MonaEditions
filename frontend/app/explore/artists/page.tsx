@@ -6,7 +6,7 @@ import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import { ipfsToHttp } from '@/app/utils/file';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
-import { publicClient } from '@/lib/client';
+import { publicClient, getDeploymentBlock } from '@/lib/client';
 
 // New artist IPFS structure
 interface ArtistIPFSData {
@@ -51,7 +51,7 @@ export default function ArtistsPage() {
                 const logs = await publicClient.getLogs({
                     address: ARTWORK_REGISTRY_ADDRESS,
                     event: parseAbiItem('event ArtistInfoUpdated(address indexed artist)'),
-                    fromBlock: 9753823n,
+                    fromBlock: getDeploymentBlock(),
                     toBlock: 'latest'
                 });
 
@@ -60,7 +60,7 @@ export default function ArtistsPage() {
                 const artistsData = await Promise.all(uniqueAddresses.map(async (addr) => {
                     const [artistData, editionLogs] = await Promise.all([
                         publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [addr as `0x${string}`] }) as Promise<any>,
-                        publicClient.getLogs({ address: ARTWORK_REGISTRY_ADDRESS, event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'), args: { artist: addr as `0x${string}` }, fromBlock: 9753823n, toBlock: 'latest' })
+                        publicClient.getLogs({ address: ARTWORK_REGISTRY_ADDRESS, event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'), args: { artist: addr as `0x${string}` }, fromBlock: getDeploymentBlock(), toBlock: 'latest' })
                     ]);
 
                     let artistName = 'Artiste anonyme';
@@ -85,7 +85,7 @@ export default function ArtistsPage() {
                 }));
 
                 const valid = artistsData
-                    .filter(p => p.name && p.name !== 'Artiste anonyme')
+                    .filter(p => p.address) // Afficher tous les artistes enregistrés
                     .sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
 
                 setArtists(valid);

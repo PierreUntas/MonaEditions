@@ -6,7 +6,7 @@ import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_AD
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import Link from 'next/link';
 import { parseAbiItem, encodeFunctionData } from 'viem';
-import { publicClient } from '@/lib/client';
+import { publicClient, getDeploymentBlock } from '@/lib/client';
 import { useSendTransaction } from '@privy-io/react-auth';
 
 interface OwnedToken {
@@ -43,7 +43,7 @@ export default function CollectorPage() {
                 const logs = await publicClient.getLogs({
                     address: ARTWORK_REGISTRY_ADDRESS,
                     event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'),
-                    fromBlock: 9753823n,
+                    fromBlock: getDeploymentBlock(),
                     toBlock: 'latest'
                 });
 

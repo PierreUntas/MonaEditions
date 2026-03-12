@@ -7,7 +7,7 @@ import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import { getCategoryLabel } from '@/app/utils/categories';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
-import { publicClient } from '@/lib/client';
+import { publicClient, getDeploymentBlock } from '@/lib/client';
 
 interface EditionIPFSData {
     title: string;
@@ -68,7 +68,7 @@ export default function ArtistEditionsPage() {
                     address: ARTWORK_REGISTRY_ADDRESS,
                     event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'),
                     args: { artist: address },
-                    fromBlock: 9753823n,
+                    fromBlock: getDeploymentBlock(),
                     toBlock: 'latest'
                 });
 

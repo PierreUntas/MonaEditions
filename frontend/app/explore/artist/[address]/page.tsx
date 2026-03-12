@@ -8,7 +8,7 @@ import { ipfsToHttp } from '@/app/utils/file';
 import { getCategoryLabel } from '@/app/utils/categories';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
-import { publicClient } from '@/lib/client';
+import { publicClient, getDeploymentBlock } from '@/lib/client';
 
 interface ArtistInfo {
     name: string;
@@ -104,7 +104,7 @@ export default function ArtistDetailsPage() {
                     address: ARTWORK_REGISTRY_ADDRESS,
                     event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'),
                     args: { artist: artistAddress as `0x${string}` },
-                    fromBlock: 9753823n,
+                    fromBlock: getDeploymentBlock(),
                     toBlock: 'latest'
                 });
 

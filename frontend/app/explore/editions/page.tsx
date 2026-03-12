@@ -7,7 +7,7 @@ import { ipfsToHttp } from '@/app/utils/file';
 import { getCategoryLabel } from '@/app/utils/categories';
 import Link from 'next/link';
 import { parseAbiItem } from 'viem';
-import { publicClient } from '@/lib/client';
+import { publicClient, getDeploymentBlock } from '@/lib/client';
 import { useSearchParams } from 'next/navigation';
 
 // New artwork IPFS structure
@@ -59,7 +59,7 @@ function ExplorePageContent() {
                 const logs = await publicClient.getLogs({
                     address: ARTWORK_REGISTRY_ADDRESS,
                     event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'),
-                    fromBlock: 9753823n,
+                    fromBlock: getDeploymentBlock(),
                     toBlock: 'latest'
                 });
 

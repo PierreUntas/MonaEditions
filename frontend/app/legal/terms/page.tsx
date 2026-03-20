@@ -6,7 +6,7 @@ export default function TermsPage() {
                 <div className="text-center mb-12">
                     <img 
                         src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
+                        alt="Mona Editions Logo" 
                         className="w-[52px] h-[52px] object-contain mx-auto mb-6"
                     />
                     <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
@@ -20,15 +20,15 @@ export default function TermsPage() {
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 space-y-8">
 
                     <Section title="1. Objet">
-                        <p>Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès et l'utilisation de la plateforme Kigen, accessible à l'adresse kigen.art. En utilisant la plateforme, vous acceptez sans réserve les présentes conditions.</p>
+                        <p>Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès et l'utilisation de la plateforme Mona Editions, accessible à l'adresse monaeditions.art. En utilisant la plateforme, vous acceptez sans réserve les présentes conditions.</p>
                     </Section>
 
                     <Section title="2. Description du service">
-                        <p>Kigen est une plateforme de certification d'œuvres d'art sur la blockchain Ethereum. Elle permet aux artistes autorisés de certifier leurs œuvres sous forme de tokens numériques, et aux collectionneurs de recevoir et conserver des certificats d'authenticité.</p>
+                        <p>Mona Editions est une plateforme de certification d'œuvres d'art sur la blockchain Ethereum. Elle permet aux artistes autorisés de certifier leurs œuvres sous forme de tokens numériques, et aux collectionneurs de recevoir et conserver des certificats d'authenticité.</p>
                     </Section>
 
                     <Section title="3. Accès à la plateforme">
-                        <p>L'accès à certaines fonctionnalités (certification d'œuvres, réclamation de certificats) nécessite la création d'un compte via Privy, notre fournisseur d'authentification. L'accès au rôle artiste est soumis à validation manuelle par l'équipe Kigen.</p>
+                        <p>L'accès à certaines fonctionnalités (certification d'œuvres, réclamation de certificats) nécessite la création d'un compte via Privy, notre fournisseur d'authentification. L'accès au rôle artiste est soumis à validation manuelle par l'équipe Mona Editions.</p>
                     </Section>
 
                     <Section title="4. Responsabilités des artistes">
@@ -38,23 +38,23 @@ export default function TermsPage() {
                             <li>La détention des droits nécessaires sur les œuvres certifiées</li>
                             <li>Le respect des droits de tiers (droits d'auteur, droits à l'image…)</li>
                         </ul>
-                        <p className="mt-3">Kigen se réserve le droit de suspendre l'accès d'un artiste en cas de manquement à ces obligations.</p>
+                        <p className="mt-3">Mona Editions se réserve le droit de suspendre l'accès d'un artiste en cas de manquement à ces obligations.</p>
                     </Section>
 
                     <Section title="5. Nature des tokens">
-                        <p>Les certificats émis sur Kigen sont des tokens ERC-1155 sur la blockchain Ethereum. Ils constituent une preuve d'authenticité numérique mais ne confèrent pas automatiquement de droits de propriété intellectuelle sur l'œuvre physique ou numérique, sauf accord explicite entre l'artiste et le collectionneur.</p>
+                        <p>Les certificats émis sur Mona Editions sont des tokens ERC-1155 sur la blockchain Ethereum. Ils constituent une preuve d'authenticité numérique mais ne confèrent pas automatiquement de droits de propriété intellectuelle sur l'œuvre physique ou numérique, sauf accord explicite entre l'artiste et le collectionneur.</p>
                     </Section>
 
                     <Section title="6. Frais et transactions">
-                        <p>Certaines opérations sur la blockchain peuvent entraîner des frais de transaction (gas fees). Kigen n'est pas responsable des variations de ces frais. La plateforme peut prendre en charge certains frais via un mécanisme de sponsorisation (gasless transactions) sans garantie de disponibilité permanente.</p>
+                        <p>Certaines opérations sur la blockchain peuvent entraîner des frais de transaction (gas fees). Mona Editions n'est pas responsable des variations de ces frais. La plateforme peut prendre en charge certains frais via un mécanisme de sponsorisation (gasless transactions) sans garantie de disponibilité permanente.</p>
                     </Section>
 
                     <Section title="7. Disponibilité du service">
-                        <p>Kigen s'efforce d'assurer la disponibilité de la plateforme mais ne peut garantir un accès ininterrompu. Des interruptions pour maintenance ou incidents techniques sont possibles sans préavis.</p>
+                        <p>Mona Editions s'efforce d'assurer la disponibilité de la plateforme mais ne peut garantir un accès ininterrompu. Des interruptions pour maintenance ou incidents techniques sont possibles sans préavis.</p>
                     </Section>
 
                     <Section title="8. Modification des CGU">
-                        <p>Kigen se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés des modifications significatives. La poursuite de l'utilisation de la plateforme après modification vaut acceptation des nouvelles conditions.</p>
+                        <p>Mona Editions se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés des modifications significatives. La poursuite de l'utilisation de la plateforme après modification vaut acceptation des nouvelles conditions.</p>
                     </Section>
 
                     <Section title="9. Droit applicable">

@@ -107,7 +107,7 @@ function ClaimTokenForm() {
             <div className="text-center mb-12">
                 <img 
                     src="/logo-kigen.png" 
-                    alt="Kigen Logo" 
+                    alt="Mona Editions Logo" 
                     className="w-[52px] h-[52px] object-contain mx-auto mb-6"
                 />
                 <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
@@ -209,7 +209,7 @@ function ClaimTokenForm() {
             <div className="flex justify-center mt-20">
                 <div className="flex flex-col items-center gap-3">
                     <div className="w-px h-12 bg-[#d6d0c8]" />
-                    <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                    <span className="font-serif italic text-[13px] text-[#a8a29e]">Mona Editions</span>
                 </div>
             </div>
         </div>

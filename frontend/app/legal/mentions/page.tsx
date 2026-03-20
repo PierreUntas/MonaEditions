@@ -6,7 +6,7 @@ export default function LegalNoticePage() {
                 <div className="text-center mb-12">
                     <img 
                         src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
+                        alt="Mona Editions Logo" 
                         className="w-[52px] h-[52px] object-contain mx-auto mb-6"
                     />
                     <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
@@ -19,7 +19,7 @@ export default function LegalNoticePage() {
 
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 space-y-8">
                     <Section title="Éditeur du site">
-                        <p>Le site <strong>Kigen</strong> (kigen.art) est édité par :</p>
+                        <p>Le site <strong>Mona Editions</strong> (monaeditions.art) est édité par :</p>
                         <p className="mt-2 text-[#78716c]">
                             Pierre Untas<br />
                             Particulier<br />
@@ -42,11 +42,11 @@ export default function LegalNoticePage() {
                     </Section>
 
                     <Section title="Propriété intellectuelle">
-                        <p>L'ensemble des contenus présents sur le site Kigen (textes, images, logos, code) sont protégés par le droit d'auteur et sont la propriété exclusive de leurs auteurs respectifs. Toute reproduction, même partielle, est strictement interdite sans autorisation préalable écrite.</p>
+                        <p>L'ensemble des contenus présents sur le site Mona Editions (textes, images, logos, code) sont protégés par le droit d'auteur et sont la propriété exclusive de leurs auteurs respectifs. Toute reproduction, même partielle, est strictement interdite sans autorisation préalable écrite.</p>
                     </Section>
 
                     <Section title="Responsabilité">
-                        <p>Kigen s'efforce de fournir des informations exactes et à jour. Cependant, la plateforme ne peut être tenue responsable des erreurs ou omissions dans les contenus, ni des dommages résultant de l'utilisation des informations publiées. Les certifications enregistrées sur la blockchain sont sous la responsabilité exclusive des artistes qui les émettent.</p>
+                        <p>Mona Editions s'efforce de fournir des informations exactes et à jour. Cependant, la plateforme ne peut être tenue responsable des erreurs ou omissions dans les contenus, ni des dommages résultant de l'utilisation des informations publiées. Les certifications enregistrées sur la blockchain sont sous la responsabilité exclusive des artistes qui les émettent.</p>
                     </Section>
 
                     <Section title="Droit applicable">

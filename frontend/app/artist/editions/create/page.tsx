@@ -118,10 +118,15 @@ export default function CreateEditionPage() {
     };
 
     const handleAmountChange = (value: string) => {
+        const numValue = parseInt(value);
+        if (value && numValue > 100) {
+            return;
+        }
+        
         setAmount(value);
         if (value) {
             const count = parseInt(value);
-            if (count > 0 && count <= 100000) {
+            if (count > 0 && count <= 100) {
                 const keys = generateSecretKeys(count);
                 setSecretKeys(keys);
                 setEditionData(prev => ({ ...prev, editionSize: count }));
@@ -474,7 +479,7 @@ export default function CreateEditionPage() {
                 <div className="text-center mb-12">
                     <img 
                         src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
+                        alt="Mona Editions Logo" 
                         className="w-[52px] h-[52px] object-contain mx-auto mb-6"
                     />
                     <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
@@ -625,9 +630,12 @@ export default function CreateEditionPage() {
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 placeholder="Ex: 50"
                                 min="1"
-                                max="100000"
+                                max="100"
                                 required
                             />
+                            <p className="text-[12px] font-light text-[#78716c] mt-2">
+                                Maximum 100 exemplaires par édition pour garantir l'exclusivité et la valeur de vos œuvres.
+                            </p>
                         </div>
 
                         {merkleRoot && (
@@ -724,7 +732,7 @@ export default function CreateEditionPage() {
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Mona Editions</span>
                     </div>
                 </div>
             </div>

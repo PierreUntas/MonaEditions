@@ -1,4 +1,4 @@
-# � Kigen – Certification d'Art sur Blockchain
+# � Mona Editions – Certification d'Art sur Blockchain
 
 Une plateforme de certification qui restaure la confiance entre artistes et collectionneurs grâce à la blockchain.
 
@@ -6,9 +6,9 @@ Une plateforme de certification qui restaure la confiance entre artistes et coll
 
 ## 📋 Présentation
 
-**Kigen** est une plateforme de certification d'œuvres d'art qui redonne de la confiance entre artistes et collectionneurs. En scannant un simple QR code sur une œuvre, vous accédez instantanément à son histoire : titre, artiste, édition, provenance, authenticité.
+**Mona Editions** est une plateforme de certification d'œuvres d'art qui redonne de la confiance entre artistes et collectionneurs. En scannant un simple QR code sur une œuvre, vous accédez instantanément à son histoire : titre, artiste, édition, provenance, authenticité.
 
-Grâce à la blockchain, ces informations sont enregistrées de façon infalsifiable. Chaque œuvre possède un certificat de propriété transférable, permettant de tracer son historique complet. Kigen valorise ainsi les artistes indépendants, lutte contre la contrefaçon et permet aux collectionneurs d'acquérir des œuvres avec une provenance vérifiable.
+Grâce à la blockchain, ces informations sont enregistrées de façon infalsifiable. Chaque œuvre possède un certificat de propriété transférable, permettant de tracer son historique complet. Mona Editions valorise ainsi les artistes indépendants, lutte contre la contrefaçon et permet aux collectionneurs d'acquérir des œuvres avec une provenance vérifiable.
 
 ### 🔐 Système de certificat numérique
 
@@ -599,7 +599,7 @@ Pour toute question ou suggestion :
 
 ---
 
-**Kigen** – *L'authenticité. Vérifiable.* 🎨✨
+**Mona Editions** – *L'authenticité. Vérifiable.* 🎨✨
 
 *Développé avec ❤️ pour valoriser le travail des artistes et protéger les collectionneurs*
 

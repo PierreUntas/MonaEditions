@@ -83,7 +83,7 @@ export default function AboutPage() {
         <div className="text-center mb-[72px]">
           <img 
             src="/logo-kigen.png" 
-            alt="Kigen Logo" 
+            alt="Mona Editions Logo" 
             className="w-[52px] h-[52px] object-contain mx-auto mb-6"
           />
           <div className="text-[11px] font-normal tracking-[0.18em] uppercase text-[#a8a29e] mb-5 flex items-center justify-center gap-3">
@@ -96,7 +96,7 @@ export default function AboutPage() {
             <em className="italic text-[#78716c]">Son histoire.</em>
           </h1>
           <p className="text-[15px] font-light leading-[1.8] text-[#78716c] max-w-[480px] mx-auto">
-            Kigen certifie l'authenticité et la provenance de chaque œuvre d'art
+            Mona Editions certifie l'authenticité et la provenance de chaque œuvre d'art
             sur la blockchain — pour les artistes qui créent, et les collectionneurs qui font confiance.
           </p>
         </div>
@@ -104,14 +104,14 @@ export default function AboutPage() {
         {/* Main card */}
         <div className="border border-[#d6d0c8] bg-[#fafaf8] mb-px p-10">
           <h2 className="font-serif text-[22px] font-normal mb-5">
-            Qu'est-ce que <em className="italic text-[#78716c]">Kigen</em> ?
+            Qu'est-ce que <em className="italic text-[#78716c]">Mona Editions</em> ?
           </h2>
           <div className="text-[14px] font-light leading-[1.85] text-[#78716c]">
             <p>
-              <strong className="font-medium text-[#1c1917]">Kigen</strong> est une plateforme de certification qui permet à tout artiste indépendant de prouver l'authenticité et la provenance de ses œuvres grâce à la blockchain — sans que l'acheteur n'ait besoin de comprendre comment ça fonctionne.
+              <strong className="font-medium text-[#1c1917]">Mona Editions</strong> est une plateforme de certification qui permet à tout artiste indépendant de prouver l'authenticité et la provenance de ses œuvres grâce à la blockchain — sans que l'acheteur n'ait besoin de comprendre comment ça fonctionne.
             </p>
             <p className="mt-3.5">
-              En scannant un simple QR code au dos de l'œuvre, le collectionneur accède instantanément à son histoire complète : titre, médium, dimensions, année de création, déclaration de l'artiste. Ces informations sont enregistrées de façon <mark className="bg-transparent text-[#4a5240] font-normal">infalsifiable</mark> sur la blockchain Ethereum — personne, pas même Kigen, ne peut les modifier après publication.
+              En scannant un simple QR code au dos de l'œuvre, le collectionneur accède instantanément à son histoire complète : titre, médium, dimensions, année de création, déclaration de l'artiste. Ces informations sont enregistrées de façon <mark className="bg-transparent text-[#4a5240] font-normal">infalsifiable</mark> sur la blockchain Ethereum — personne, pas même Mona Editions, ne peut les modifier après publication.
             </p>
             <p className="mt-3.5">
               À chaque revente, le certificat de propriété se transfère avec l'œuvre. L'historique complet de ses propriétaires successifs est préservé pour toujours — une provenance vérifiable, permanente, et accessible à tous.
@@ -162,7 +162,7 @@ export default function AboutPage() {
           </div>
           <div className="font-serif text-[clamp(20px,3vw,28px)] font-normal text-white leading-[1.4]">
             L'art n'a de valeur que si son histoire <em className="italic text-white/40">peut être prouvée</em>.<br />
-            Kigen rend cette preuve permanente, accessible, et infalsifiable.
+            Mona Editions rend cette preuve permanente, accessible, et infalsifiable.
           </div>
         </div>
 
@@ -193,7 +193,7 @@ export default function AboutPage() {
             Technologie
           </h3>
           <p className="text-[13px] font-light text-[#78716c] mb-5 leading-[1.7]">
-            Kigen est construit sur des standards ouverts et des technologies éprouvées.
+            Mona Editions est construit sur des standards ouverts et des technologies éprouvées.
           </p>
           <div className="flex flex-wrap gap-2">
             {techs.map(({ name, url }) => (

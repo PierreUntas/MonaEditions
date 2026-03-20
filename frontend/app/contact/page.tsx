@@ -45,7 +45,7 @@ export default function ContactPage() {
                 <div className="text-center mb-12">
                     <img 
                         src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
+                        alt="Mona Editions Logo" 
                         className="w-[52px] h-[52px] object-contain mx-auto mb-6"
                     />
                     <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">

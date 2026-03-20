@@ -92,14 +92,10 @@ export default function Navbar() {
                 {/* Logo */}
                 <a href="/" className="flex items-center gap-2.5 group no-underline">
                     <img 
-                        src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
-                        className="w-[34px] h-[34px] object-contain flex-shrink-0"
+                        src="/logo-mona.svg" 
+                        alt="Mona Editions Logo" 
+                        className="h-14 w-auto object-contain flex-shrink-0"
                     />
-                    <div className="flex flex-col leading-none">
-                        <span className="font-serif text-[17px] text-[#1c1917] tracking-[0.01em]">Kigen</span>
-                       
-                    </div>
                 </a>
 
                 {/* Center links */}
@@ -256,7 +252,7 @@ export default function Navbar() {
 
                     {/* Panel footer */}
                     <div className="px-6 py-4 border-t border-[#d6d0c8] flex items-center justify-between">
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Mona Editions</span>
                         <span className="flex items-center gap-1.5 text-[10px] font-light text-[#a8a29e]">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#4a5240] inline-block" />
                             {networkName}

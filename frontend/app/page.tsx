@@ -12,7 +12,7 @@ export default function Home() {
                 <div className="text-center mb-[72px]">
                     <img 
                         src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
+                        alt="Mona Editions Logo" 
                         className="w-[52px] h-[52px] object-contain mx-auto mb-6"
                     />
                     <div className="text-[11px] font-normal tracking-[0.18em] uppercase text-[#a8a29e] mb-5">
@@ -31,7 +31,7 @@ export default function Home() {
                 {/* Hero CTA */}
                 <div className="border border-[#d6d0c8] bg-[#1c1917] mb-6 py-16 px-10 text-center">
                     <div className="text-[10px] font-normal tracking-[0.15em] uppercase text-white/30 mb-6">
-                        Bienvenue sur Kigen
+                        Bienvenue sur Mona Editions
                     </div>
                     <div className="font-serif text-[clamp(32px,5vw,48px)] font-normal text-white leading-[1.3] mb-5 tracking-[-1px]">
                         Donnez à vos œuvres<br />

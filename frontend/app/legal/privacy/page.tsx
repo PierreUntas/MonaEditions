@@ -6,7 +6,7 @@ export default function PrivacyPage() {
                 <div className="text-center mb-12">
                     <img 
                         src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
+                        alt="Mona Editions Logo" 
                         className="w-[52px] h-[52px] object-contain mx-auto mb-6"
                     />
                     <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
@@ -20,7 +20,7 @@ export default function PrivacyPage() {
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 space-y-8">
 
                     <Section title="1. Responsable du traitement">
-                        <p>Pierre Untas, 88 rue Lagrange, 33000 Bordeaux, joignable à <a href="mailto:pierre.untas@gmail.com" className="text-[#4a5240] underline underline-offset-2">pierre.untas@gmail.com</a>, est responsable du traitement des données personnelles collectées sur la plateforme Kigen.</p>
+                        <p>Pierre Untas, 88 rue Lagrange, 33000 Bordeaux, joignable à <a href="mailto:pierre.untas@gmail.com" className="text-[#4a5240] underline underline-offset-2">pierre.untas@gmail.com</a>, est responsable du traitement des données personnelles collectées sur la plateforme Mona Editions.</p>
                     </Section>
 
                     <Section title="2. Données collectées">

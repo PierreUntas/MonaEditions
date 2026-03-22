@@ -171,7 +171,7 @@ export default function ArtistDetailsPage() {
     if (!artist) return (
         <div className="min-h-screen bg-[#f5f3ef]">
             <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                <p className="font-serif italic text-[22px] text-[#a8a29e]">Artiste introuvable</p>
+                <p className=" italic text-[22px] text-[#a8a29e]">Artiste introuvable</p>
             </div>
         </div>
     );
@@ -223,7 +223,7 @@ export default function ArtistDetailsPage() {
                                         Artiste certifié
                                     </span>
                                 </div>
-                                <h1 className="font-serif text-[clamp(32px,5vw,52px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-2">
+                                <h1 className=" text-[clamp(32px,5vw,52px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-2">
                                     {artist.name}
                                 </h1>
                                 <p className="text-[14px] font-light text-[#78716c]">{artist.location}</p>
@@ -331,7 +331,7 @@ export default function ArtistDetailsPage() {
                 {/* Photo gallery — portfolio (skip first used as hero) */}
                 {portfolio && portfolio.length > 1 && (
                     <div className="border border-[#d6d0c8] border-t-0 bg-[#fafaf8] p-8 mb-px">
-                        <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-6">
+                        <h2 className=" text-[22px] font-normal text-[#1c1917] mb-6">
                             Portfolio <em className="italic text-[#78716c]">photos</em>
                         </h2>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-px bg-[#d6d0c8] border border-[#d6d0c8]">
@@ -351,10 +351,10 @@ export default function ArtistDetailsPage() {
                 {/* Works section */}
                 <div className="mt-16 mb-8">
                     <div className="flex items-end justify-between border-b border-[#d6d0c8] pb-6 mb-0">
-                        <h2 className="font-serif text-[clamp(24px,3vw,36px)] font-normal tracking-[-0.5px] text-[#1c1917]">
+                        <h2 className=" text-[clamp(24px,3vw,36px)] font-normal tracking-[-0.5px] text-[#1c1917]">
                             Œuvres <em className="italic text-[#78716c]">certifiées</em>
                         </h2>
-                        <span className="font-serif italic text-[36px] text-[#e7e3dc] leading-none">
+                        <span className=" italic text-[36px] text-[#e7e3dc] leading-none">
                             {editions.length}
                         </span>
                     </div>
@@ -362,7 +362,7 @@ export default function ArtistDetailsPage() {
 
                 {editions.length === 0 ? (
                     <div className="border border-[#d6d0c8] bg-[#fafaf8] p-12 text-center">
-                        <p className="font-serif italic text-[18px] text-[#a8a29e]">
+                        <p className=" italic text-[18px] text-[#a8a29e]">
                             Cet artiste n'a pas encore certifié d'œuvre.
                         </p>
                     </div>
@@ -384,7 +384,7 @@ export default function ArtistDetailsPage() {
                                     </div>
                                 ) : (
                                     <div className="w-full aspect-[4/3] bg-[#e7e3dc] flex items-center justify-center">
-                                        <img src="/logo-kigen.png" alt="Logo" className="w-16 h-16 object-contain opacity-20" />
+                                        <img src="/logo-mona.svg" alt="Logo" className="w-16 h-16 object-contain opacity-20" />
                                     </div>
                                 )}
 
@@ -395,7 +395,7 @@ export default function ArtistDetailsPage() {
                                                 {getCategoryLabel(edition.ipfsData.category)}
                                             </p>
                                         )}
-                                        <h3 className="font-serif text-[17px] font-normal text-[#1c1917] leading-tight">
+                                        <h3 className=" text-[17px] font-normal text-[#1c1917] leading-tight">
                                             {edition.title}
                                         </h3>
                                     </div>
@@ -438,7 +438,7 @@ export default function ArtistDetailsPage() {
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                        <span className=" italic text-[13px] text-[#a8a29e]">Mona Editions</span>
                     </div>
                 </div>
 

@@ -174,7 +174,7 @@ function ExplorePageContent() {
                     </div>
                     <div className="flex items-end justify-between border-b border-[#d6d0c8] pb-8">
                         <div>
-                            <h1 className="font-serif text-[clamp(40px,6vw,64px)] font-normal leading-[1.05] tracking-[-1.5px] text-[#1c1917] mb-3">
+                            <h1 className=" text-[clamp(40px,6vw,64px)] font-normal leading-[1.05] tracking-[-1.5px] text-[#1c1917] mb-3">
                                 La <em className="italic text-[#78716c]">galerie</em>
                             </h1>
                             <p className="text-[14px] font-light text-[#78716c] leading-relaxed max-w-md">
@@ -183,7 +183,7 @@ function ExplorePageContent() {
                             </p>
                         </div>
                         <div className="text-right hidden md:block">
-                            <span className="font-serif italic text-[48px] text-[#e7e3dc] leading-none">{editions.length}</span>
+                            <span className=" italic text-[48px] text-[#e7e3dc] leading-none">{editions.length}</span>
                             <span className="block text-[11px] font-light tracking-[0.08em] text-[#a8a29e] mt-1">œuvres certifiées</span>
                         </div>
                     </div>
@@ -214,7 +214,7 @@ function ExplorePageContent() {
                     </div>
                 ) : filteredEditions.length === 0 ? (
                     <div className="border border-[#d6d0c8] bg-[#fafaf8] p-12 text-center">
-                        <p className="font-serif italic text-[22px] text-[#a8a29e]">Aucune œuvre trouvée</p>
+                        <p className=" italic text-[22px] text-[#a8a29e]">Aucune œuvre trouvée</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#d6d0c8] border border-[#d6d0c8]">
@@ -235,7 +235,7 @@ function ExplorePageContent() {
                                     </div>
                                 ) : (
                                     <div className="w-full aspect-[4/3] bg-[#e7e3dc] flex items-center justify-center">
-                                        <img src="/logo-kigen.png" alt="Logo" className="w-16 h-16 object-contain opacity-20" />
+                                        <img src="/logo-mona.svg" alt="Logo" className="w-16 h-16 object-contain opacity-20" />
                                     </div>
                                 )}
 
@@ -248,7 +248,7 @@ function ExplorePageContent() {
                                                     {getCategoryLabel(edition.ipfsData.category)}
                                                 </p>
                                             )}
-                                            <h3 className="font-serif text-[18px] font-normal text-[#1c1917] leading-tight">
+                                            <h3 className=" text-[18px] font-normal text-[#1c1917] leading-tight">
                                                 {edition.title}
                                             </h3>
                                         </div>
@@ -298,7 +298,7 @@ function ExplorePageContent() {
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                        <span className=" italic text-[13px] text-[#a8a29e]">Mona Editions</span>
                     </div>
                 </div>
             </div>

@@ -40,13 +40,10 @@ const Footer = () => {
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-3">
                             <img 
-                                src="/logo-kigen.png" 
-                                alt="Kigen Logo" 
-                                className="w-8 h-8 object-contain"
+                                src="/logo-mona.svg" 
+                                alt="Mona Editions Logo" 
+                                className="w-28 h-14 object-contain"
                             />
-                            <span className="font-serif text-[18px] font-normal text-[#1c1917] tracking-[-0.3px]">
-                                Kigen
-                            </span>
                         </div>
                         <p className="text-[13px] font-light text-[#78716c] leading-[1.7] max-w-[220px]">
                             Certification d'œuvres d'art sur la blockchain. Authenticité permanente, vérifiable par tous.
@@ -95,7 +92,7 @@ const Footer = () => {
 
                 {/* Contact + Légal — ligne unique */}
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2 py-6 border-b border-[#d6d0c8]">
-                    <a href="mailto:contact@kigen.art" className="text-[12px] font-light text-[#78716c] hover:text-[#1c1917] transition-colors no-underline">contact@kigen.art</a>
+                    <a href="mailto:pierre.untas@gmail.com" className="text-[12px] font-light text-[#78716c] hover:text-[#1c1917] transition-colors no-underline">pierre.untas@gmail.com</a>
                     <span className="text-[#d6d0c8]">·</span>
                     <FooterLink href="/contact">Nous contacter</FooterLink>
                     <span className="text-[#d6d0c8]">·</span>
@@ -112,10 +109,10 @@ const Footer = () => {
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8">
                     <div className="flex items-center gap-3">
                         <div className="w-px h-4 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                        <span className=" italic text-[13px] text-[#a8a29e]">Mona Editions</span>
                     </div>
                     <p className="text-[12px] font-light text-[#a8a29e] tracking-[0.04em]">
-                        &copy; Kigen {new Date().getFullYear()} — Tous droits réservés
+                        &copy; Mona Editions {new Date().getFullYear()} — Tous droits réservés
                     </p>
                 </div>
             </div>

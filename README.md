@@ -1,4 +1,4 @@
-# � Kigen – Certification d'Art sur Blockchain
+# � Mona Editions – Certification d'Art sur Blockchain
 
 Une plateforme de certification qui restaure la confiance entre artistes et collectionneurs grâce à la blockchain.
 
@@ -6,9 +6,9 @@ Une plateforme de certification qui restaure la confiance entre artistes et coll
 
 ## 📋 Présentation
 
-**Kigen** est une plateforme de certification d'œuvres d'art qui redonne de la confiance entre artistes et collectionneurs. En scannant un simple QR code sur une œuvre, vous accédez instantanément à son histoire : titre, artiste, édition, provenance, authenticité.
+**Mona Editions** est une plateforme de certification d'œuvres d'art qui redonne de la confiance entre artistes et collectionneurs. En scannant un simple QR code sur une œuvre, vous accédez instantanément à son histoire : titre, artiste, édition, provenance, authenticité.
 
-Grâce à la blockchain, ces informations sont enregistrées de façon infalsifiable. Chaque œuvre possède un certificat de propriété transférable, permettant de tracer son historique complet. Kigen valorise ainsi les artistes indépendants, lutte contre la contrefaçon et permet aux collectionneurs d'acquérir des œuvres avec une provenance vérifiable.
+Grâce à la blockchain, ces informations sont enregistrées de façon infalsifiable. Chaque œuvre possède un certificat de propriété transférable, permettant de tracer son historique complet. Mona Editions valorise ainsi les artistes indépendants, lutte contre la contrefaçon et permet aux collectionneurs d'acquérir des œuvres avec une provenance vérifiable.
 
 ### 🔐 Système de certificat numérique
 
@@ -287,19 +287,19 @@ Le système génère automatiquement un fichier CSV contenant :
 
 | Index | Clé secrète | Merkle Proof | URL de claim |
 |-------|-------------|--------------|--------------|
-| 0 | abc123... | [0x..., 0x...] | https://www.kigen.art/collector/claim?editionId=1&secretKey=abc123&merkleProof=0x... |
-| 1 | def456... | [0x..., 0x...] | https://www.kigen.art/collector/claim?editionId=1&secretKey=def456&merkleProof=0x... |
+| 0 | abc123... | [0x..., 0x...] | https://www.monaeditions.com/collector/claim?editionId=1&secretKey=abc123&merkleProof=0x... |
+| 1 | def456... | [0x..., 0x...] | https://www.monaeditions.com/collector/claim?editionId=1&secretKey=def456&merkleProof=0x... |
 | ... | ... | ... | ... |
 
 L'artiste peut alors générer **des QR codes pour chaque exemplaire** :
 
 1. **QR Code sur l'œuvre** (visible au dos ou au côté)
-   - URL : `https://www.kigen.art/explore/edition/[editionId]`
+   - URL : `https://www.monaeditions.com/explore/edition/[editionId]`
    - Permet de consulter les informations d'authenticité
    - Accessible à tous, même sans wallet
 
 2. **QR Code du certificat** (document séparé remis à l'acheteur)
-   - URL : `https://www.kigen.art/collector/claim?editionId=X&secretKey=...&merkleProof=...`
+   - URL : `https://www.monaeditions.com/collector/claim?editionId=X&secretKey=...&merkleProof=...`
    - Permet de claim le certificat numérique
    - Accessible uniquement au propriétaire légitime
    - Nécessite une connexion (email ou wallet)
@@ -372,7 +372,7 @@ Informations affichées :
 
 ### Typographie
 
-- **Titres principaux** : Serif (font-serif)
+- **Titres principaux** : Serif ()
 - **Corps de texte** : Sans-serif (font-light)
 - **Emphase** : Italique pour les mots clés
 - **Uppercase** : Petits titres avec tracking large
@@ -599,7 +599,7 @@ Pour toute question ou suggestion :
 
 ---
 
-**Kigen** – *L'authenticité. Vérifiable.* 🎨✨
+**Mona Editions** – *L'authenticité. Vérifiable.* 🎨✨
 
 *Développé avec ❤️ pour valoriser le travail des artistes et protéger les collectionneurs*
 

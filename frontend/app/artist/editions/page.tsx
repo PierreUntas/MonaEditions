@@ -145,7 +145,7 @@ export default function ArtistEditionsPage() {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="font-serif italic text-[22px] text-[#a8a29e]">Veuillez connecter votre wallet</p>
+                    <p className=" italic text-[22px] text-[#a8a29e]">Veuillez connecter votre wallet</p>
                 </div>
             </div>
         );
@@ -155,7 +155,7 @@ export default function ArtistEditionsPage() {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="font-serif italic text-[22px] text-[#a8a29e] text-center max-w-md px-6">
+                    <p className=" italic text-[22px] text-[#a8a29e] text-center max-w-md px-6">
                         Accès refusé : vous n'êtes pas autorisé comme artiste
                     </p>
                 </div>
@@ -168,11 +168,11 @@ export default function ArtistEditionsPage() {
             <div className="max-w-[860px] mx-auto px-6 pt-28 pb-20">
                 <div className="text-center mb-12">
                     <img 
-                        src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
-                        className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+                        src="/logo-mona.svg" 
+                        alt="Mona Editions Logo" 
+                        className="w-[100px] h-[100px] object-contain mx-auto mb-6"
                     />
-                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-8">
+                    <h1 className=" text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-8">
                         Mes <em className="italic text-[#78716c]">Œuvres</em>
                     </h1>
                     <Link
@@ -189,7 +189,7 @@ export default function ArtistEditionsPage() {
                         <p className="text-[13px] font-light text-[#a8a29e] tracking-[0.06em]">Chargement de vos œuvres…</p>
                     </div>
                 ) : editions.length === 0 ? (
-                    <div className="text-center font-serif italic text-[18px] text-[#a8a29e] py-12">
+                    <div className="text-center  italic text-[18px] text-[#a8a29e] py-12">
                         Vous n'avez pas encore créé d'œuvre.
                     </div>
                 ) : (
@@ -208,7 +208,7 @@ export default function ArtistEditionsPage() {
                                 >
                                     <div className="flex justify-between items-start gap-8">
                                         <div className="flex-1">
-                                            <h2 className="font-serif text-[28px] font-normal text-[#1c1917] mb-3 leading-tight">
+                                            <h2 className=" text-[28px] font-normal text-[#1c1917] mb-3 leading-tight">
                                                 {edition.title}
                                             </h2>
                                             <div className="space-y-1.5">
@@ -237,7 +237,7 @@ export default function ArtistEditionsPage() {
                                             <p className="text-[11px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                                 Exemplaires restants
                                             </p>
-                                            <p className="font-serif text-[36px] font-normal text-[#1c1917] leading-none">
+                                            <p className=" text-[36px] font-normal text-[#1c1917] leading-none">
                                                 {edition.remainingTokens.toString()}
                                             </p>
                                             {edition.ipfsData?.editionSize && (
@@ -254,7 +254,7 @@ export default function ArtistEditionsPage() {
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                        <span className=" italic text-[13px] text-[#a8a29e]">Mona Editions</span>
                     </div>
                 </div>
             </div>

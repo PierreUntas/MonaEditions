@@ -187,7 +187,7 @@ export default function EditionDetailsPage() {
     if (!edition || !artist) return (
         <div className="min-h-screen bg-[#f5f3ef]">
             <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                <p className="font-serif italic text-[22px] text-[#a8a29e]">Œuvre introuvable</p>
+                <p className=" italic text-[22px] text-[#a8a29e]">Œuvre introuvable</p>
             </div>
         </div>
     );
@@ -222,14 +222,14 @@ export default function EditionDetailsPage() {
                                     {getCategoryLabel(editionIPFSData.category)}
                                 </span>
                             )}
-                            <h1 className="font-serif text-[clamp(32px,5vw,42px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-1">
+                            <h1 className=" text-[clamp(32px,5vw,42px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight mb-1">
                                 {edition.title}
                             </h1>
                             <p className="text-[14px] text-[#78716c]">Œuvre #{edition.tokenId.toString()}</p>
                         </div>
                         <div className="text-right flex-shrink-0 ml-6">
                             <p className="mb-1 text-[12px] text-[#a8a29e]">Exemplaires</p>
-                            <p className="font-serif text-4xl font-normal text-[#1c1917]">
+                            <p className=" text-4xl font-normal text-[#1c1917]">
                                 {edition.remainingTokens.toString()}
                             </p>
                             {editionIPFSData?.editionSize && (
@@ -239,7 +239,7 @@ export default function EditionDetailsPage() {
                     </div>
                     {comments.length > 0 && (
                         <div className="flex items-center gap-2 pt-3 border-t border-[#e7e3dc]">
-                            <span className="font-serif text-2xl font-normal text-[#1c1917]">{calculateAverageRating()}</span>
+                            <span className=" text-2xl font-normal text-[#1c1917]">{calculateAverageRating()}</span>
                             <span className="text-[#1c1917]">★★★★★</span>
                             <span className="text-[14px] text-[#78716c]">({comments.length} avis)</span>
                         </div>
@@ -249,7 +249,7 @@ export default function EditionDetailsPage() {
                 {/* Image gallery */}
                 {images.length > 0 && (
                     <div className="border border-[#d6d0c8] bg-[#fafaf8] mb-px p-8">
-                        <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                        <h2 className=" text-[22px] font-normal text-[#1c1917] mb-5">
                             Images de l'<em className="italic text-[#78716c]">œuvre</em>
                         </h2>
                         {/* Main image */}
@@ -284,7 +284,7 @@ export default function EditionDetailsPage() {
 
                 {/* Artwork details */}
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] mb-px p-8">
-                    <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                    <h2 className=" text-[22px] font-normal text-[#1c1917] mb-5">
                         Informations de l'<em className="italic text-[#78716c]">œuvre</em>
                     </h2>
                     <div className="space-y-4">
@@ -329,7 +329,7 @@ export default function EditionDetailsPage() {
                 {/* Artist section */}
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] mb-px p-8">
                     <div className="flex items-start gap-6 mb-6 pb-6 border-b border-[#e7e3dc]">
-                        <h2 className="font-serif text-[22px] font-normal text-[#1c1917] flex-1">
+                        <h2 className=" text-[22px] font-normal text-[#1c1917] flex-1">
                             L'<em className="italic text-[#78716c]">artiste</em>
                         </h2>
                         {artistIPFSData?.logo && (
@@ -403,7 +403,7 @@ export default function EditionDetailsPage() {
                 {/* Reviews */}
                 {comments.length > 0 && (
                     <div className="border border-[#d6d0c8] bg-[#fafaf8] mb-px p-8">
-                        <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                        <h2 className=" text-[22px] font-normal text-[#1c1917] mb-5">
                             Avis des <em className="italic text-[#78716c]">collectionneurs</em>
                         </h2>
                         <div className="space-y-4">
@@ -428,7 +428,7 @@ export default function EditionDetailsPage() {
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                        <span className=" italic text-[13px] text-[#a8a29e]">Mona Editions</span>
                     </div>
                 </div>
             </div>

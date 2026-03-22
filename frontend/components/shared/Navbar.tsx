@@ -92,14 +92,10 @@ export default function Navbar() {
                 {/* Logo */}
                 <a href="/" className="flex items-center gap-2.5 group no-underline">
                     <img 
-                        src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
-                        className="w-[34px] h-[34px] object-contain flex-shrink-0"
+                        src="/logo-mona.svg" 
+                        alt="Mona Editions Logo" 
+                        className="w-[100px] h-[100px] object-contain flex-shrink-0"
                     />
-                    <div className="flex flex-col leading-none">
-                        <span className="font-serif text-[17px] text-[#1c1917] tracking-[0.01em]">Kigen</span>
-                       
-                    </div>
                 </a>
 
                 {/* Center links */}
@@ -124,7 +120,7 @@ export default function Navbar() {
                         <div
                             onClick={() => setIsOpen(!isOpen)}
                             className="w-8 h-8 border border-[#d6d0c8] bg-[#fafaf8] flex items-center justify-center
-                                font-serif italic text-sm text-[#78716c] cursor-pointer
+                                 italic text-sm text-[#78716c] cursor-pointer
                                 hover:border-[#1c1917] hover:text-[#1c1917] transition-all duration-200">
                             {user?.email?.address?.[0]?.toUpperCase() ?? '?'}
                         </div>
@@ -256,7 +252,7 @@ export default function Navbar() {
 
                     {/* Panel footer */}
                     <div className="px-6 py-4 border-t border-[#d6d0c8] flex items-center justify-between">
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                        <span className=" italic text-[13px] text-[#a8a29e]">Mona Editions</span>
                         <span className="flex items-center gap-1.5 text-[10px] font-light text-[#a8a29e]">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#4a5240] inline-block" />
                             {networkName}

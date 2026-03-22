@@ -7,8 +7,8 @@ const faqs = [
         category: "La plateforme",
         items: [
             {
-                q: "Qu'est-ce que Kigen ?",
-                a: "Kigen est une plateforme de certification d'œuvres d'art sur la blockchain Ethereum. Chaque œuvre certifiée reçoit un certificat numérique permanent, infalsifiable et vérifiable par tous."
+                q: "Qu'est-ce que Mona Editions ?",
+                a: "Mona Editions est une plateforme de certification d'œuvres d'art sur la blockchain Ethereum. Chaque œuvre certifiée reçoit un certificat numérique permanent, infalsifiable et vérifiable par tous."
             },
             {
                 q: "Comment fonctionne la certification ?",
@@ -16,7 +16,7 @@ const faqs = [
             },
             {
                 q: "La blockchain utilisée est-elle fiable ?",
-                a: "Oui. Kigen utilise le réseau Ethereum (testnet Sepolia en phase de test). Les données enregistrées sur la blockchain sont immuables et permanentes : elles ne peuvent pas être modifiées ou supprimées."
+                a: "Oui. Mona Editions utilise le réseau Ethereum (testnet Sepolia en phase de test). Les données enregistrées sur la blockchain sont immuables et permanentes : elles ne peuvent pas être modifiées ou supprimées."
             },
         ]
     },
@@ -24,7 +24,7 @@ const faqs = [
         category: "Pour les artistes",
         items: [
             {
-                q: "Comment devenir artiste certifié sur Kigen ?",
+                q: "Comment devenir artiste certifié sur Mona Editions ?",
                 a: "L'accès artiste est soumis à validation manuelle. Contactez-nous via le formulaire de contact en précisant votre démarche artistique. Notre équipe étudiera votre demande."
             },
             {
@@ -46,7 +46,7 @@ const faqs = [
             },
             {
                 q: "Ai-je besoin d'un wallet crypto ?",
-                a: "Non. Kigen utilise Privy, qui vous permet de créer un wallet automatiquement via votre email. Aucune connaissance technique n'est requise."
+                a: "Non. Mona Editions utilise Privy, qui vous permet de créer un wallet automatiquement via votre email. Aucune connaissance technique n'est requise."
             },
             {
                 q: "Que prouve mon certificat ?",
@@ -65,15 +65,15 @@ export default function FaqPage() {
 
                 <div className="text-center mb-12">
                     <img 
-                        src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
-                        className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+                        src="/logo-mona.svg" 
+                        alt="Mona Editions Logo" 
+                        className="w-[100px] h-[100px] object-contain mx-auto mb-6"
                     />
-                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
+                    <h1 className=" text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
                         Questions <em className="italic text-[#78716c]">fréquentes</em>
                     </h1>
                     <p className="text-[14px] font-light text-[#78716c] mt-4 leading-[1.8]">
-                        Tout ce que vous devez savoir sur Kigen et la certification d'œuvres.
+                        Tout ce que vous devez savoir sur Mona Editions et la certification d'œuvres.
                     </p>
                 </div>
 

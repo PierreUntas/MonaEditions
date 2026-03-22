@@ -44,11 +44,11 @@ export default function ContactPage() {
 
                 <div className="text-center mb-12">
                     <img 
-                        src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
-                        className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+                        src="/logo-mona.svg" 
+                        alt="Mona Editions Logo" 
+                        className="w-[100px] h-[100px] object-contain mx-auto mb-6"
                     />
-                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
+                    <h1 className=" text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
                         Nous <em className="italic text-[#78716c]">contacter</em>
                     </h1>
                     <p className="text-[14px] font-light text-[#78716c] mt-4 leading-[1.8] max-w-md mx-auto">
@@ -58,7 +58,7 @@ export default function ContactPage() {
 
                 {sent ? (
                     <div className="border border-[#d6d0c8] bg-[#fafaf8] p-10 text-center">
-                        <p className="font-serif text-[22px] text-[#1c1917] mb-2">Message envoyé</p>
+                        <p className=" text-[22px] text-[#1c1917] mb-2">Message envoyé</p>
                         <p className="text-[14px] font-light text-[#78716c]">Nous vous répondrons à <strong>{form.email}</strong> dans les meilleurs délais.</p>
                     </div>
                 ) : (

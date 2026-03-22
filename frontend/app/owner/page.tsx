@@ -87,7 +87,7 @@ export default function AdminPage() {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="font-serif italic text-[22px] text-[#a8a29e]">Veuillez connecter votre wallet</p>
+                    <p className=" italic text-[22px] text-[#a8a29e]">Veuillez connecter votre wallet</p>
                 </div>
             </div>
         );
@@ -97,7 +97,7 @@ export default function AdminPage() {
         return (
             <div className="min-h-screen bg-[#f5f3ef]">
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className="font-serif italic text-[22px] text-[#a8a29e] text-center max-w-md px-6">
+                    <p className=" italic text-[22px] text-[#a8a29e] text-center max-w-md px-6">
                         Accès refusé : vous n'êtes pas le propriétaire du contrat
                     </p>
                 </div>
@@ -110,18 +110,18 @@ export default function AdminPage() {
             <div className="max-w-2xl mx-auto px-6 pt-28 pb-20">
                 <div className="text-center mb-12">
                     <img 
-                        src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
-                        className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+                        src="/logo-mona.svg" 
+                        alt="Mona Editions Logo" 
+                        className="w-[100px] h-[100px] object-contain mx-auto mb-6"
                     />
-                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
+                    <h1 className=" text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
                         Gestion des <em className="italic text-[#78716c]">Admins</em>
                     </h1>
                 </div>
 
                 {/* Add an admin */}
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
-                    <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                    <h2 className=" text-[22px] font-normal text-[#1c1917] mb-5">
                         Ajouter un <em className="italic text-[#78716c]">Admin</em>
                     </h2>
                     <form onSubmit={handleAddAdmin} className="space-y-4">
@@ -151,7 +151,7 @@ export default function AdminPage() {
 
                 {/* Remove an admin */}
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
-                    <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                    <h2 className=" text-[22px] font-normal text-[#1c1917] mb-5">
                         Retirer un <em className="italic text-[#78716c]">Admin</em>
                     </h2>
                     <form onSubmit={handleRemoveAdmin} className="space-y-4">
@@ -181,7 +181,7 @@ export default function AdminPage() {
 
                 {/* Check admin status */}
                 <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
-                    <h2 className="font-serif text-[22px] font-normal text-[#1c1917] mb-5">
+                    <h2 className=" text-[22px] font-normal text-[#1c1917] mb-5">
                         Vérifier le <em className="italic text-[#78716c]">Statut Admin</em>
                     </h2>
                     <div className="space-y-4">
@@ -210,7 +210,7 @@ export default function AdminPage() {
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                        <span className=" italic text-[13px] text-[#a8a29e]">Mona Editions</span>
                     </div>
                 </div>
             </div>

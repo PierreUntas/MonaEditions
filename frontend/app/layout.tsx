@@ -4,12 +4,12 @@ import "./globals.css";
 import Layout from "../components/shared/Layout";
 
 export const metadata: Metadata = {
-  title: "Kigen - Certification d'Art sur Blockchain",
-  description: "Kigen est une plateforme de certification d'œuvres d'art sur la blockchain, garantissant l'authenticité et la provenance de chaque création artistique.",
+  title: "Mona Editions - Certification d'Art sur Blockchain",
+  description: "Mona Editions est une plateforme de certification d'œuvres d'art sur la blockchain, garantissant l'authenticité et la provenance de chaque création artistique.",
   keywords: ["blockchain", "art", "certification", "NFT", "artiste", "collectionneur", "authenticité", "provenance", "Web3"],
-  authors: [{ name: "Kigen" }],
+  authors: [{ name: "Mona Editions" }],
   openGraph: {
-    title: "Kigen - Certification d'Art sur Blockchain",
+    title: "Mona Editions - Certification d'Art sur Blockchain",
     description: "Certification décentralisée d'œuvres d'art avec provenance vérifiable",
     type: "website",
   },

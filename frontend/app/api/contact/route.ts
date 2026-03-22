@@ -18,10 +18,10 @@ export async function POST(request: NextRequest) {
 
     // Send email via Resend
     const { data, error } = await resend.emails.send({
-      from: 'Kigen Contact <onboarding@resend.dev>', // Use your verified domain in production
+      from: 'Mona Editions Contact <onboarding@resend.dev>', // Use your verified domain in production
       to: ['pierre.untas@gmail.com'], // Destination email
       replyTo: email,
-      subject: `[Kigen Contact] ${subject}`,
+      subject: `[Mona Editions Contact] ${subject}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #1c1917; border-bottom: 1px solid #d6d0c8; padding-bottom: 10px;">
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
           </div>
           
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #d6d0c8; font-size: 12px; color: #a8a29e;">
-            <p>Kigen - Plateforme de certification d'œuvres d'art</p>
+            <p>Mona Editions - Plateforme de certification d'œuvres d'art</p>
           </div>
         </div>
       `,

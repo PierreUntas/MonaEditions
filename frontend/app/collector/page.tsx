@@ -159,11 +159,11 @@ export default function CollectorPage() {
             <div className="max-w-[860px] mx-auto px-6 pt-28 pb-20">
                 <div className="text-center mb-12">
                     <img 
-                        src="/logo-kigen.png" 
-                        alt="Kigen Logo" 
-                        className="w-[52px] h-[52px] object-contain mx-auto mb-6"
+                        src="/logo-mona.svg" 
+                        alt="Mona Editions Logo" 
+                        className="w-[100px] h-[100px] object-contain mx-auto mb-6"
                     />
-                    <h1 className="font-serif text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
+                    <h1 className=" text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
                         Mes <em className="italic text-[#78716c]">Certificats</em>
                     </h1>
                 </div>
@@ -175,7 +175,7 @@ export default function CollectorPage() {
                     </div>
                 ) : ownedTokens.length === 0 ? (
                     <div className="border border-[#d6d0c8] bg-[#fafaf8] p-12 text-center">
-                        <p className="font-serif italic text-[18px] text-[#78716c] mb-6">
+                        <p className=" italic text-[18px] text-[#78716c] mb-6">
                             Vous ne possédez pas encore de certificat
                         </p>
                         <Link
@@ -191,7 +191,7 @@ export default function CollectorPage() {
                             <div key={token.tokenId.toString()} className="border border-[#d6d0c8] bg-[#fafaf8] p-8">
                                 <div className="flex justify-between items-start mb-6">
                                     <div>
-                                        <h2 className="font-serif text-[28px] font-normal text-[#1c1917] mb-2 leading-tight">
+                                        <h2 className=" text-[28px] font-normal text-[#1c1917] mb-2 leading-tight">
                                             {token.title}
                                         </h2>
                                         <p className="text-[12px] font-light tracking-[0.06em] text-[#a8a29e] mb-1">
@@ -210,7 +210,7 @@ export default function CollectorPage() {
                                         <p className="text-[11px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
                                             Exemplaires
                                         </p>
-                                        <p className="font-serif text-[36px] font-normal text-[#1c1917] leading-none">
+                                        <p className=" text-[36px] font-normal text-[#1c1917] leading-none">
                                             {token.balance.toString()}
                                         </p>
                                     </div>
@@ -241,7 +241,7 @@ export default function CollectorPage() {
                 {selectedToken && (
                     <div className="fixed inset-0 bg-[#1c1917]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 max-w-md w-full">
-                            <h3 className="font-serif text-[28px] font-normal text-[#1c1917] mb-6 leading-tight">
+                            <h3 className=" text-[28px] font-normal text-[#1c1917] mb-6 leading-tight">
                                 Laisser un avis
                             </h3>
                             <form onSubmit={handleAddComment} className="space-y-5">
@@ -306,7 +306,7 @@ export default function CollectorPage() {
                 <div className="flex justify-center mt-20">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-px h-12 bg-[#d6d0c8]" />
-                        <span className="font-serif italic text-[13px] text-[#a8a29e]">Kigen</span>
+                        <span className=" italic text-[13px] text-[#a8a29e]">Mona Editions</span>
                     </div>
                 </div>
             </div>

@@ -121,7 +121,14 @@ export default function CreateEditionPage() {
         setAmount(value);
         if (value) {
             const count = parseInt(value);
-            if (count > 0 && count <= 100000) {
+            if (count > 100) {
+                alert('La taille de l\'édition ne peut pas dépasser 100 exemplaires pour limiter les coûts de gas.');
+                setAmount('');
+                setSecretKeys([]);
+                setMerkleRoot('');
+                setMerkleTree(null);
+                setEditionData(prev => ({ ...prev, editionSize: 0 }));
+            } else if (count > 0 && count <= 100) {
                 const keys = generateSecretKeys(count);
                 setSecretKeys(keys);
                 setEditionData(prev => ({ ...prev, editionSize: count }));
@@ -625,7 +632,7 @@ export default function CreateEditionPage() {
                                 className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors"
                                 placeholder="Ex: 50"
                                 min="1"
-                                max="100000"
+                                max="100"
                                 required
                             />
                         </div>

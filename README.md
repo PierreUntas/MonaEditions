@@ -248,7 +248,7 @@ Par défaut configuré sur **Base Mainnet**. Pour changer de réseau, modifiez :
 - Création d'édition : `/artist/editions/create`
 - Mes éditions : `/artist/editions`
 
-### �️ Collectionneur
+### Collectionneur
 
 **Capacités** :
 - Scan du QR code sur l'œuvre
@@ -396,7 +396,7 @@ Informations affichées :
 - Expositions
 - Contact
 
-## 🎨 Design System
+## Design System
 
 ### Couleurs
 

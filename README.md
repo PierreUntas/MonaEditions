@@ -1,23 +1,23 @@
-# � Mona Editions – Certification d'Art sur Blockchain
+# Mona Editions – Certification d'Art sur Blockchain
 
 Une plateforme de certification qui restaure la confiance entre artistes et collectionneurs grâce à la blockchain.
 
 > Projet de fin de formation **Développeur Blockchain** chez [Alyra](https://www.alyra.fr/)
 
-## 📋 Présentation
+## Présentation
 
 **Mona Editions** est une plateforme de certification d'œuvres d'art qui redonne de la confiance entre artistes et collectionneurs. En scannant un simple QR code sur une œuvre, vous accédez instantanément à son histoire : titre, artiste, édition, provenance, authenticité.
 
 Grâce à la blockchain, ces informations sont enregistrées de façon infalsifiable. Chaque œuvre possède un certificat de propriété transférable, permettant de tracer son historique complet. Mona Editions valorise ainsi les artistes indépendants, lutte contre la contrefaçon et permet aux collectionneurs d'acquérir des œuvres avec une provenance vérifiable.
 
-### 🔐 Système de certificat numérique
+### Système de certificat numérique
 
 - **QR Code sur l'œuvre** : Redirige vers la page de l'édition pour consulter les informations d'authenticité
 - **Certificat claimable** : Contient la clé secrète permettant de claim le certificat de propriété
 
 Ce système garantit que seuls les propriétaires légitimes peuvent recevoir leur certificat.
 
-## 🏗️ Architecture
+## Architecture
 
 ### Backend (Hardhat)
 
@@ -90,7 +90,7 @@ frontend/
     └── utils.ts
 ```
 
-## 🚀 Installation
+## Installation
 
 ### Prérequis
 
@@ -185,7 +185,7 @@ npm run dev
 
 L'application sera disponible sur `http://localhost:3000`
 
-## 🔧 Configuration
+## Configuration
 
 ### Contrats
 
@@ -214,9 +214,9 @@ Par défaut configuré sur **Base Mainnet**. Pour changer de réseau, modifiez :
 2. Générer un JWT dans le dashboard API Keys
 3. Ajouter le JWT dans `.env.local`
 
-## 👥 Rôles utilisateurs
+## Rôles utilisateurs
 
-### 🔐 Propriétaire (Owner)
+### Propriétaire (Owner)
 
 
 **Capacités** :
@@ -226,7 +226,7 @@ Par défaut configuré sur **Base Mainnet**. Pour changer de réseau, modifiez :
 
 **Interface** : `/owner`
 
-### 👨‍💼 Admin
+### Admin
 
 **Capacités** :
 - Autorisation/révocation d'artistes
@@ -235,7 +235,7 @@ Par défaut configuré sur **Base Mainnet**. Pour changer de réseau, modifiez :
 
 **Interface** : `/admin`
 
-### 🎨 Artiste
+### Artiste
 
 **Capacités** :
 - Enregistrement du profil (nom, bio, style artistique)
@@ -260,7 +260,7 @@ Par défaut configuré sur **Base Mainnet**. Pour changer de réseau, modifiez :
 - Claim : `/collector/claim`
 - Explorer : `/explore/editions`
 
-## 🔑 Workflow de certification
+## Workflow de certification
 
 ### 1. Enregistrement de l'artiste
 
@@ -367,7 +367,7 @@ Une fois le certificat réclamé :
 - Le collectionneur a accès à toutes les informations de l'œuvre
 - Le certificat peut être transféré lors d'une revente
 
-## 🔍 Explorer les œuvres
+## Explorer les œuvres
 
 ### Page d'exploration (`/explore/editions`)
 
@@ -423,7 +423,7 @@ Informations affichées :
 - Inputs avec style épuré
 - Grid system pour galeries d'œuvres
 
-## 📦 Technologies utilisées
+## Technologies utilisées
 
 ### Smart Contracts
 
@@ -449,7 +449,7 @@ Informations affichées :
 - **Sepolia** - Blockchain testnet
 - **Nœud Ethereum personnel** - Raspberry Pi 5 (spacewolf.web3pi.link)
 
-## 🔐 Sécurité
+## Sécurité
 
 ### Merkle Tree
 
@@ -520,7 +520,7 @@ function createArtworkEdition(...) public onlyAuthorizedArtist {
 - Messages d'erreur typés et explicites
 - Meilleure expérience développeur avec les outils modernes
 
-## 📱 Responsive Design
+## Responsive Design
 
 L'application est entièrement responsive :
 
@@ -538,7 +538,7 @@ xl: '1280px'
 ```
 
 
-## 🌐 Déploiement
+## Déploiement
 
 ### Frontend (Vercel)
 
@@ -586,7 +586,7 @@ npx hardhat ignition deploy ignition/modules/ArtworkCertificationSystem.ts --net
 
 Les adresses seront affichées après chaque déploiement.
 
-## 📚 Ressources
+## Ressources
 
 ### Documentation
 
@@ -607,9 +607,9 @@ Les adresses seront affichées après chaque déploiement.
 - [ArtworkRegistry](https://basescan.org/address/0xB70Dda9838E6b9cdb77e6fdAdC27733C1d12289E)
 - [ArtworkTokenization](https://basescan.org/address/0x65d2dfAbCF50b618e3b1084fc20c4559AAD034DA)
 
-## 🚀 Roadmap
+## Roadmap
 
-### Phase 1 ✅ (Actuelle)
+### Phase 1 (Actuelle)
 - [x] Smart contracts de base
 - [x] Interface artiste complète
 - [x] Système de claim avec Merkle Tree
@@ -617,13 +617,13 @@ Les adresses seront affichées après chaque déploiement.
 - [x] Stockage IPFS
 - [x] Authentification Privy (email + wallet)
 
-### Phase 2 🔄 (En cours)
+### Phase 2 (En cours)
 - [ ] Historique des transferts de certificats
 - [ ] Profils publics d'artistes enrichis
 - [ ] Notifications email
 - [ ] Support multi-langues (FR/EN)
 
-### Phase 3 📋 (Prévu)
+### Phase 3 (Prévu)
 - [x] Déploiement sur Base mainnet
 - [ ] Marketplace secondaire d'œuvres
 - [ ] Système de royalties pour artistes
@@ -631,15 +631,15 @@ Les adresses seront affichées après chaque déploiement.
 - [ ] Analytics avancées
 - [ ] Application mobile
 
-## 👨‍💻 Équipe
+## Équipe
 
 Projet développé par Pierre Untas en formation développeur blockchain chez Alyra et 4 collaborateurs en formation consultant blockchain : Nicolas Lesty, Vincent Forli, Julien Ruiz et Etienne Regis.
 
-## 📄 Licence
+## Licence
 
 Ce projet est sous licence MIT.
 
-## 🤝 Contribution
+## Contribution
 
 Les contributions sont les bienvenues ! N'hésitez pas à :
 
@@ -649,16 +649,11 @@ Les contributions sont les bienvenues ! N'hésitez pas à :
 4. Push sur la branche (`git push origin feature/AmazingFeature`)
 5. Ouvrir une Pull Request
 
-## 📧 Contact
+## Contact
 
 Pour toute question ou suggestion :
 - GitHub : [@PierreUntas](https://github.com/pierreuntas)
 - Email : pierre.untas@gmail.com
 
----
-
-**Mona Editions** – *L'authenticité. Vérifiable.* 🎨✨
-
-*Développé avec ❤️ pour valoriser le travail des artistes et protéger les collectionneurs*
 
 

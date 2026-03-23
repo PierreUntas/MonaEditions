@@ -21,7 +21,7 @@ Ce système garantit que seuls les propriétaires légitimes peuvent recevoir le
 
 ### Backend (Hardhat)
 
-Le projet utilise 2 smart contracts principaux déployés sur **Sepolia Testnet** :
+Le projet utilise 2 smart contracts principaux déployés sur **Base Mainnet** :
 
 - **ArtworkRegistry** : Contrat principal
   - Gestion des artistes et éditions d'œuvres
@@ -34,7 +34,9 @@ Le projet utilise 2 smart contracts principaux déployés sur **Sepolia Testnet*
   - Gestion des transferts et balances
   - Un token ID = une édition d'œuvre
 
-**Infrastructure** : Nœud Ethereum Sepolia auto-hébergé sur Raspberry Pi 5
+**Réseaux disponibles** :
+- **Production** : Base Mainnet (L2 Ethereum) via Infura
+- **Développement** : Sepolia Testnet via Infura/Alchemy
 
 ```
 contracts/
@@ -119,7 +121,10 @@ npx hardhat coverage
 npx hardhat node
 npx hardhat ignition deploy ignition/modules/ArtworkCertificationSystem.ts --network localhost
 
-# Sepolia testnet
+# Base mainnet (production)
+npx hardhat ignition deploy ignition/modules/ArtworkCertificationSystem.ts --network base
+
+# Sepolia testnet (développement)
 npx hardhat ignition deploy ignition/modules/ArtworkCertificationSystem.ts --network sepolia
 ```
 
@@ -130,19 +135,47 @@ cd frontend
 npm install
 ```
 
-Créer un fichier `.env.local` :
+Créer un fichier `.env` :
 
 ```env
+# Environnement (development ou production)
+NEXT_PUBLIC_ENVIRONMENT=production
+
+# RPC URL - Base Mainnet
+NEXT_PUBLIC_RPC_URL_BASE=https://base-mainnet.infura.io/v3/VOTRE_INFURA_KEY
+
+# Adresses des smart contracts - Base Network
+NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS=0xB70Dda9838E6b9cdb77e6fdAdC27733C1d12289E
+NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS=0x65d2dfAbCF50b618e3b1084fc20c4559AAD034DA
+
+# (Optionnel) Adresses pour Sepolia Testnet - Développement uniquement
+# NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS=0xdEB44263bCE9AE897213901B548b1B271DB99B58
+# NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS=0x084B23B6e9134f357714B476CA058e920DFeF176
+# NEXT_PUBLIC_PERSONNAL_RPC_URL_SEPOLIA=https://eth-sepolia.g.alchemy.com/v2/VOTRE_ALCHEMY_KEY
+
 # Pinata pour IPFS
-NEXT_PUBLIC_PINATA_JWT=votre_jwt_pinata
+PINATA_JWT=votre_jwt_pinata
+IPFS_GATEWAY_URL=https://gateway.pinata.cloud/ipfs/
 
-# Nœud Ethereum personnel (Raspberry Pi 5)
-NEXT_PUBLIC_PERSONNAL_RPC_URL_SEPOLIA=https://spacewolf.web3pi.link
+# Privy pour l'authentification
+NEXT_PUBLIC_PRIVY_APP_ID=votre_privy_app_id
 
-# Adresses des smart contracts
-NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS=0x...
-NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS=0x...
+# Resend pour les emails (optionnel)
+RESEND_API_KEY=votre_resend_api_key
 ```
+
+**Variables requises** :
+- `NEXT_PUBLIC_ENVIRONMENT` : Définit l'environnement (development/production)
+- `NEXT_PUBLIC_RPC_URL_BASE` : URL RPC pour Base mainnet (Infura, Alchemy, etc.)
+- `NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS` : Adresse du contrat ArtworkRegistry
+- `NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS` : Adresse du contrat ArtworkTokenization
+- `PINATA_JWT` : Token JWT Pinata pour uploader sur IPFS
+- `IPFS_GATEWAY_URL` : Gateway IPFS pour récupérer les fichiers
+- `NEXT_PUBLIC_PRIVY_APP_ID` : App ID Privy pour l'authentification
+
+**Variables optionnelles** :
+- `RESEND_API_KEY` : Pour l'envoi d'emails de notification
+- `NEXT_PUBLIC_PERSONNAL_RPC_URL_SEPOLIA` : RPC Sepolia (Infura/Alchemy) pour le développement
 
 Lancer le serveur de développement :
 
@@ -165,10 +198,15 @@ export const ARTWORK_TOKENIZATION_ADDRESS = '0x...';
 
 ### Réseau Blockchain
 
-Par défaut configuré sur **Sepolia**. Pour changer de réseau, modifiez :
+Par défaut configuré sur **Base Mainnet**. Pour changer de réseau, modifiez :
 
 - `contracts/hardhat.config.ts` (backend)
 - `frontend/config/wagmi.ts` (frontend)
+- Variables d'environnement `.env`
+
+**Réseaux disponibles** :
+- **Base Mainnet** (production) - L2 avec frais réduits
+- **Sepolia Testnet** (développement) - Pour les tests
 
 ### IPFS (Pinata)
 
@@ -516,21 +554,37 @@ vercel --prod
 ```
 
 Variables d'environnement à configurer sur Vercel :
-- `NEXT_PUBLIC_PINATA_JWT` (pour IPFS)
-- `NEXT_PUBLIC_PERSONNAL_RPC_URL_SEPOLIA`
-- `NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS`
-- `NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS`
-- `NEXT_PUBLIC_PRIVY_APP_ID`
 
-### Smart Contracts (Sepolia)
+**Requises** :
+- `NEXT_PUBLIC_ENVIRONMENT` - Environment (production)
+- `NEXT_PUBLIC_RPC_URL_BASE` - RPC URL Base Mainnet
+- `NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS` - Adresse contrat Registry
+- `NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS` - Adresse contrat Tokenization
+- `PINATA_JWT` - Token Pinata pour IPFS
+- `IPFS_GATEWAY_URL` - Gateway IPFS
+- `NEXT_PUBLIC_PRIVY_APP_ID` - App ID Privy
+
+**Optionnelles** :
+- `RESEND_API_KEY` - Pour les emails
+- `NEXT_PUBLIC_PERSONNAL_RPC_URL_SEPOLIA` - Si vous utilisez Sepolia
+
+### Smart Contracts
 
 Pour déployer les contrats :
 
 ```bash
+# Base Mainnet (production)
+npx hardhat ignition deploy ignition/modules/ArtworkCertificationSystem.ts --network base
+
+# Sepolia Testnet (développement)
 npx hardhat ignition deploy ignition/modules/ArtworkCertificationSystem.ts --network sepolia
 ```
 
-Les adresses seront affichées après le déploiement.
+**Contrats actuellement déployés sur Base Mainnet** :
+- ArtworkRegistry : `0xB70Dda9838E6b9cdb77e6fdAdC27733C1d12289E`
+- ArtworkTokenization : `0x65d2dfAbCF50b618e3b1084fc20c4559AAD034DA`
+
+Les adresses seront affichées après chaque déploiement.
 
 ## 📚 Ressources
 
@@ -546,8 +600,12 @@ Les adresses seront affichées après le déploiement.
 
 ### Explorateurs
 
-- [Sepolia Etherscan](https://sepolia.etherscan.io)
-- Vérifiez les adresses des contrats après déploiement
+- [BaseScan](https://basescan.org) - Explorateur Base Mainnet
+- [Sepolia Etherscan](https://sepolia.etherscan.io) - Explorateur Sepolia Testnet
+
+**Contrats sur BaseScan** :
+- [ArtworkRegistry](https://basescan.org/address/0xB70Dda9838E6b9cdb77e6fdAdC27733C1d12289E)
+- [ArtworkTokenization](https://basescan.org/address/0x65d2dfAbCF50b618e3b1084fc20c4559AAD034DA)
 
 ## 🚀 Roadmap
 
@@ -566,7 +624,7 @@ Les adresses seront affichées après le déploiement.
 - [ ] Support multi-langues (FR/EN)
 
 ### Phase 3 📋 (Prévu)
-- [ ] Déploiement sur mainnet
+- [x] Déploiement sur Base mainnet
 - [ ] Marketplace secondaire d'œuvres
 - [ ] Système de royalties pour artistes
 - [ ] API publique pour galeries

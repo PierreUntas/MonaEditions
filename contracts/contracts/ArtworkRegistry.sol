@@ -94,8 +94,8 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
      */
     struct Review {
         address collector;
-        uint editionId;
         uint8 rating;
+        uint editionId;
         string metadata;
     }
 
@@ -173,10 +173,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
      * @param collector Address of the collector
      * @param editionId ID of the claimed edition
      */
-    event CertificateClaimed(
-        address indexed collector,
-        uint indexed editionId
-    );
+    event CertificateClaimed(address indexed collector, uint indexed editionId);
 
     /**
      * @dev Emitted when a collector adds a review to an edition
@@ -310,7 +307,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
      */
     function addAdmin(address _newAdmin) external onlyOwner {
         require(!admins[_newAdmin], AlreadyAdmin());
-        
+
         admins[_newAdmin] = true;
         emit NewAdmin(_newAdmin);
     }
@@ -327,7 +324,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
      */
     function removeAdmin(address _admin) external onlyOwner {
         require(admins[_admin], NotAnAdmin());
-        
+
         admins[_admin] = false;
         emit AdminRemoved(_admin);
     }
@@ -559,6 +556,8 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
         uint8 _rating,
         string memory _metadata
     ) external {
+        require(artworkEditions[_editionId].merkleRoot != bytes32(0), EditionDoesNotExist());
+
         require(
             artworkTokenization.balanceOf(msg.sender, _editionId) > 0,
             NotAllowedToReview()
@@ -577,7 +576,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
         );
 
         editionReviews[_editionId].push(
-            Review(msg.sender, _editionId, _rating, _metadata)
+            Review(msg.sender, _rating,  _editionId, _metadata)
         );
 
         reviewCount[_editionId][msg.sender]++;
@@ -592,9 +591,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
      * @param _address Address of the artist to query
      * @return Artist struct containing all artist information
      */
-    function getArtist(
-        address _address
-    ) external view returns (Artist memory) {
+    function getArtist(address _address) external view returns (Artist memory) {
         return artists[_address];
     }
 
@@ -696,9 +693,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
      * - Frontend can warn artists if they haven't approved yet
      * - Artists can verify their approval status before creating editions
      */
-    function isArtistApproved(
-        address _artist
-    ) external view returns (bool) {
+    function isArtistApproved(address _artist) external view returns (bool) {
         return artworkTokenization.isApprovedForAll(_artist, address(this));
     }
 }

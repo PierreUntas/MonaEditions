@@ -32,9 +32,21 @@ jobs:
 
       - name: Compile contracts
         run: npx hardhat compile
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          SEPOLIA_PRIVATE_KEY: ${{ secrets.SEPOLIA_PRIVATE_KEY }}
+          BASE_RPC_URL: ${{ secrets.BASE_RPC_URL }}
+          BASE_PRIVATE_KEY: ${{ secrets.BASE_PRIVATE_KEY }}
+          BASESCAN_API_KEY: ${{ secrets.BASESCAN_API_KEY }}
 
       - name: Run tests
         run: npx hardhat test
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          SEPOLIA_PRIVATE_KEY: ${{ secrets.SEPOLIA_PRIVATE_KEY }}
+          BASE_RPC_URL: ${{ secrets.BASE_RPC_URL }}
+          BASE_PRIVATE_KEY: ${{ secrets.BASE_PRIVATE_KEY }}
+          BASESCAN_API_KEY: ${{ secrets.BASESCAN_API_KEY }}
 
   build-frontend:
     name: Build Frontend
@@ -59,3 +71,13 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          NEXT_PUBLIC_ENVIRONMENT: production
+          NEXT_PUBLIC_RPC_URL_BASE: ${{ secrets.NEXT_PUBLIC_RPC_URL_BASE }}
+          NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS: ${{ secrets.NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS }}
+          NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS: ${{ secrets.NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS }}
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+          IPFS_GATEWAY_URL: ${{ secrets.IPFS_GATEWAY_URL }}
+          NEXT_PUBLIC_PERSONNAL_RPC_URL_SEPOLIA: ${{ secrets.NEXT_PUBLIC_PERSONNAL_RPC_URL_SEPOLIA }}
+          NEXT_PUBLIC_PRIVY_APP_ID: ${{ secrets.NEXT_PUBLIC_PRIVY_APP_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

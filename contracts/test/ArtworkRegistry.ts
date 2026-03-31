@@ -78,14 +78,13 @@ describe("ArtworkRegistry", function () {
 
     describe("Administration", function () {
         it("Should add a new admin", async function () {
-            const adminAddress = admin.getAddress();
-            await artworkRegistry.addAdmin(adminAddress);
-            expect(await artworkRegistry.isAdmin(adminAddress)).to.equal(true);
+            await artworkRegistry.addAdmin(admin.getAddress());
+            expect(await artworkRegistry.isAdmin(admin.getAddress())).to.equal(true);
         })
 
         it("Should not allow non-owner to add a new admin", async function () {
-            const adminAddress = admin.getAddress();
-            await expect(artworkRegistry.connect(artist).addAdmin(adminAddress)).to.revertedWithCustomError(artworkRegistry, "OwnableUnauthorizedAccount");
+            await expect(artworkRegistry.connect(artist).addAdmin(artist.getAddress()))
+                .to.revertedWithCustomError(artworkRegistry, "OwnableUnauthorizedAccount");
         })
 
         it("Should allow multiple admins", async function () {
@@ -93,6 +92,28 @@ describe("ArtworkRegistry", function () {
             await artworkRegistry.addAdmin(artist.getAddress());
             expect(await artworkRegistry.isAdmin(admin.getAddress())).to.equal(true);
             expect(await artworkRegistry.isAdmin(artist.getAddress())).to.equal(true);
+        })
+
+        it("Should remove an admin", async function () {
+            await artworkRegistry.addAdmin(admin.getAddress());
+
+            await expect(artworkRegistry.removeAdmin(admin.getAddress()))
+                .to.emit(artworkRegistry, "AdminRemoved")
+                .withArgs(await admin.getAddress());
+
+            expect(await artworkRegistry.isAdmin(admin.getAddress())).to.equal(false);
+        })
+
+        it("Should not allow non-owner to remove an admin", async function () {
+            await artworkRegistry.addAdmin(admin.getAddress());
+
+            await expect(artworkRegistry.connect(artist).removeAdmin(admin.getAddress()))
+                .to.revertedWithCustomError(artworkRegistry, "OwnableUnauthorizedAccount");
+        })
+
+        it("Should not allow to remove a non-admin", async function () {
+            await expect(artworkRegistry.removeAdmin(artist.getAddress()))
+                .to.revertedWithCustomError(artworkRegistry, "NotAnAdmin");
         })
     })
 
@@ -138,36 +159,50 @@ describe("ArtworkRegistry", function () {
         const fakeCID = "QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest"
 
         it("Should set artist info", async function () {
-
             await artworkRegistry.connect(owner).addAdmin(admin.getAddress());
             await artworkRegistry.connect(admin).authorizeArtist(artist.getAddress(), true);
             await artworkRegistry.connect(artist).setArtistInfo(fakeCID);
 
             const newArtist = await artworkRegistry.getArtist(artist.getAddress());
-
             expect(newArtist.metadata).to.equal(fakeCID);
         })
 
         it("Should not allow non-authorized artist to set artist info", async function () {
-            await expect(artworkRegistry.connect(artist).setArtistInfo(fakeCID)).to.revertedWithCustomError(artworkRegistry, "ArtistNotAuthorized");
+            await expect(artworkRegistry.connect(artist).setArtistInfo(fakeCID))
+                .to.revertedWithCustomError(artworkRegistry, "ArtistNotAuthorized");
+        })
+
+        it("Should check isArtistApproved correctly", async function () {
+            await artworkRegistry.connect(owner).addAdmin(admin.getAddress());
+            await artworkRegistry.connect(admin).authorizeArtist(artist.getAddress(), true);
+            await artworkTokenization.connect(artist).setApprovalForAll(artworkRegistry.getAddress(), true);
+
+            expect(await artworkRegistry.isArtistApproved(artist.getAddress())).to.equal(true);
+
+            await artworkTokenization.connect(artist).setApprovalForAll(artworkRegistry.getAddress(), false);
+
+            expect(await artworkRegistry.isArtistApproved(artist.getAddress())).to.equal(false);
         })
     })
 
     describe("Artwork Editions", function () {
         const fakeCID = "QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest";
+        const newCID = "QmNewMetadataCIDCorrectLengthForTestingPurposesXX";
+        let edition: any;
+        let editionId: number;
 
         beforeEach(async function () {
+            edition = generateSecretKeys(5);
+            editionId = 1;
+
             await artworkRegistry.connect(owner).addAdmin(admin.getAddress());
             await artworkRegistry.connect(admin).authorizeArtist(artist.getAddress(), true);
             await artworkRegistry.connect(artist).setArtistInfo(fakeCID);
+            await artworkTokenization.connect(artist).setApprovalForAll(await artworkRegistry.getAddress(), true);
 
         })
 
         it("Should create an artwork edition", async function () {
-            const edition = generateSecretKeys(5);
-
-            // Artist must approve ArtworkRegistry to transfer certificates
-            await artworkTokenization.connect(artist).setApprovalForAll(await artworkRegistry.getAddress(), true);
 
             await expect(artworkRegistry.connect(artist).createArtworkEdition(fakeCID, 10, edition.merkleRoot))
                 .to.emit(artworkRegistry, "NewArtworkEdition")
@@ -180,11 +215,8 @@ describe("ArtworkRegistry", function () {
         })
 
         it("Should not allow non-authorized artist to create an artwork edition", async function () {
-            const edition = generateSecretKeys(5);
 
             await artworkRegistry.connect(admin).authorizeArtist(artist.getAddress(), false);
-
-            await artworkTokenization.connect(artist).setApprovalForAll(await artworkRegistry.getAddress(), true);
 
             await expect(artworkRegistry.connect(artist).createArtworkEdition(fakeCID, 10, edition.merkleRoot)).to.revertedWithCustomError(artworkRegistry, "ArtistNotAuthorized");
         })
@@ -192,8 +224,6 @@ describe("ArtworkRegistry", function () {
         it("Should allow to set multiple artwork editions", async function () {
             const edition1 = generateSecretKeys(5);
             const edition2 = generateSecretKeys(5);
-
-            await artworkTokenization.connect(artist).setApprovalForAll(await artworkRegistry.getAddress(), true);
 
             await expect(artworkRegistry.connect(artist).createArtworkEdition(fakeCID, 10, edition1.merkleRoot))
                 .to.emit(artworkRegistry, "NewArtworkEdition")
@@ -210,6 +240,52 @@ describe("ArtworkRegistry", function () {
             expect(artworkEdition1.merkleRoot).to.equal(edition1.merkleRoot);
             expect(artworkEdition2.metadata).to.equal(fakeCID);
             expect(artworkEdition2.merkleRoot).to.equal(edition2.merkleRoot);
+        })
+
+        it("Should allow artist to update metadata before any claim", async function () {
+            await artworkRegistry.connect(artist).createArtworkEdition(fakeCID, 5, edition.merkleRoot);
+
+            await expect(artworkRegistry.connect(artist).updateEditionMetadata(editionId, newCID))
+                .to.emit(artworkRegistry, "EditionMetadataUpdated")
+                .withArgs(await artist.getAddress(), editionId, newCID);
+
+            const artworkEdition = await artworkRegistry.getArtworkEdition(editionId);
+            expect(artworkEdition.metadata).to.equal(newCID);
+        })
+
+        it("Should not allow to update metadata after a claim", async function () {
+            await artworkRegistry.connect(artist).createArtworkEdition(fakeCID, 5, edition.merkleRoot);
+
+            const keyData = edition.keyWithProofs[0];
+            await artworkRegistry.connect(collector).claimCertificate(editionId, keyData.secretKey, keyData.proof);
+
+            await expect(artworkRegistry.connect(artist).updateEditionMetadata(editionId, newCID))
+                .to.revertedWithCustomError(artworkRegistry, "MetadataLocked");
+        })
+
+        it("Should not allow another artist to update metadata", async function () {
+            await artworkRegistry.connect(artist).createArtworkEdition(fakeCID, 5, edition.merkleRoot);
+            await artworkRegistry.connect(admin).authorizeArtist(collector.getAddress(), true);
+
+            await expect(artworkRegistry.connect(collector).updateEditionMetadata(editionId, newCID))
+                .to.revertedWithCustomError(artworkRegistry, "NotYourEdition");
+        })
+
+        it("Should set hasBeenClaimed to true after first claim", async function () {
+            await artworkRegistry.connect(artist).createArtworkEdition(fakeCID, 5, edition.merkleRoot);
+
+            const keyData = edition.keyWithProofs[0];
+
+            expect(await artworkRegistry.isEditionLocked(editionId)).to.equal(false);
+
+            await artworkRegistry.connect(collector).claimCertificate(editionId, keyData.secretKey, keyData.proof);
+
+            expect(await artworkRegistry.isEditionLocked(editionId)).to.equal(true);
+        })
+
+        it("Should not allow to update metadata for non-existing edition", async function () {
+            await expect(artworkRegistry.connect(artist).updateEditionMetadata(999, newCID))
+                .to.revertedWithCustomError(artworkRegistry, "EditionDoesNotExist");
         })
     })
 
@@ -344,11 +420,50 @@ describe("ArtworkRegistry", function () {
             await artworkRegistry.connect(collector).addReview(editionId, 4, fakeCID);
             await expect(artworkRegistry.connect(collector).addReview(editionId, 3, fakeCID)).to.revertedWithCustomError(artworkRegistry, "ReviewLimitReached");
         })
+
+        it("Should return correct total review count", async function () {
+            const keyData = edition.keyWithProofs[0];
+            await artworkRegistry.connect(collector).claimCertificate(editionId, keyData.secretKey, keyData.proof);
+
+            await artworkRegistry.connect(collector).addReview(editionId, 5, fakeCID);
+            await artworkRegistry.connect(collector).addReview(editionId, 4, fakeCID);
+
+            const count = await artworkRegistry.getEditionReviewsCount(editionId);
+            expect(count).to.equal(2);
+        })
+
+        it("Should paginate reviews correctly", async function () {
+            const keyData1 = edition.keyWithProofs[0];
+            await artworkRegistry.connect(collector).claimCertificate(editionId, keyData1.secretKey, keyData1.proof);
+            await artworkRegistry.connect(collector).addReview(editionId, 5, fakeCID);
+            await artworkRegistry.connect(collector).addReview(editionId, 4, fakeCID);
+
+            const keyData2 = edition.keyWithProofs[1];
+            await artworkRegistry.connect(collector2).claimCertificate(editionId, keyData2.secretKey, keyData2.proof);
+            await artworkRegistry.connect(collector2).addReview(editionId, 3, fakeCID);
+
+            const page1 = await artworkRegistry.getEditionReviews(editionId, 0, 2);
+            expect(page1.length).to.equal(2);
+
+            const page2 = await artworkRegistry.getEditionReviews(editionId, 2, 2);
+            expect(page2.length).to.equal(1);
+        })
+
+        it("Should return empty array when startIndex is beyond total", async function () {
+            const reviews = await artworkRegistry.getEditionReviews(editionId, 99, 10);
+            expect(reviews.length).to.equal(0);
+        })
+
+        it("Should revert when limit exceeds MAX_REVIEWS_QUERY", async function () {
+            await expect(artworkRegistry.getEditionReviews(editionId, 0, 101))
+                .to.revertedWithCustomError(artworkRegistry, "QueryLimitTooHigh");
+        })
     })
 
     describe("ArtworkTokenization Contract", function () {
         let edition: any;
         let editionId: number;
+        let artworkTokenizationDirect: any;
         const fakeCID = "QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest";
 
         beforeEach(async function () {
@@ -359,6 +474,9 @@ describe("ArtworkRegistry", function () {
             await artworkRegistry.connect(admin).authorizeArtist(artist.getAddress(), true);
             await artworkTokenization.connect(artist).setApprovalForAll(artworkRegistry.getAddress(), true);
             await artworkRegistry.connect(artist).createArtworkEdition(fakeCID, 5, edition.merkleRoot);
+
+            const ArtworkTokenization = await ethers.getContractFactory("ArtworkTokenization");
+            artworkTokenizationDirect = await ArtworkTokenization.deploy("");
         })
 
         it("Should return the correct URI for tokens", async function () {
@@ -379,8 +497,49 @@ describe("ArtworkRegistry", function () {
             expect(tokenArtist).to.equal(await artist.getAddress());
         })
 
-        it("Should not allow direct minting of tokens (only through ArtworkRegistry", async function () {
-            await expect(artworkTokenization.connect(artist).mintArtworkEdition(artist.getAddress(), 5, "")).to.revertedWithCustomError(artworkTokenization, "OwnableUnauthorizedAccount");
+        it("Should not allow direct minting of tokens (only through ArtworkRegistry)", async function () {
+            await expect(artworkTokenization.connect(artist).mintArtworkEdition(artist.getAddress(), 5, fakeCID))
+                .to.revertedWithCustomError(artworkTokenization, "OwnableUnauthorizedAccount");
+        })
+
+        it("Should revert when minting with zero address", async function () {
+            await expect(
+                artworkTokenizationDirect.connect(owner).mintArtworkEdition(
+                    ethers.ZeroAddress,
+                    5,
+                    fakeCID
+                )
+            ).to.revertedWithCustomError(artworkTokenizationDirect, "InvalidArtistAddress");
+        })
+
+        it("Should revert when minting with zero amount", async function () {
+            await expect(
+                artworkTokenizationDirect.connect(owner).mintArtworkEdition(
+                    artist.getAddress(),
+                    0,
+                    fakeCID
+                )
+            ).to.revertedWithCustomError(artworkTokenizationDirect, "InvalidAmount");
+        })
+
+        it("Should revert when minting with CID too short", async function () {
+            await expect(
+                artworkTokenizationDirect.connect(owner).mintArtworkEdition(
+                    artist.getAddress(),
+                    5,
+                    "QmTooShort"
+                )
+            ).to.revertedWithCustomError(artworkTokenizationDirect, "InvalidIPFSCID");
+        })
+
+        it("Should revert when minting with CID too long", async function () {
+            await expect(
+                artworkTokenizationDirect.connect(owner).mintArtworkEdition(
+                    artist.getAddress(),
+                    5,
+                    "Qm" + "a".repeat(100)
+                )
+            ).to.revertedWithCustomError(artworkTokenizationDirect, "InvalidIPFSCID");
         })
     })
 
@@ -397,7 +556,7 @@ describe("ArtworkRegistry", function () {
             const tx = await artworkRegistry.connect(artist).createArtworkEdition("QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest", 1000, edition.merkleRoot);
             const receipt = await tx.wait();
             const gasUsed = receipt.gasUsed;
-            
+
             expect(gasUsed).to.be.lessThan(300000);
         })
 

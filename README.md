@@ -145,8 +145,8 @@ NEXT_PUBLIC_ENVIRONMENT=production
 NEXT_PUBLIC_RPC_URL_BASE=https://base-mainnet.infura.io/v3/VOTRE_INFURA_KEY
 
 # Adresses des smart contracts - Base Network
-NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS=0xB70Dda9838E6b9cdb77e6fdAdC27733C1d12289E
-NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS=0x65d2dfAbCF50b618e3b1084fc20c4559AAD034DA
+NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS=0x5BE1B5CD7CCab144d59daf1Daf4fA7A1ed39A71B
+NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS=0x1F88E95659d8c7f3E65455Eb82D6D2580ADbf819
 
 # (Optionnel) Adresses pour Sepolia Testnet - Développement uniquement
 # NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS=0xdEB44263bCE9AE897213901B548b1B271DB99B58
@@ -581,8 +581,8 @@ npx hardhat ignition deploy ignition/modules/ArtworkCertificationSystem.ts --net
 ```
 
 **Contrats actuellement déployés sur Base Mainnet** :
-- ArtworkRegistry : `0xB70Dda9838E6b9cdb77e6fdAdC27733C1d12289E`
-- ArtworkTokenization : `0x65d2dfAbCF50b618e3b1084fc20c4559AAD034DA`
+- ArtworkRegistry : `0x5BE1B5CD7CCab144d59daf1Daf4fA7A1ed39A71B`
+- ArtworkTokenization : `0x1F88E95659d8c7f3E65455Eb82D6D2580ADbf819`
 
 Les adresses seront affichées après chaque déploiement.
 
@@ -604,8 +604,8 @@ Les adresses seront affichées après chaque déploiement.
 - [Sepolia Etherscan](https://sepolia.etherscan.io) - Explorateur Sepolia Testnet
 
 **Contrats sur BaseScan** :
-- [ArtworkRegistry](https://basescan.org/address/0xB70Dda9838E6b9cdb77e6fdAdC27733C1d12289E)
-- [ArtworkTokenization](https://basescan.org/address/0x65d2dfAbCF50b618e3b1084fc20c4559AAD034DA)
+- [ArtworkRegistry](https://basescan.org/address/0x5BE1B5CD7CCab144d59daf1Daf4fA7A1ed39A71B)
+- [ArtworkTokenization](https://basescan.org/address/0x1F88E95659d8c7f3E65455Eb82D6D2580ADbf819)
 
 ## Roadmap
 

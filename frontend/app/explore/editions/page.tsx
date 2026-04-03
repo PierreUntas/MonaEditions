@@ -134,7 +134,7 @@ function ExplorePageContent() {
                         const count = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviewsCount', args: [edition.tokenId] }) as bigint;
                         if (count > 0n) {
                             const comments = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviews', args: [edition.tokenId, 0n, count] }) as any[];
-                            return { tokenId: edition.tokenId, averageRating: comments.reduce((s, c) => s + Number(c.rating), 0) / comments.length, commentsCount: Number(count) };
+                            return { tokenId: edition.tokenId, averageRating: comments.reduce((s, c) => s + Number(c[1]), 0) / comments.length, commentsCount: Number(count) };
                         }
                         return null;
                     } catch { return null; }

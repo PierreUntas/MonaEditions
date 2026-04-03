@@ -579,14 +579,14 @@ export const ARTWORK_REGISTRY_ABI =[
               "type": "address"
             },
             {
-              "internalType": "uint256",
-              "name": "editionId",
-              "type": "uint256"
-            },
-            {
               "internalType": "uint8",
               "name": "rating",
               "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "editionId",
+              "type": "uint256"
             },
             {
               "internalType": "string",

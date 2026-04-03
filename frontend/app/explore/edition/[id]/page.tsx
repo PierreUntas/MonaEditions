@@ -54,8 +54,8 @@ interface ArtistIPFSData {
 
 interface Comment {
     collector: string;
-    productEditionId: bigint;
     rating: number;
+    editionId: bigint;
     metadata: string;
 }
 
@@ -156,7 +156,7 @@ export default function EditionDetailsPage() {
                         abi: ARTWORK_REGISTRY_ABI,
                         functionName: 'getEditionReviews',
                         args: [tokenId, 0n, 10n]
-                    }) as any[];
+                    }) as Comment[];
                     setComments(commentsData);
                 }
 

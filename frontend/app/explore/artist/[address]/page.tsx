@@ -59,7 +59,7 @@ export default function ArtistDetailsPage() {
     const [artist, setArtist] = useState<ArtistInfo | null>(null);
     const [artistIPFSData, setArtistIPFSData] = useState<ArtistIPFSData | null>(null);
     const [editions, setEditions] = useState<EditionInfo[]>([]);
-    
+
     // Grouped loading states
     const [loadingStates, setLoadingStates] = useState({
         fetchingArtist: true,
@@ -137,7 +137,8 @@ export default function ArtistDetailsPage() {
                     let avgRating = 0;
                     if (count > 0n) {
                         const comments = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviews', args: [edition.tokenId, 0n, count] }) as any[];
-                        avgRating = comments.reduce((a: number, c: any) => a + Number(c.rating), 0) / comments.length;
+                        avgRating = comments.reduce((a: number, c: any) => {
+                        return a + Number(c[1]); }, 0) / comments.length;
                     }
                     if (edition.metadata?.trim()) {
                         try {

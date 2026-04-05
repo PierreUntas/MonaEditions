@@ -46,7 +46,7 @@ const Footer = () => {
                             />
                         </div>
                         <p className="text-[13px] font-light text-[#78716c] leading-[1.7] max-w-[220px]">
-                            Certification d'œuvres d'art sur la blockchain. Authenticité permanente, vérifiable par tous.
+                            Certifier, exposer et transférer la propriété d'une oeuvre de manière simple, sécurisée et économique.
                         </p>
                     </div>
 

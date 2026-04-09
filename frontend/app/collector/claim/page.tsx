@@ -51,7 +51,7 @@ function ClaimTokenForm() {
             return;
         }
 
-        if (!editionId || !secretKey || !merkleProofInput) {
+        if (!editionId || !secretKey) {
             setError('Veuillez remplir tous les champs');
             return;
         }
@@ -174,7 +174,6 @@ function ClaimTokenForm() {
                                     onChange={(e) => setMerkleProofInput(e.target.value)}
                                     className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] placeholder:text-[#a8a29e] focus:outline-none focus:border-[#1c1917] transition-colors font-mono text-[11px] min-h-[100px]"
                                     placeholder="Ex: 0x123...,0xabc...,0xdef..."
-                                    required
                                 />
                                 <p className="text-[11px] text-[#a8a29e] mt-2 font-light">
                                     Format : hash1,hash2,hash3 (avec 0x devant chaque hash)

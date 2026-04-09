@@ -217,7 +217,7 @@ export default function CreateEditionPage() {
             for (let index = 0; index < secretKeys.length; index++) {
                 const key = secretKeys[index];
                 const merkleProofParam = getMerkleProofForKey(key, merkleTree);
-                const claimUrl = `${BASE_URL}/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${merkleProofParam}`;
+                const claimUrl = `${BASE_URL}/collector/claim?editionId=${createdEditionId}&secretKey=${key}&merkleProof=${encodeURIComponent(merkleProofParam)}`;
                 const qrCodeDataUrl = await generateQRCodeImage(claimUrl);
                 excelData.push({
                     'Index': index + 1,

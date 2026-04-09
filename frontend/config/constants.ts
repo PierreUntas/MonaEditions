@@ -2,4 +2,4 @@
  * Application-wide constants
  */
 
-export const BASE_URL = 'https://www.beeblock.fr';
+export const BASE_URL = 'https://monaeditions.com';

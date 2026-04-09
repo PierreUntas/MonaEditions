@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useAccount, useWriteContract, useReadContract } from 'wagmi';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 import { BASE_URL } from '@/config/constants';
-import { uploadToIPFS, getFromIPFSGateway } from '@/app/utils/ipfs';
-import { base64ToBlob, downloadFile, fileToBase64, gatewayUrlToIpfsUri } from '@/app/utils/file';
+import { uploadToIPFS, uploadFileToIPFS, getFromIPFSGateway } from '@/app/utils/ipfs';
+import { base64ToBlob, downloadFile, gatewayUrlToIpfsUri } from '@/app/utils/file';
 import { useSendTransaction } from '@privy-io/react-auth';
 import { encodeFunctionData } from 'viem';
 import QRCode from 'qrcode';
@@ -17,14 +17,14 @@ export default function ArtistPage() {
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isCheckingAuthorization, setIsCheckingAuthorization] = useState(true);
     const [isRegistered, setIsRegistered] = useState(false);
-    
+
     // Grouped loading states
     const [loadingStates, setLoadingStates] = useState({
         uploading: false,
         loadingIPFS: false,
         generatingQR: false,
     });
-    
+
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string>('');
     const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -168,18 +168,23 @@ export default function ArtistPage() {
         setLoadingStates(prev => ({ ...prev, uploading: true }));
 
         try {
-            // Upload logo if a new file was selected, otherwise keep existing
-            let logoUrl: string | undefined = logoPreview.startsWith('https://ipfs.io/ipfs/')
+            // Upload logo if a new file was selected, otherwise keep existing IPFS URI
+            let logoUri: string | undefined = logoPreview.startsWith('https://ipfs.io/ipfs/')
                 ? gatewayUrlToIpfsUri(logoPreview)
                 : undefined;
 
             if (logoFile) {
-                logoUrl = await fileToBase64(logoFile);
+                // Upload the file directly to IPFS and get its CID
+                const logoCid = await uploadFileToIPFS(logoFile);
+                logoUri = `ipfs://${logoCid}`;
             }
 
-            // Convert newly added local files to base64
-            const newPhotoUrls = await Promise.all(
-                photoFiles.map(file => fileToBase64(file))
+            // Upload newly added local photos to IPFS and collect their URIs
+            const newPhotoUris = await Promise.all(
+                photoFiles.map(async (file) => {
+                    const cid = await uploadFileToIPFS(file);
+                    return `ipfs://${cid}`;
+                })
             );
 
             // Preserve existing IPFS photos that weren't removed by the user
@@ -202,8 +207,8 @@ export default function ArtistPage() {
                 location,
                 website: additionalData.website,
                 bio: additionalData.bio,
-                ...(logoUrl ? { logo: logoUrl } : {}),
-                portfolio: [...existingIpfsPhotos, ...newPhotoUrls],
+                ...(logoUri ? { logo: logoUri } : {}),
+                portfolio: [...existingIpfsPhotos, ...newPhotoUris],
                 exhibitions: additionalData.exhibitions,
                 socialMedia: additionalData.socialMedia,
             };
@@ -269,9 +274,9 @@ export default function ArtistPage() {
         <div className="min-h-screen bg-[#f5f3ef]">
             <div className="max-w-2xl mx-auto px-6 pt-28 pb-20">
                 <div className="text-center mb-12">
-                    <img 
-                        src="/logo-mona.svg" 
-                        alt="Mona Editions Logo" 
+                    <img
+                        src="/logo-mona.svg"
+                        alt="Mona Editions Logo"
                         className="w-[100px] h-[100px] object-contain mx-auto mb-6"
                     />
                     <h1 className=" text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">

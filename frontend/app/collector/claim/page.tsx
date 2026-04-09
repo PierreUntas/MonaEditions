@@ -18,7 +18,7 @@ function ClaimTokenForm() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
-    
+
     // Grouped loading states
     const [loadingStates, setLoadingStates] = useState({
         claiming: false,
@@ -34,7 +34,7 @@ function ClaimTokenForm() {
         if (editionIdParam) setEditionId(editionIdParam);
         if (secretKeyParam) setSecretKey(secretKeyParam);
         if (merkleProofParam) setMerkleProofInput(merkleProofParam);
-        
+
         // Auto-expand advanced section if params are present
         if (editionIdParam || secretKeyParam || merkleProofParam) {
             setShowAdvanced(true);
@@ -58,9 +58,9 @@ function ClaimTokenForm() {
 
         setLoadingStates(prev => ({ ...prev, claiming: true }));
         try {
-            const merkleProof = merkleProofInput
-                .split(',')
-                .map(hash => hash.trim() as `0x${string}`);
+            const merkleProof = merkleProofInput.trim()
+                ? merkleProofInput.split(',').map(hash => hash.trim() as `0x${string}`)
+                : [];
 
             const data = encodeFunctionData({
                 abi: ARTWORK_REGISTRY_ABI,
@@ -105,9 +105,9 @@ function ClaimTokenForm() {
     return (
         <div className="max-w-3xl mx-auto px-6 pt-28 pb-20">
             <div className="text-center mb-12">
-                <img 
-                    src="/logo-mona.svg" 
-                    alt="Mona Editions Logo" 
+                <img
+                    src="/logo-mona.svg"
+                    alt="Mona Editions Logo"
                     className="w-[100px] h-[100px] object-contain mx-auto mb-6"
                 />
                 <h1 className=" text-[clamp(32px,5vw,48px)] font-normal tracking-[-1px] text-[#1c1917] leading-tight">
@@ -123,7 +123,7 @@ function ClaimTokenForm() {
 
             <div className="border border-[#d6d0c8] bg-[#fafaf8] p-8 mb-px">
                 <form onSubmit={handleClaim} className="space-y-6">
-                    
+
                     {/* Advanced parameters toggle */}
                     <div>
                         <button

@@ -17,7 +17,7 @@ import * as XLSX from 'xlsx';
 // Utility function
 
 const getMerkleProofForKey = (key: string, merkleTree: MerkleTree): string => {
-    const leaf = keccak256(Buffer.from(key));
+    const leaf = keccak256(`0x${Buffer.from(key).toString('hex')}`);
     const proof = merkleTree.getHexProof(leaf);
     return proof.join(',');
 };

@@ -9,7 +9,7 @@ import { base64ToBlob, downloadFile } from '@/app/utils/file';
 import { CATEGORIES_EN, CATEGORIES_FR } from '@/app/utils/categories';
 import { MerkleTree } from 'merkletreejs';
 import { keccak256, encodeFunctionData, decodeEventLog, createPublicClient, http } from 'viem';
-import { sepolia } from 'viem/chains';
+import { base } from 'viem/chains';
 import { useSendTransaction } from '@privy-io/react-auth';
 import QRCode from 'qrcode';
 import * as XLSX from 'xlsx';
@@ -369,7 +369,7 @@ export default function CreateEditionPage() {
             alert('Transaction envoyée ! En attente de confirmation...');
 
             const publicClientInstance = createPublicClient({
-                chain: sepolia,
+                chain: base,
                 transport: http(process.env.NEXT_PUBLIC_RPC_URL_SEPOLIA),
             });
 

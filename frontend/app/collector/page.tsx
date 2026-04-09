@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
-import { getFromIPFSGateway } from '@/app/utils/ipfs';
+import { getFromIPFSGateway, uploadToIPFS } from '@/app/utils/ipfs';
 import Link from 'next/link';
 import { parseAbiItem, encodeFunctionData } from 'viem';
 import { publicClient, getDeploymentBlock } from '@/lib/client';
@@ -22,7 +22,6 @@ export default function CollectorPage() {
     const { address } = useAccount();
     const [ownedTokens, setOwnedTokens] = useState<OwnedToken[]>([]);
     
-    // Grouped loading states
     const [loadingStates, setLoadingStates] = useState({
         fetchingTokens: true,
         commenting: false,
@@ -131,10 +130,13 @@ export default function CollectorPage() {
 
         setLoadingStates(prev => ({ ...prev, commenting: true }));
         try {
+            const reviewMetadata = { rating, comment };
+            const cid = await uploadToIPFS(reviewMetadata);
+
             const data = encodeFunctionData({
                 abi: ARTWORK_REGISTRY_ABI,
                 functionName: 'addReview',
-                args: [selectedToken, rating, comment]
+                args: [selectedToken, rating, cid]
             });
 
             await sendTransaction({ to: ARTWORK_REGISTRY_ADDRESS, data }, { sponsor: true });

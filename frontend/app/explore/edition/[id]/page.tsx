@@ -18,7 +18,6 @@ interface EditionDetails {
     remainingTokens: bigint;
 }
 
-// New artwork IPFS structure
 interface EditionIPFSData {
     title: string;
     year: number;
@@ -36,7 +35,6 @@ interface ArtistInfo {
     metadata: string;
 }
 
-// New artist IPFS structure
 interface ArtistIPFSData {
     name: string;
     location: string;
@@ -59,6 +57,11 @@ interface Comment {
     metadata: string;
 }
 
+interface CommentIPFSData {
+    rating: number;
+    comment: string;
+}
+
 export default function EditionDetailsPage() {
     const params = useParams();
     const editionId = params.id as string;
@@ -68,13 +71,14 @@ export default function EditionDetailsPage() {
     const [artist, setArtist] = useState<ArtistInfo | null>(null);
     const [artistIPFSData, setArtistIPFSData] = useState<ArtistIPFSData | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
-    
+    const [commentsIPFS, setCommentsIPFS] = useState<Record<number, CommentIPFSData>>({});
+
     // Grouped loading states
     const [loadingStates, setLoadingStates] = useState({
         fetchingEdition: true,
         loadingIPFS: false,
     });
-    
+
     const [selectedImage, setSelectedImage] = useState<number>(0);
 
     useEffect(() => {
@@ -158,6 +162,17 @@ export default function EditionDetailsPage() {
                         args: [tokenId, 0n, 10n]
                     }) as Comment[];
                     setComments(commentsData);
+
+                    const ipfsData: Record<number, CommentIPFSData> = {};
+                    for (let i = 0; i < commentsData.length; i++) {
+                        try {
+                            const data = await getFromIPFSGateway(commentsData[i].metadata) as CommentIPFSData;
+                            ipfsData[i] = data;
+                        } catch (e) {
+                            console.error('Error loading comment IPFS data:', e);
+                        }
+                    }
+                    setCommentsIPFS(ipfsData);
                 }
 
             } catch (error) {
@@ -418,7 +433,9 @@ export default function EditionDetailsPage() {
                                             {comment.collector.slice(0, 6)}…{comment.collector.slice(-4)}
                                         </span>
                                     </div>
-                                    <p className="text-[14px] text-[#1c1917] leading-[1.75]">{comment.metadata}</p>
+                                    <p className="text-[14px] text-[#1c1917] leading-[1.75]">
+                                        {commentsIPFS[index]?.comment ?? '…'}
+                                    </p>
                                 </div>
                             ))}
                         </div>

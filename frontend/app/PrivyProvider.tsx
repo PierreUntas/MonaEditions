@@ -47,7 +47,7 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
                 appearance: {
                     theme: "light",
                     accentColor: "#fbbf24",
-                    logo: "/originlink-logo.png",
+                    logo: "/monaeditions-logo.png",
                 },
                 // embeddedWallets: {
                 //     createOnLogin: "users-without-wallets",

@@ -43,7 +43,7 @@ export default function PrivyProvider({ children }: { children: React.ReactNode 
         <PrivyProviderCore
             appId={appId}
             config={{
-                loginMethods: ["email", "wallet"],
+                loginMethods: ["email"],
                 appearance: {
                     theme: "light",
                     accentColor: "#fbbf24",

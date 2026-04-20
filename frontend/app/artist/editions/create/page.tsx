@@ -370,7 +370,7 @@ export default function CreateEditionPage() {
 
             const publicClientInstance = createPublicClient({
                 chain: base,
-                transport: http(process.env.NEXT_PUBLIC_RPC_URL_SEPOLIA),
+                transport: http(process.env.NEXT_PUBLIC_RPC_URL_BASE),
             });
 
             const receipt = await publicClientInstance.waitForTransactionReceipt({

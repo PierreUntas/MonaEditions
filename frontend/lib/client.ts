@@ -3,10 +3,7 @@ import { base } from "viem/chains";
 
 export const publicClient = createPublicClient({
     chain: base,
-    transport: fallback([
-        http(process.env.NEXT_PUBLIC_RPC_URL_BASE),
-        http('https://mainnet.base.org'),
-    ])
+    transport: http(process.env.NEXT_PUBLIC_RPC_URL_BASE)
 });
 
 export const DEPLOYMENT_BLOCK = 42793770n;

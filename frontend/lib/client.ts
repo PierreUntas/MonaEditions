@@ -1,14 +1,14 @@
-import { createPublicClient, http } from "viem";
+import { createPublicClient, http, fallback } from "viem";
 import { base } from "viem/chains";
-
-const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL_BASE;
 
 export const publicClient = createPublicClient({
     chain: base,
-    transport: http(RPC_URL)
+    transport: fallback([
+        http('https://mainnet.base.org'),
+        http(process.env.NEXT_PUBLIC_RPC_URL_BASE),
+    ])
 });
 
-// Deployment block number on Base mainnet
 export const DEPLOYMENT_BLOCK = 42793770n;
 
 export const getDeploymentBlock = () => {

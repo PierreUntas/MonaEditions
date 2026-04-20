@@ -4,8 +4,8 @@ import { base } from "viem/chains";
 export const publicClient = createPublicClient({
     chain: base,
     transport: fallback([
-        http('https://mainnet.base.org'),
         http(process.env.NEXT_PUBLIC_RPC_URL_BASE),
+        http('https://mainnet.base.org'),
     ])
 });
 

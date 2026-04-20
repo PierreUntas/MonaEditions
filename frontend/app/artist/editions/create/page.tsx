@@ -448,7 +448,7 @@ export default function CreateEditionPage() {
                         <div className="flex items-center justify-between gap-4">
                             <div>
                                 <p className="text-[14px] font-medium text-[#1c1917] mb-1">Action requise</p>
-                                <p className="text-[13px] font-light text-[#78716c]">Vous devez approuver le contrat avant de créer des œuvres.</p>
+                                <p className="text-[13px] font-light text-[#78716c]">Vous autorisez Mona Editions à transférer des certificats en votre nom pour faciliter le transfert de propriété en toute sécurité.</p>
                             </div>
                             <button
                                 onClick={handleApprove}

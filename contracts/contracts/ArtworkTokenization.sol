@@ -38,6 +38,13 @@ contract ArtworkTokenization is ERC1155, Ownable {
     event ArtworkEditionMinted(address indexed artist, uint256 indexed tokenId, uint256 amount);
 
     /**
+     * @dev Emitted when the metadata URI for a token ID is updated
+     * @param tokenId The token ID whose URI was updated
+     * @param newUri The new metadata URI associated with the token ID
+     */
+    event TokenURIUpdated(uint256 indexed tokenId, string newUri);
+
+    /**
      * @dev Constructor that sets the base URI and initializes Ownable
      * @param uriIpfs Base URI for token metadata (typically an IPFS gateway)
      */
@@ -91,5 +98,16 @@ contract ArtworkTokenization is ERC1155, Ownable {
      */
     function uri(uint256 tokenId) public view override returns (string memory) {
         return _tokenURIs[tokenId];
+    }
+
+        /**
+        * @dev Updates the metadata URI for a specific token ID
+        * @param _tokenId The token ID whose URI is to be updated
+        * @param _newUri The new metadata URI to associate with the token ID
+        */
+    function updateTokenURI(uint256 _tokenId, string memory _newUri) external onlyOwner {
+        if (bytes(_newUri).length < 40 || bytes(_newUri).length > 100) revert InvalidIPFSCID();
+        _tokenURIs[_tokenId] = _newUri;
+        emit TokenURIUpdated(_tokenId, _newUri);
     }
 }

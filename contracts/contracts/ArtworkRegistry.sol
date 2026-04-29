@@ -37,6 +37,8 @@ interface IArtworkTokenization {
     ) external view returns (bool);
 
     function updateTokenMetadata(uint256 tokenId, string memory newMetadata) external;
+
+    function uri(uint256 tokenId) external view returns (string memory);
 }
 
 /**
@@ -77,12 +79,10 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
 
     /**
      * @dev Structure representing an artwork edition
-     * @param metadata IPFS CID pointing to edition information JSON (title, year, description, technique, images, etc.)
      * @param merkleRoot Root hash of the Merkle Tree containing all secret keys for this edition
      * @param hasBeenClaimed Flag indicating if at least one certificate has been claimed (locks metadata)
      */
     struct ArtworkEdition {
-        string metadata;
         bytes32 merkleRoot;
         bool hasBeenClaimed;
     }
@@ -427,7 +427,6 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
         );
 
         ArtworkEdition storage edition = artworkEditions[tokenId];
-        edition.metadata = _metadata;
         edition.merkleRoot = _merkleRoot;
 
         emit NewArtworkEdition(msg.sender, tokenId);
@@ -467,7 +466,6 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
             InvalidIPFSCID()
         );
 
-        edition.metadata = _newMetadata;
         artworkTokenization.updateTokenMetadata(_editionId, _newMetadata);
 
         emit EditionMetadataUpdated(msg.sender, _editionId, _newMetadata);
@@ -601,10 +599,21 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
     /**
      * @dev Returns the information of an artwork edition
      * @param _id ID of the edition to query
-     * @return ArtworkEdition struct containing all edition information
+     * @return metadata IPFS CID from ArtworkTokenization
+     * @return merkleRoot Root hash of the Merkle Tree
+     * @return hasBeenClaimed Whether at least one certificate has been claimed
      */
-    function getArtworkEdition(uint _id) external view returns (ArtworkEdition memory) {
-        return artworkEditions[_id];
+    function getArtworkEdition(uint _id) external view returns (
+        string memory metadata,
+        bytes32 merkleRoot,
+        bool hasBeenClaimed
+    ) {
+        ArtworkEdition storage edition = artworkEditions[_id];
+        return (
+            artworkTokenization.uri(_id),
+            edition.merkleRoot,
+            edition.hasBeenClaimed
+        );
     }
 
     /**

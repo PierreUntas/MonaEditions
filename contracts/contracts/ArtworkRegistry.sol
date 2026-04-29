@@ -54,16 +54,16 @@ interface IArtworkTokenization {
  * Certificate distribution uses Merkle Tree proofs for gas-efficient and secure claiming.
  */
 contract ArtworkRegistry is Ownable, ReentrancyGuard {
-    // ============ CONSTANTS ============
+    // ============ CONFIGURATION VARIABLES ============
 
     /// @dev Maximum number of certificates that can be minted in a single edition
-    uint256 public constant MAX_EDITION_SIZE = 100_000;
+    uint256 public maxEditionSize = 100_000;
 
     /// @dev Maximum number of reviews a user can add per edition
-    uint256 public constant MAX_REVIEWS_PER_USER = 2;
+    uint256 public maxReviewsPerUserAndEdition = 5;
 
     /// @dev Maximum number of reviews returned in a single query
-    uint256 public constant MAX_REVIEWS_QUERY = 100;
+    uint256 public maxReviewsQuery = 100;
 
     // ============ STRUCTS ============
 
@@ -201,6 +201,24 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
         string newMetadata
     );
 
+    /**
+     * @dev Emitted when the maximum edition size configuration is updated
+     * @param newValue The new maximum edition size
+     */
+    event MaxEditionSizeUpdated(uint256 newValue);
+
+    /**
+     * @dev Emitted when the maximum reviews per user configuration is updated
+     * @param newValue The new maximum reviews per user and edition
+     */
+    event MaxReviewsPerUserAndEditionUpdated(uint256 newValue);
+
+    /**
+     * @dev Emitted when the maximum reviews query configuration is updated
+     * @param newValue The new maximum reviews query
+     */
+    event MaxReviewsQueryUpdated(uint256 newValue);
+
     // ============ ERRORS ============
 
     /// @dev Thrown when a non-admin tries to perform an admin-only action
@@ -262,6 +280,9 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
 
     /// @dev Thrown when the query limit for reviews is too high
     error QueryLimitTooHigh();
+
+    /// @dev Thrown when trying to set an invalid configuration value
+    error InvalidConfigValue();
 
     // ============ MODIFIERS ============
 
@@ -332,6 +353,54 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
     }
 
     /**
+     * @dev Updates the maximum edition size configuration
+     * @param _newMaxEditionSize New maximum number of certificates per edition
+     *
+     * Requirements:
+     * - Caller must be the contract owner
+     * - Value must be greater than 0
+     *
+     * Emits a {MaxEditionSizeUpdated} event
+     */
+    function setMaxEditionSize(uint256 _newMaxEditionSize) external onlyOwner {
+        require(_newMaxEditionSize > 0, InvalidConfigValue());
+        maxEditionSize = _newMaxEditionSize;
+        emit MaxEditionSizeUpdated(_newMaxEditionSize);
+    }
+
+    /**
+     * @dev Updates the maximum reviews per user configuration
+     * @param _newMaxReviewsPerUserAndEdition New maximum reviews per user and edition
+     *
+     * Requirements:
+     * - Caller must be the contract owner
+     * - Value must be greater than 0
+     *
+     * Emits a {MaxReviewsPerUserAndEditionUpdated} event
+     */
+    function setMaxReviewsPerUserAndEdition(uint256 _newMaxReviewsPerUserAndEdition) external onlyOwner {
+        require(_newMaxReviewsPerUserAndEdition > 0, InvalidConfigValue());
+        maxReviewsPerUserAndEdition = _newMaxReviewsPerUserAndEdition;
+        emit MaxReviewsPerUserAndEditionUpdated(_newMaxReviewsPerUserAndEdition);
+    }
+
+    /**
+     * @dev Updates the maximum reviews query configuration
+     * @param _newMaxReviewsQuery New maximum reviews returned in a single query
+     *
+     * Requirements:
+     * - Caller must be the contract owner
+     * - Value must be greater than 0
+     *
+     * Emits a {MaxReviewsQueryUpdated} event
+     */
+    function setMaxReviewsQuery(uint256 _newMaxReviewsQuery) external onlyOwner {
+        require(_newMaxReviewsQuery > 0, InvalidConfigValue());
+        maxReviewsQuery = _newMaxReviewsQuery;
+        emit MaxReviewsQueryUpdated(_newMaxReviewsQuery);
+    }
+
+    /**
      * @dev Authorizes or revokes authorization for an artist
      * @param _artist Address of the artist
      * @param _isAuthorized True to authorize, false to revoke
@@ -394,7 +463,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
      * - Caller must be an authorized artist
      * - Artist must have called setApprovalForAll on ArtworkTokenization
      * - Amount must be greater than 0
-     * - Amount must not exceed MAX_EDITION_SIZE
+     * - Amount must not exceed maxEditionSize
      * - Merkle root must not be empty
      * - Metadata must be a valid IPFS CID
      *
@@ -416,7 +485,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
         );
 
         require(_amount > 0, EditionMustHaveCertificates());
-        require(_amount <= MAX_EDITION_SIZE, EditionSizeTooLarge());
+        require(_amount <= maxEditionSize, EditionSizeTooLarge());
 
         require(_merkleRoot != bytes32(0), EmptyMerkleRoot());
 
@@ -567,7 +636,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
         require(_rating <= 5, RatingOutOfRange());
 
         require(
-            reviewCount[_editionId][msg.sender] < MAX_REVIEWS_PER_USER,
+            reviewCount[_editionId][msg.sender] < maxReviewsPerUserAndEdition,
             ReviewLimitReached()
         );
 
@@ -620,7 +689,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
      * @dev Returns all reviews for a specific edition (paginated)
      * @param _editionId ID of the edition
      * @param startIndex Starting index for pagination
-     * @param limit Maximum number of reviews to return (capped at MAX_REVIEWS_QUERY)
+     * @param limit Maximum number of reviews to return (capped at maxReviewsQuery)
      * @return Array of reviews
      *
      * @notice Returns empty array if startIndex is beyond total reviews
@@ -630,7 +699,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
         uint startIndex,
         uint limit
     ) external view returns (Review[] memory) {
-        require(limit <= MAX_REVIEWS_QUERY, QueryLimitTooHigh());
+        require(limit <= maxReviewsQuery, QueryLimitTooHigh());
 
         uint total = editionReviews[_editionId].length;
 

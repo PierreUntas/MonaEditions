@@ -117,6 +117,83 @@ describe("ArtworkRegistry", function () {
         })
     })
 
+    describe("Configuration", function () {
+        it("Should update maxEditionSize", async function () {
+            const newSize = 50000;
+            await expect(artworkRegistry.setMaxEditionSize(newSize))
+                .to.emit(artworkRegistry, "MaxEditionSizeUpdated")
+                .withArgs(newSize);
+
+            expect(await artworkRegistry.maxEditionSize()).to.equal(newSize);
+        })
+
+        it("Should not allow non-owner to update maxEditionSize", async function () {
+            await expect(artworkRegistry.connect(artist).setMaxEditionSize(50000))
+                .to.revertedWithCustomError(artworkRegistry, "OwnableUnauthorizedAccount");
+        })
+
+        it("Should not allow to set maxEditionSize to zero", async function () {
+            await expect(artworkRegistry.setMaxEditionSize(0))
+                .to.revertedWithCustomError(artworkRegistry, "InvalidConfigValue");
+        })
+
+        it("Should update maxReviewsPerUserAndEdition", async function () {
+            const newLimit = 10;
+            await expect(artworkRegistry.setMaxReviewsPerUserAndEdition(newLimit))
+                .to.emit(artworkRegistry, "MaxReviewsPerUserAndEditionUpdated")
+                .withArgs(newLimit);
+
+            expect(await artworkRegistry.maxReviewsPerUserAndEdition()).to.equal(newLimit);
+        })
+
+        it("Should not allow non-owner to update maxReviewsPerUserAndEdition", async function () {
+            await expect(artworkRegistry.connect(artist).setMaxReviewsPerUserAndEdition(10))
+                .to.revertedWithCustomError(artworkRegistry, "OwnableUnauthorizedAccount");
+        })
+
+        it("Should not allow to set maxReviewsPerUserAndEdition to zero", async function () {
+            await expect(artworkRegistry.setMaxReviewsPerUserAndEdition(0))
+                .to.revertedWithCustomError(artworkRegistry, "InvalidConfigValue");
+        })
+
+        it("Should update maxReviewsQuery", async function () {
+            const newLimit = 200;
+            await expect(artworkRegistry.setMaxReviewsQuery(newLimit))
+                .to.emit(artworkRegistry, "MaxReviewsQueryUpdated")
+                .withArgs(newLimit);
+
+            expect(await artworkRegistry.maxReviewsQuery()).to.equal(newLimit);
+        })
+
+        it("Should not allow non-owner to update maxReviewsQuery", async function () {
+            await expect(artworkRegistry.connect(artist).setMaxReviewsQuery(200))
+                .to.revertedWithCustomError(artworkRegistry, "OwnableUnauthorizedAccount");
+        })
+
+        it("Should not allow to set maxReviewsQuery to zero", async function () {
+            await expect(artworkRegistry.setMaxReviewsQuery(0))
+                .to.revertedWithCustomError(artworkRegistry, "InvalidConfigValue");
+        })
+
+        it("Should respect updated maxEditionSize when creating edition", async function () {
+            await artworkRegistry.addAdmin(admin.getAddress());
+            await artworkRegistry.connect(admin).authorizeArtist(artist.getAddress(), true);
+            await artworkTokenization.connect(artist).setApprovalForAll(artworkRegistry.getAddress(), true);
+
+            const newSize = 100;
+            await artworkRegistry.setMaxEditionSize(newSize);
+
+            const edition = generateSecretKeys(5);
+            const fakeCID = "QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest";
+
+            await artworkRegistry.connect(artist).createArtworkEdition(fakeCID, newSize, edition.merkleRoot);
+
+            const edition2 = generateSecretKeys(5);
+            await expect(artworkRegistry.connect(artist).createArtworkEdition(fakeCID, 101, edition2.merkleRoot))
+                .to.revertedWithCustomError(artworkRegistry, "EditionSizeTooLarge");
+        })
+    })
+
     describe("Authorization", function () {
         beforeEach(async function () {
             await artworkRegistry.addAdmin(admin.getAddress());
@@ -423,14 +500,17 @@ describe("ArtworkRegistry", function () {
             await expect(artworkRegistry.connect(collector).addReview(editionId, 6, fakeCID)).to.revertedWithCustomError(artworkRegistry, "RatingOutOfRange");
         })
 
-        it("Should not allow to add three reviews from the same collector", async function () {
+        it("Should not allow to add more than maxReviewsPerUserAndEdition reviews from the same collector", async function () {
             const keyData = edition.keyWithProofs[0];
             await artworkRegistry.connect(collector).claimCertificate(editionId, keyData.secretKey, keyData.proof);
 
             const fakeCID = "QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest";
             await artworkRegistry.connect(collector).addReview(editionId, 5, fakeCID);
             await artworkRegistry.connect(collector).addReview(editionId, 4, fakeCID);
-            await expect(artworkRegistry.connect(collector).addReview(editionId, 3, fakeCID)).to.revertedWithCustomError(artworkRegistry, "ReviewLimitReached");
+            await artworkRegistry.connect(collector).addReview(editionId, 3, fakeCID);
+            await artworkRegistry.connect(collector).addReview(editionId, 2, fakeCID);
+            await artworkRegistry.connect(collector).addReview(editionId, 1, fakeCID);
+            await expect(artworkRegistry.connect(collector).addReview(editionId, 0, fakeCID)).to.revertedWithCustomError(artworkRegistry, "ReviewLimitReached");
         })
 
         it("Should return correct total review count", async function () {
@@ -466,9 +546,33 @@ describe("ArtworkRegistry", function () {
             expect(reviews.length).to.equal(0);
         })
 
-        it("Should revert when limit exceeds MAX_REVIEWS_QUERY", async function () {
+        it("Should revert when limit exceeds maxReviewsQuery", async function () {
             await expect(artworkRegistry.getEditionReviews(editionId, 0, 101))
                 .to.revertedWithCustomError(artworkRegistry, "QueryLimitTooHigh");
+        })
+
+        it("Should respect updated maxReviewsPerUserAndEdition", async function () {
+            const keyData = edition.keyWithProofs[0];
+            await artworkRegistry.connect(collector).claimCertificate(editionId, keyData.secretKey, keyData.proof);
+
+            await artworkRegistry.setMaxReviewsPerUserAndEdition(2);
+
+            const fakeCID = "QmYwAPJzv5CZsnANOTaREALcidButCorrectLengthForTest";
+            await artworkRegistry.connect(collector).addReview(editionId, 5, fakeCID);
+            await artworkRegistry.connect(collector).addReview(editionId, 4, fakeCID);
+            
+            await expect(artworkRegistry.connect(collector).addReview(editionId, 3, fakeCID))
+                .to.revertedWithCustomError(artworkRegistry, "ReviewLimitReached");
+        })
+
+        it("Should respect updated maxReviewsQuery", async function () {
+            await artworkRegistry.setMaxReviewsQuery(5);
+
+            await expect(artworkRegistry.getEditionReviews(editionId, 0, 6))
+                .to.revertedWithCustomError(artworkRegistry, "QueryLimitTooHigh");
+
+            const reviews = await artworkRegistry.getEditionReviews(editionId, 0, 5);
+            expect(reviews.length).to.equal(0); // No reviews yet, but no error
         })
     })
 

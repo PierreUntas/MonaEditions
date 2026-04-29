@@ -208,10 +208,10 @@ describe("ArtworkRegistry", function () {
                 .to.emit(artworkRegistry, "NewArtworkEdition")
                 .withArgs(await artist.getAddress(), 1);
 
-            const artworkEdition = await artworkRegistry.getArtworkEdition(1);
+            const [metadata, merkleRoot] = await artworkRegistry.getArtworkEdition(1);
 
-            expect(artworkEdition.metadata).to.equal(fakeCID);
-            expect(artworkEdition.merkleRoot).to.equal(edition.merkleRoot);
+            expect(metadata).to.equal(fakeCID);
+            expect(merkleRoot).to.equal(edition.merkleRoot);
         })
 
         it("Should not allow non-authorized artist to create an artwork edition", async function () {
@@ -233,13 +233,13 @@ describe("ArtworkRegistry", function () {
                 .to.emit(artworkRegistry, "NewArtworkEdition")
                 .withArgs(await artist.getAddress(), 2);
 
-            const artworkEdition1 = await artworkRegistry.getArtworkEdition(1);
-            const artworkEdition2 = await artworkRegistry.getArtworkEdition(2);
+            const [metadata1, merkleRoot1] = await artworkRegistry.getArtworkEdition(1);
+            const [metadata2, merkleRoot2] = await artworkRegistry.getArtworkEdition(2);
 
-            expect(artworkEdition1.metadata).to.equal(fakeCID);
-            expect(artworkEdition1.merkleRoot).to.equal(edition1.merkleRoot);
-            expect(artworkEdition2.metadata).to.equal(fakeCID);
-            expect(artworkEdition2.merkleRoot).to.equal(edition2.merkleRoot);
+            expect(metadata1).to.equal(fakeCID);
+            expect(merkleRoot1).to.equal(edition1.merkleRoot);
+            expect(metadata2).to.equal(fakeCID);
+            expect(merkleRoot2).to.equal(edition2.merkleRoot);
         })
 
         it("Should allow artist to update metadata before any claim", async function () {
@@ -249,8 +249,8 @@ describe("ArtworkRegistry", function () {
                 .to.emit(artworkRegistry, "EditionMetadataUpdated")
                 .withArgs(await artist.getAddress(), editionId, newCID);
 
-            const artworkEdition = await artworkRegistry.getArtworkEdition(editionId);
-            expect(artworkEdition.metadata).to.equal(newCID);
+            const [metadata] = await artworkRegistry.getArtworkEdition(editionId);
+            expect(metadata).to.equal(newCID);
         })
 
         it("Should not allow to update metadata after a claim", async function () {
@@ -293,8 +293,8 @@ describe("ArtworkRegistry", function () {
 
             await artworkRegistry.connect(artist).updateEditionMetadata(editionId, newCID);
 
-            const artworkEdition = await artworkRegistry.getArtworkEdition(editionId);
-            expect(artworkEdition.metadata).to.equal(newCID);
+            const [metadata] = await artworkRegistry.getArtworkEdition(editionId);
+            expect(metadata).to.equal(newCID);
 
             const tokenURI = await artworkTokenization.uri(editionId);
             expect(tokenURI).to.equal(newCID);

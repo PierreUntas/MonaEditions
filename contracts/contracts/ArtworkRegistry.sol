@@ -36,7 +36,7 @@ interface IArtworkTokenization {
         address operator
     ) external view returns (bool);
 
-    function updateTokenURI(uint256 tokenId, string memory newUri) external;
+    function updateTokenMetadata(uint256 tokenId, string memory newMetadata) external;
 }
 
 /**
@@ -468,7 +468,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
         );
 
         edition.metadata = _newMetadata;
-        artworkTokenization.updateTokenURI(_editionId, _newMetadata);
+        artworkTokenization.updateTokenMetadata(_editionId, _newMetadata);
 
         emit EditionMetadataUpdated(msg.sender, _editionId, _newMetadata);
     }

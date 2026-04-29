@@ -554,28 +554,28 @@ describe("ArtworkRegistry", function () {
             ).to.revertedWithCustomError(artworkTokenizationDirect, "InvalidIPFSCID");
         })
 
-        it("Should not allow direct call to updateTokenURI (only through ArtworkRegistry)", async function () {
-            await expect(artworkTokenization.connect(artist).updateTokenURI(editionId, "QmNewMetadataCIDCorrectLengthForTestingPurposesXX"))
+        it("Should not allow direct call to updateTokenMetadata (only through ArtworkRegistry)", async function () {
+            await expect(artworkTokenization.connect(artist).updateTokenMetadata(editionId, "QmNewMetadataCIDCorrectLengthForTestingPurposesXX"))
                 .to.revertedWithCustomError(artworkTokenization, "OwnableUnauthorizedAccount");
         })
 
-        it("Should revert updateTokenURI with CID too short", async function () {
+        it("Should revert updateTokenMetadata with CID too short", async function () {
             await expect(
-                artworkTokenizationDirect.connect(owner).updateTokenURI(1, "QmTooShort")
+                artworkTokenizationDirect.connect(owner).updateTokenMetadata(1, "QmTooShort")
             ).to.revertedWithCustomError(artworkTokenizationDirect, "InvalidIPFSCID");
         })
 
-        it("Should revert updateTokenURI with CID too long", async function () {
+        it("Should revert updateTokenMetadata with CID too long", async function () {
             await expect(
-                artworkTokenizationDirect.connect(owner).updateTokenURI(1, "Qm" + "a".repeat(100))
+                artworkTokenizationDirect.connect(owner).updateTokenMetadata(1, "Qm" + "a".repeat(100))
             ).to.revertedWithCustomError(artworkTokenizationDirect, "InvalidIPFSCID");
         })
 
-        it("Should emit TokenURIUpdated event when URI is updated", async function () {
+        it("Should emit TokenMetadataUpdated event when metadata is updated", async function () {
             const newCID = "QmNewMetadataCIDCorrectLengthForTestingPurposesXX";
 
             await expect(artworkRegistry.connect(artist).updateEditionMetadata(editionId, newCID))
-                .to.emit(artworkTokenization, "TokenURIUpdated")
+                .to.emit(artworkTokenization, "TokenMetadataUpdated")
                 .withArgs(editionId, newCID);
         })
     })

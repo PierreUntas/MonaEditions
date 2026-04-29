@@ -38,11 +38,11 @@ contract ArtworkTokenization is ERC1155, Ownable {
     event ArtworkEditionMinted(address indexed artist, uint256 indexed tokenId, uint256 amount);
 
     /**
-     * @dev Emitted when the metadata URI for a token ID is updated
-     * @param tokenId The token ID whose URI was updated
-     * @param newUri The new metadata URI associated with the token ID
+     * @dev Emitted when the metadata for a token ID is updated
+     * @param tokenId The token ID whose metadata was updated
+     * @param newMetadata The new metadata associated with the token ID
      */
-    event TokenURIUpdated(uint256 indexed tokenId, string newUri);
+    event TokenMetadataUpdated(uint256 indexed tokenId, string newMetadata);
 
     /**
      * @dev Constructor that sets the base URI and initializes Ownable
@@ -103,11 +103,11 @@ contract ArtworkTokenization is ERC1155, Ownable {
         /**
         * @dev Updates the metadata URI for a specific token ID
         * @param _tokenId The token ID whose URI is to be updated
-        * @param _newUri The new metadata URI to associate with the token ID
+        * @param _newMetadata The new metadata URI to associate with the token ID
         */
-    function updateTokenURI(uint256 _tokenId, string memory _newUri) external onlyOwner {
-        if (bytes(_newUri).length < 40 || bytes(_newUri).length > 100) revert InvalidIPFSCID();
-        _tokenURIs[_tokenId] = _newUri;
-        emit TokenURIUpdated(_tokenId, _newUri);
+    function updateTokenMetadata(uint256 _tokenId, string memory _newMetadata) external onlyOwner {
+        if (bytes(_newMetadata).length < 40 || bytes(_newMetadata).length > 100) revert InvalidIPFSCID();
+        _tokenURIs[_tokenId] = _newMetadata;
+        emit TokenMetadataUpdated(_tokenId, _newMetadata);
     }
 }

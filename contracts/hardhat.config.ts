@@ -69,8 +69,8 @@ export default defineConfig({
                 }
             },
             {
-                network: "baseSepolia",
-                chainId: 84532,
+                network: "sepolia",
+                chainId: 11155111,
                 urls: {
                     apiURL: "https://api-sepolia.basescan.org/api",
                     browserURL: "https://sepolia.basescan.org"

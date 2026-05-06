@@ -3,13 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
-import { BASE_URL } from '@/config/constants';
+import { BASE_URL, activeChain, activeRpcUrl } from '@/config/constants';
 import { uploadToIPFS, uploadFileToIPFS } from '@/app/utils/ipfs';
 import { base64ToBlob, downloadFile } from '@/app/utils/file';
 import { CATEGORIES_EN, CATEGORIES_FR } from '@/app/utils/categories';
 import { MerkleTree } from 'merkletreejs';
 import { keccak256, encodeFunctionData, decodeEventLog, createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
 import { useSendTransaction } from '@privy-io/react-auth';
 import QRCode from 'qrcode';
 import * as XLSX from 'xlsx';
@@ -369,8 +368,8 @@ export default function CreateEditionPage() {
             alert('Transaction envoyée ! En attente de confirmation...');
 
             const publicClientInstance = createPublicClient({
-                chain: base,
-                transport: http(process.env.NEXT_PUBLIC_RPC_URL_BASE),
+                chain: activeChain,
+                transport: http(activeRpcUrl),
             });
 
             const receipt = await publicClientInstance.waitForTransactionReceipt({

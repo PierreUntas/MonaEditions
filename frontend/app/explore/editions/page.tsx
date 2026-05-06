@@ -66,7 +66,7 @@ function ExplorePageContent() {
                 const editionsPromises = logs.map(async (log) => {
                     const tokenId = log.args.editionId as bigint;
                     const artistAddress = log.args.artist as `0x${string}`;
-                    const [editionInfo, balance, artistData] = await Promise.all([
+                    const [[editionMetadata], balance, artistData] = await Promise.all([
                         publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [tokenId] }) as Promise<any>,
                         publicClient.readContract({ address: ARTWORK_TOKENIZATION_ADDRESS, abi: ARTWORK_TOKENIZATION_ABI, functionName: 'balanceOf', args: [artistAddress, tokenId] }) as Promise<bigint>,
                         publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [artistAddress] }) as Promise<any>
@@ -85,9 +85,9 @@ function ExplorePageContent() {
                     }
 
                     let artworkTitle = 'Œuvre sans titre';
-                    if (editionInfo.metadata?.trim()) {
+                    if (editionMetadata?.trim()) {
                         try {
-                            const editionIpfsData = await getFromIPFSGateway(editionInfo.metadata);
+                            const editionIpfsData = await getFromIPFSGateway(editionMetadata);
                             artworkTitle = editionIpfsData.title || 'Œuvre sans titre';
                         } catch (e) {
                             console.error('Error loading edition IPFS data:', e);
@@ -95,7 +95,7 @@ function ExplorePageContent() {
                     }
 
                     return {
-                        edition: { tokenId, artist: artistAddress, title: artworkTitle, metadata: editionInfo.metadata, remainingTokens: balance },
+                        edition: { tokenId, artist: artistAddress, title: artworkTitle, metadata: editionMetadata, remainingTokens: balance },
                         artistInfo: { address: artistAddress, name: artistName, location: artistLocation }
                     };
                 });

@@ -111,22 +111,22 @@ export default function ArtistDetailsPage() {
                 const editionsData: EditionInfo[] = [];
                 for (const log of logs) {
                     const tokenId = log.args.editionId as bigint;
-                    const [editionInfo, balance] = await Promise.all([
+                    const [[editionMetadata], balance] = await Promise.all([
                         publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [tokenId] }) as Promise<any>,
                         publicClient.readContract({ address: ARTWORK_TOKENIZATION_ADDRESS, abi: ARTWORK_TOKENIZATION_ABI, functionName: 'balanceOf', args: [artistAddress as `0x${string}`, tokenId] }) as Promise<bigint>
                     ]);
 
                     let artworkTitle = 'Œuvre sans titre';
-                    if (editionInfo.metadata?.trim()) {
+                    if (editionMetadata?.trim()) {
                         try {
-                            const editionIpfsData = await getFromIPFSGateway(editionInfo.metadata);
+                            const editionIpfsData = await getFromIPFSGateway(editionMetadata);
                             artworkTitle = editionIpfsData.title || 'Œuvre sans titre';
                         } catch (e) {
                             console.error('Error loading edition IPFS data:', e);
                         }
                     }
 
-                    editionsData.push({ tokenId, title: artworkTitle, metadata: editionInfo.metadata, remainingTokens: balance });
+                    editionsData.push({ tokenId, title: artworkTitle, metadata: editionMetadata, remainingTokens: balance });
                 }
 
                 editionsData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));

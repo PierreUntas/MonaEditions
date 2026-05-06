@@ -77,7 +77,7 @@ export default function ArtistEditionsPage() {
                 for (const log of logs) {
                     const tokenId = log.args.editionId as bigint;
 
-                    const editionInfo = await publicClient.readContract({
+                    const [editionMetadata, editionMerkleRoot] = await publicClient.readContract({
                         address: ARTWORK_REGISTRY_ADDRESS,
                         abi: ARTWORK_REGISTRY_ABI,
                         functionName: 'getArtworkEdition',
@@ -92,16 +92,16 @@ export default function ArtistEditionsPage() {
                     }) as bigint;
 
                     let artworkTitle = 'Œuvre sans titre';
-                    if (editionInfo.metadata?.trim()) {
+                    if (editionMetadata?.trim()) {
                         try {
-                            const ipfsData = await getFromIPFSGateway(editionInfo.metadata);
+                            const ipfsData = await getFromIPFSGateway(editionMetadata);
                             artworkTitle = ipfsData.title || 'Œuvre sans titre';
                         } catch (e) {
                             console.error('Error loading IPFS:', e);
                         }
                     }
 
-                    editionsData.push({ tokenId, title: artworkTitle, metadata: editionInfo.metadata, merkleRoot: editionInfo.merkleRoot, remainingTokens: balance });
+                    editionsData.push({ tokenId, title: artworkTitle, metadata: editionMetadata, merkleRoot: editionMerkleRoot, remainingTokens: balance });
                 }
 
                 editionsData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));

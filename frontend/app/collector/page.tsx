@@ -60,7 +60,7 @@ export default function CollectorPage() {
                     }) as bigint;
 
                     if (balance > 0n) {
-                        const [editionInfo, artistData] = await Promise.all([
+                        const [[editionMetadata], artistData] = await Promise.all([
                             publicClient.readContract({
                                 address: ARTWORK_REGISTRY_ADDRESS,
                                 abi: ARTWORK_REGISTRY_ABI,
@@ -76,9 +76,9 @@ export default function CollectorPage() {
                         ]);
 
                         let artworkTitle = 'Œuvre sans titre';
-                        if (editionInfo.metadata?.trim()) {
+                        if (editionMetadata?.trim()) {
                             try {
-                                const editionIpfs = await getFromIPFSGateway(editionInfo.metadata);
+                                const editionIpfs = await getFromIPFSGateway(editionMetadata);
                                 artworkTitle = editionIpfs.title || 'Œuvre sans titre';
                             } catch (e) {
                                 console.error('Error loading edition metadata:', e);
@@ -99,7 +99,7 @@ export default function CollectorPage() {
                             tokenId,
                             balance,
                             title: artworkTitle,
-                            metadata: editionInfo.metadata,
+                            metadata: editionMetadata,
                             artist: artistAddress,
                             artistName: artistName
                         });

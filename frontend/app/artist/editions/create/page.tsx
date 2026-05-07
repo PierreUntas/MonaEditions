@@ -681,24 +681,6 @@ export default function CreateEditionPage() {
                                 </p>
                             </div>
                         )}
-                        {createdEditionId !== 'pending' && createdEditionId !== 'confirmed' && (
-                            <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6">
-                                <p className="text-[14px] font-medium text-[#1c1917] mb-2">
-                                    QR Code pour l'étiquette de l'œuvre
-                                </p>
-                                <p className="text-[13px] font-light text-[#78716c] mb-4 leading-[1.7]">
-                                    Ce QR code pointe vers la page de l'œuvre et peut être apposé au dos.
-                                </p>
-                                <button
-                                    onClick={downloadEditionPageQRCode}
-                                    disabled={loadingStates.generatingQR}
-                                    className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
-                                >
-                                    {loadingStates.generatingQR ? 'Génération…' : 'Télécharger QR Code Œuvre'}
-                                </button>
-                            </div>
-                        )}
-
                         <div className="border border-[#d6d0c8] bg-[#fafaf8] p-6">
                             <p className="text-[14px] font-medium text-[#1c1917] mb-2">
                                 QR Codes pour les collectionneurs
@@ -723,6 +705,24 @@ export default function CreateEditionPage() {
                                 </button>
                             </div>
                         </div>
+
+                        {createdEditionId !== 'pending' && createdEditionId !== 'confirmed' && (
+                            <div className="border border-[#d6d0c8] bg-[#ede9e3] p-6">
+                                <p className="text-[14px] font-medium text-[#1c1917] mb-2">
+                                    QR Code pour l'étiquette de l'œuvre
+                                </p>
+                                <p className="text-[13px] font-light text-[#78716c] mb-4 leading-[1.7]">
+                                    Ce QR code pointe vers la page de l'œuvre et peut être apposé au dos.
+                                </p>
+                                <button
+                                    onClick={downloadEditionPageQRCode}
+                                    disabled={loadingStates.generatingQR}
+                                    className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
+                                >
+                                    {loadingStates.generatingQR ? 'Génération…' : 'Télécharger QR Code Œuvre'}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
 

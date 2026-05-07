@@ -28,6 +28,7 @@ interface EditionInfo {
     title: string;
     metadata: string;
     remainingTokens: bigint;
+    disabled: boolean;
     ipfsData?: EditionIPFSData;
     averageRating?: number;
     commentsCount?: number;
@@ -66,7 +67,7 @@ function ExplorePageContent() {
                 const editionsPromises = logs.map(async (log) => {
                     const tokenId = log.args.editionId as bigint;
                     const artistAddress = log.args.artist as `0x${string}`;
-                    const [[editionMetadata], balance, artistData] = await Promise.all([
+                    const [[editionMetadata, , , editionDisabled], balance, artistData] = await Promise.all([
                         publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [tokenId] }) as Promise<any>,
                         publicClient.readContract({ address: ARTWORK_TOKENIZATION_ADDRESS, abi: ARTWORK_TOKENIZATION_ABI, functionName: 'balanceOf', args: [artistAddress, tokenId] }) as Promise<bigint>,
                         publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [artistAddress] }) as Promise<any>
@@ -95,7 +96,7 @@ function ExplorePageContent() {
                     }
 
                     return {
-                        edition: { tokenId, artist: artistAddress, title: artworkTitle, metadata: editionMetadata, remainingTokens: balance },
+                        edition: { tokenId, artist: artistAddress, title: artworkTitle, metadata: editionMetadata, remainingTokens: balance, disabled: editionDisabled },
                         artistInfo: { address: artistAddress, name: artistName, location: artistLocation }
                     };
                 });
@@ -157,10 +158,11 @@ function ExplorePageContent() {
     }, []);
 
     // Filter by category (from new IPFS structure)
-    const uniqueCategories = Array.from(new Set(editions.map(b => b.ipfsData?.category).filter(Boolean))) as string[];
+    const activeEditions = editions.filter(e => !e.disabled);
+    const uniqueCategories = Array.from(new Set(activeEditions.map(b => b.ipfsData?.category).filter(Boolean))) as string[];
     const filteredEditions = filterCategory === 'all'
-        ? editions
-        : editions.filter(b => b.ipfsData?.category === filterCategory);
+        ? activeEditions
+        : activeEditions.filter(b => b.ipfsData?.category === filterCategory);
 
     return (
         <div className="min-h-screen bg-[#f5f3ef]">

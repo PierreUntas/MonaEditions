@@ -232,31 +232,6 @@ export const ARTWORK_REGISTRY_ABI =[
       "inputs": [
         {
           "indexed": true,
-          "internalType": "address",
-          "name": "artist",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "editionId",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "newMetadata",
-          "type": "string"
-        }
-      ],
-      "name": "EditionMetadataUpdated",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
           "internalType": "uint256",
           "name": "editionId",
           "type": "uint256"
@@ -288,6 +263,31 @@ export const ARTWORK_REGISTRY_ABI =[
         }
       ],
       "name": "EditionMerkleRootReplaced",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "artist",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "editionId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "newMetadata",
+          "type": "string"
+        }
+      ],
+      "name": "EditionMetadataUpdated",
       "type": "event"
     },
     {
@@ -424,37 +424,6 @@ export const ARTWORK_REGISTRY_ABI =[
           "internalType": "uint256",
           "name": "_editionId",
           "type": "uint256"
-        }
-      ],
-      "name": "disableEdition",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_editionId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "_newMerkleRoot",
-          "type": "bytes32"
-        }
-      ],
-      "name": "replaceEditionMerkleRoot",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_editionId",
-          "type": "uint256"
         },
         {
           "internalType": "uint8",
@@ -564,6 +533,19 @@ export const ARTWORK_REGISTRY_ABI =[
         }
       ],
       "name": "createArtworkEdition",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_editionId",
+          "type": "uint256"
+        }
+      ],
+      "name": "disableEdition",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -852,6 +834,24 @@ export const ARTWORK_REGISTRY_ABI =[
     {
       "inputs": [],
       "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_editionId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_newMerkleRoot",
+          "type": "bytes32"
+        }
+      ],
+      "name": "replaceEditionMerkleRoot",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

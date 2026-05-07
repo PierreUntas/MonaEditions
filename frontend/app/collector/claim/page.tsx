@@ -7,6 +7,7 @@ import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contrac
 import Image from 'next/image';
 import { useSendTransaction } from '@privy-io/react-auth';
 import { encodeFunctionData } from 'viem';
+import { publicClient } from '@/lib/client';
 
 function ClaimTokenForm() {
     const { address } = useAccount();
@@ -58,6 +59,17 @@ function ClaimTokenForm() {
 
         setLoadingStates(prev => ({ ...prev, claiming: true }));
         try {
+            const editionData = await publicClient.readContract({
+                address: ARTWORK_REGISTRY_ADDRESS,
+                abi: ARTWORK_REGISTRY_ABI,
+                functionName: 'getArtworkEdition',
+                args: [BigInt(editionId)],
+            }) as any;
+            if (editionData[3] === true) {
+                setError('Cette édition a été désactivée et n\'accepte plus de nouvelles réclamations.');
+                return;
+            }
+
             const merkleProof = merkleProofInput.trim()
                 ? merkleProofInput.split(',').map(hash => hash.trim() as `0x${string}`)
                 : [];

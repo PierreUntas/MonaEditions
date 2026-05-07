@@ -26,6 +26,7 @@ interface EditionInfo {
     metadata: string;
     merkleRoot: string;
     remainingTokens: bigint;
+    disabled: boolean;
     ipfsData?: EditionIPFSData;
 }
 
@@ -77,7 +78,7 @@ export default function ArtistEditionsPage() {
                 for (const log of logs) {
                     const tokenId = log.args.editionId as bigint;
 
-                    const [editionMetadata, editionMerkleRoot] = await publicClient.readContract({
+                    const [editionMetadata, editionMerkleRoot, , editionDisabled] = await publicClient.readContract({
                         address: ARTWORK_REGISTRY_ADDRESS,
                         abi: ARTWORK_REGISTRY_ABI,
                         functionName: 'getArtworkEdition',
@@ -101,7 +102,7 @@ export default function ArtistEditionsPage() {
                         }
                     }
 
-                    editionsData.push({ tokenId, title: artworkTitle, metadata: editionMetadata, merkleRoot: editionMerkleRoot, remainingTokens: balance });
+                    editionsData.push({ tokenId, title: artworkTitle, metadata: editionMetadata, merkleRoot: editionMerkleRoot, remainingTokens: balance, disabled: editionDisabled });
                 }
 
                 editionsData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
@@ -208,9 +209,16 @@ export default function ArtistEditionsPage() {
                                 >
                                     <div className="flex justify-between items-start gap-8">
                                         <div className="flex-1">
-                                            <h2 className=" text-[28px] font-normal text-[#1c1917] mb-3 leading-tight">
-                                                {edition.title}
-                                            </h2>
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <h2 className=" text-[28px] font-normal text-[#1c1917] leading-tight">
+                                                    {edition.title}
+                                                </h2>
+                                                {edition.disabled && (
+                                                    <span className="text-[10px] font-medium tracking-[0.12em] uppercase text-[#dc2626] border border-[#dc2626] px-2 py-0.5 flex-shrink-0">
+                                                        Désactivée
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="space-y-1.5">
                                                 <p className="text-[12px] font-light tracking-[0.06em] text-[#a8a29e]">
                                                     ŒUVRE #{edition.tokenId.toString()}

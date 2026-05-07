@@ -599,7 +599,7 @@ contract ArtworkRegistry is Ownable, ReentrancyGuard {
      *
      * Emits an {EditionMerkleRootReplaced} event
      */
-    function replaceEditionMerkleRoot(uint256 _editionId, bytes32 _newMerkleRoot) external onlyOwner {
+    function replaceEditionMerkleRoot(uint256 _editionId, bytes32 _newMerkleRoot) external onlyAdmin {
         ArtworkEdition storage edition = artworkEditions[_editionId];
         require(edition.merkleRoot != bytes32(0), EditionDoesNotExist());
         require(_newMerkleRoot != bytes32(0), EmptyMerkleRoot());

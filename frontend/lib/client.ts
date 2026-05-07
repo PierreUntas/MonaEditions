@@ -6,7 +6,7 @@ export const publicClient = createPublicClient({
     transport: http(activeRpcUrl),
 });
 
-const DEPLOYMENT_BLOCK_SEPOLIA = 10795135n;
+const DEPLOYMENT_BLOCK_SEPOLIA = 10807610n;
 const DEPLOYMENT_BLOCK_BASE = 0n;
 
 export const DEPLOYMENT_BLOCK = isProduction ? DEPLOYMENT_BLOCK_BASE : DEPLOYMENT_BLOCK_SEPOLIA;

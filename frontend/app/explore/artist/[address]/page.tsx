@@ -47,6 +47,7 @@ interface EditionInfo {
     title: string;
     metadata: string;
     remainingTokens: bigint;
+    disabled: boolean;
     ipfsData?: EditionIPFSData;
     averageRating?: number;
     commentsCount?: number;
@@ -111,7 +112,7 @@ export default function ArtistDetailsPage() {
                 const editionsData: EditionInfo[] = [];
                 for (const log of logs) {
                     const tokenId = log.args.editionId as bigint;
-                    const [[editionMetadata], balance] = await Promise.all([
+                    const [[editionMetadata, , , editionDisabled], balance] = await Promise.all([
                         publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [tokenId] }) as Promise<any>,
                         publicClient.readContract({ address: ARTWORK_TOKENIZATION_ADDRESS, abi: ARTWORK_TOKENIZATION_ABI, functionName: 'balanceOf', args: [artistAddress as `0x${string}`, tokenId] }) as Promise<bigint>
                     ]);
@@ -126,7 +127,7 @@ export default function ArtistDetailsPage() {
                         }
                     }
 
-                    editionsData.push({ tokenId, title: artworkTitle, metadata: editionMetadata, remainingTokens: balance });
+                    editionsData.push({ tokenId, title: artworkTitle, metadata: editionMetadata, remainingTokens: balance, disabled: editionDisabled });
                 }
 
                 editionsData.sort((a, b) => Number(b.tokenId) - Number(a.tokenId));
@@ -369,7 +370,7 @@ export default function ArtistDetailsPage() {
                     </div>
                 ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#d6d0c8] border border-[#d6d0c8]">
-                        {editions.map((edition) => (
+                        {editions.filter(e => !e.disabled).map((edition) => (
                             <Link
                                 key={edition.tokenId.toString()}
                                 href={`/explore/edition/${edition.tokenId}`}

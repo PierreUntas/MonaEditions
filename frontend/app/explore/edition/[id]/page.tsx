@@ -16,6 +16,7 @@ interface EditionDetails {
     metadata: string;
     merkleRoot: string;
     remainingTokens: bigint;
+    disabled: boolean;
 }
 
 interface EditionIPFSData {
@@ -88,7 +89,7 @@ export default function EditionDetailsPage() {
             try {
                 const tokenId = BigInt(editionId);
 
-                const [editionMetadata, editionMerkleRoot] = await publicClient.readContract({
+                const [editionMetadata, editionMerkleRoot, , editionDisabled] = await publicClient.readContract({
                     address: ARTWORK_REGISTRY_ADDRESS,
                     abi: ARTWORK_REGISTRY_ABI,
                     functionName: 'getArtworkEdition',
@@ -123,7 +124,7 @@ export default function EditionDetailsPage() {
                     }
                 }
 
-                setEdition({ tokenId, artist: artistAddress, title: artworkTitle, metadata: editionMetadata, merkleRoot: editionMerkleRoot, remainingTokens: balance });
+                setEdition({ tokenId, artist: artistAddress, title: artworkTitle, metadata: editionMetadata, merkleRoot: editionMerkleRoot, remainingTokens: balance, disabled: editionDisabled });
 
                 const artistData = await publicClient.readContract({
                     address: ARTWORK_REGISTRY_ADDRESS,

@@ -17,6 +17,7 @@ export default function ArtistPage() {
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isCheckingAuthorization, setIsCheckingAuthorization] = useState(true);
     const [isRegistered, setIsRegistered] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     // Grouped loading states
     const [loadingStates, setLoadingStates] = useState({
@@ -226,7 +227,9 @@ export default function ArtistPage() {
                 { sponsor: true }
             );
 
-            alert('Informations enregistrées avec succès !');
+            setIsRegistered(true);
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 6000);
         } catch (error) {
             console.error('Error saving artist:', error);
             alert('Erreur lors de l\'enregistrement');
@@ -495,10 +498,18 @@ export default function ArtistPage() {
                             </div>
                         </div>
 
+                        {saveSuccess && (
+                            <div className="border border-[#d6d0c8] bg-[#f0fdf4] p-4">
+                                <p className="text-[13px] font-medium text-[#166534]">
+                                    Informations enregistrées avec succès. La transaction est en cours de confirmation sur la blockchain.
+                                </p>
+                            </div>
+                        )}
+
                         <button
                             type="submit"
                             disabled={isRegistering || loadingStates.uploading || loadingStates.loadingIPFS}
-                            className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200"
+                            className="w-full bg-[#1c1917] text-[#fafaf8] font-medium text-[12px] tracking-[0.06em] py-3.5 px-8 border border-[#1c1917] disabled:opacity-50 hover:bg-[#292524] transition-all duration-200 cursor-pointer"
                         >
                             {loadingStates.uploading
                                 ? 'Upload IPFS en cours…'

@@ -249,17 +249,21 @@ export default function CollectorPage() {
                             <form onSubmit={handleAddComment} className="space-y-5">
                                 <div>
                                     <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">
-                                        Note (0–5)
+                                        Note
                                     </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="5"
+                                    <select
                                         value={rating}
                                         onChange={(e) => setRating(Number(e.target.value))}
-                                        className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] focus:outline-none focus:border-[#1c1917] transition-colors"
+                                        className="w-full px-4 py-3 bg-[#f5f3ef] border border-[#d6d0c8] text-[13px] text-[#1c1917] focus:outline-none focus:border-[#1c1917] transition-colors cursor-pointer"
                                         required
-                                    />
+                                    >
+                                        <option value={5}>⭐⭐⭐⭐⭐ 5 / 5</option>
+                                        <option value={4}>⭐⭐⭐⭐ 4 / 5</option>
+                                        <option value={3}>⭐⭐⭐ 3 / 5</option>
+                                        <option value={2}>⭐⭐ 2 / 5</option>
+                                        <option value={1}>⭐ 1 / 5</option>
+                                        <option value={0}>0 / 5</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[#a8a29e] mb-2">

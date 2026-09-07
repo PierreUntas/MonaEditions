@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -107,7 +108,17 @@ export default function RootLayout({
             <head>
                 <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
             </head>
-            <body className="antialiased">{children}</body>
+            <body className="antialiased">
+                {children}
+                {/*
+                 * Vercel Web Analytics — anonymized page view + visitor
+                 * tracking. Free on Hobby tier (up to 2500 events/month),
+                 * privacy-friendly by design (no cookies, no PII), so no
+                 * consent banner is required under GDPR. Data lands in the
+                 * Vercel dashboard 24-48h after first pageview.
+                 */}
+                <Analytics />
+            </body>
         </html>
     );
 }

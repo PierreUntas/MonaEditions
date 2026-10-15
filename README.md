@@ -4,6 +4,18 @@ Une plateforme de certification qui restaure la confiance entre artistes et coll
 
 > Projet de fin de formation **Développeur Blockchain** chez [Alyra](https://www.alyra.fr/)
 
+**🔗 [Voir le site en production → monaeditions.com](https://www.monaeditions.com)**
+
+| | |
+|---|---|
+| **Démo** | [monaeditions.com](https://www.monaeditions.com) — explorer les éditions, scanner un certificat |
+| **Réseau** | Base Mainnet (production) |
+| **ArtworkRegistry** | [`0x4f093952…Cd4Fc208`](https://basescan.org/address/0x4f093952cF2377eFa05BC15E32ffFF63Cd4Fc208) |
+| **ArtworkTokenization** | [`0xF4D0B110…2F9e8Ae6`](https://basescan.org/address/0xF4D0B110015E4Cb131Ac294E3384A8332F9e8Ae6) |
+| **Stack** | Solidity 0.8.28 · Hardhat · Next.js 16 · Wagmi/Viem · Privy · IPFS |
+| **Tests** | 77 tests contrats (`npx hardhat test`) · CI GitHub Actions |
+| **Docs techniques** | [`docs/technique/`](./docs/technique) — architecture, contrats, flux de certification, évolution v2 |
+
 ## Présentation
 
 **Mona Editions** est une plateforme de certification d'œuvres d'art qui redonne de la confiance entre artistes et collectionneurs. En scannant un simple QR code sur une œuvre, vous accédez instantanément à son histoire : titre, artiste, édition, provenance, authenticité.
@@ -145,12 +157,12 @@ NEXT_PUBLIC_ENVIRONMENT=production
 NEXT_PUBLIC_RPC_URL_BASE=https://base-mainnet.infura.io/v3/VOTRE_INFURA_KEY
 
 # Adresses des smart contracts - Base Network
-NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS=0x5BE1B5CD7CCab144d59daf1Daf4fA7A1ed39A71B
-NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS=0x1F88E95659d8c7f3E65455Eb82D6D2580ADbf819
+NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS=0x4f093952cF2377eFa05BC15E32ffFF63Cd4Fc208
+NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS=0xF4D0B110015E4Cb131Ac294E3384A8332F9e8Ae6
 
 # (Optionnel) Adresses pour Sepolia Testnet - Développement uniquement
-# NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS=0xdEB44263bCE9AE897213901B548b1B271DB99B58
-# NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS=0x084B23B6e9134f357714B476CA058e920DFeF176
+# NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS=0xfa954e2AEC0827Bb69433db64F99F6E9df562113
+# NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS=0x1f7Bac7B3F6B49E2147541aB58f2C6365A7Ed148
 # NEXT_PUBLIC_PERSONNAL_RPC_URL_SEPOLIA=https://eth-sepolia.g.alchemy.com/v2/VOTRE_ALCHEMY_KEY
 
 # Pinata pour IPFS
@@ -581,8 +593,8 @@ npx hardhat ignition deploy ignition/modules/ArtworkCertificationSystem.ts --net
 ```
 
 **Contrats actuellement déployés sur Base Mainnet** :
-- ArtworkRegistry : `0x5BE1B5CD7CCab144d59daf1Daf4fA7A1ed39A71B`
-- ArtworkTokenization : `0x1F88E95659d8c7f3E65455Eb82D6D2580ADbf819`
+- ArtworkRegistry : `0x4f093952cF2377eFa05BC15E32ffFF63Cd4Fc208`
+- ArtworkTokenization : `0xF4D0B110015E4Cb131Ac294E3384A8332F9e8Ae6`
 
 Les adresses seront affichées après chaque déploiement.
 
@@ -604,8 +616,8 @@ Les adresses seront affichées après chaque déploiement.
 - [Sepolia Etherscan](https://sepolia.etherscan.io) - Explorateur Sepolia Testnet
 
 **Contrats sur BaseScan** :
-- [ArtworkRegistry](https://basescan.org/address/0x5BE1B5CD7CCab144d59daf1Daf4fA7A1ed39A71B)
-- [ArtworkTokenization](https://basescan.org/address/0x1F88E95659d8c7f3E65455Eb82D6D2580ADbf819)
+- [ArtworkRegistry](https://basescan.org/address/0x4f093952cF2377eFa05BC15E32ffFF63Cd4Fc208)
+- [ArtworkTokenization](https://basescan.org/address/0xF4D0B110015E4Cb131Ac294E3384A8332F9e8Ae6)
 
 ## Roadmap
 
@@ -633,11 +645,13 @@ Les adresses seront affichées après chaque déploiement.
 
 ## Équipe
 
-Projet développé par Pierre Untas en formation développeur blockchain chez Alyra et 4 collaborateurs en formation consultant blockchain : Nicolas Lesty, Vincent Forli, Julien Ruiz et Etienne Regis.
+**Développement** (smart contracts, frontend, déploiement, CI) : Pierre Untas, en formation Développeur Blockchain chez Alyra.
+
+**Cadrage produit et go-to-market** : Nicolas Lesty, Vincent Forli, Julien Ruiz et Etienne Regis, en formation Consultant Blockchain chez Alyra.
 
 ## Licence
 
-Ce projet est sous licence MIT.
+Ce projet est sous licence MIT — voir [LICENSE](./LICENSE).
 
 ## Contribution
 
@@ -652,7 +666,7 @@ Les contributions sont les bienvenues ! N'hésitez pas à :
 ## Contact
 
 Pour toute question ou suggestion :
-- GitHub : [@PierreUntas](https://github.com/pierreuntas)
+- GitLab : [@pierre.untas](https://gitlab.com/pierre.untas)
 - Email : pierre.untas@gmail.com
 
 

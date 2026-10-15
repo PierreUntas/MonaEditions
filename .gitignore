@@ -4,3 +4,6 @@ node_modules/
 dist/
 build/
 .env
+
+# Docs de travail internes (feedback pilotes, procédures de test en prod, admin perso)
+docs/internal/

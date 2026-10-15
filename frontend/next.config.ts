@@ -6,7 +6,7 @@ import { withSentryConfig } from '@sentry/nextjs';
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const nextConfig: NextConfig = {
-    webpack: (config, { isServer, webpack }) => {
+    webpack: (config, { isServer }) => {
         config.externals.push('pino-pretty', 'lokijs', 'encoding');
 
         config.resolve.fallback = {

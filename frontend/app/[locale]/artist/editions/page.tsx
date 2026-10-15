@@ -38,6 +38,8 @@ import { publicClient, getDeploymentBlock } from '@/lib/client';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import { ipfsToHttp } from '@/app/utils/file';
 import { getCategoryLabel } from '@/app/utils/categories';
+import { getPrivyWalletAddress } from '@/lib/privy-user';
+import type { RegistryArtist } from '@/types/contracts';
 
 interface EditionIPFSData {
     title?: string;
@@ -64,12 +66,10 @@ export default function ArtistEditionsPage() {
     const t = useTranslations('Artist.editions');
     const { address } = useAccount();
     const { user, ready: privyReady } = usePrivy();
-    const walletAddress = (user?.wallet || (user?.linkedAccounts as any[])?.find((a: any) => a.type === 'wallet'))?.address;
+    const walletAddress = getPrivyWalletAddress(user);
     const activeAddress = (walletAddress || address) as `0x${string}` | undefined;
 
     const [editions, setEditions] = useState<EditionInfo[]>([]);
-    const [isAuthorized, setIsAuthorized] = useState(false);
-    const [isCheckingAuthorization, setIsCheckingAuthorization] = useState(true);
     const [loadingStates, setLoadingStates] = useState({
         fetchingEditions: false,
         loadingIPFS: false,
@@ -83,15 +83,11 @@ export default function ArtistEditionsPage() {
         args: activeAddress ? [activeAddress] : undefined,
     });
 
-    useEffect(() => {
-        if (artistData) {
-            const artist = artistData as { authorized: boolean };
-            setIsAuthorized(artist.authorized);
-            setIsCheckingAuthorization(false);
-        } else if (!isLoadingArtist && artistData !== undefined) {
-            setIsCheckingAuthorization(false);
-        }
-    }, [artistData, isLoadingArtist]);
+    // Both flags are derived from the on-chain read rather than mirrored into
+    // state: `undefined` means the read has not answered yet, which is exactly
+    // the "still checking" condition the gate needs.
+    const isAuthorized = (artistData as RegistryArtist | undefined)?.authorized === true;
+    const isCheckingAuthorization = artistData === undefined;
 
     /**
      * v2 metadata lock invariant: an edition becomes immutable once any
@@ -143,7 +139,7 @@ export default function ArtistEditionsPage() {
                     let artworkTitle = t('untitled');
                     if (editionMetadata?.trim()) {
                         try {
-                            const ipfsData = await getFromIPFSGateway(editionMetadata);
+                            const ipfsData = await getFromIPFSGateway<EditionIPFSData>(editionMetadata);
                             artworkTitle = ipfsData?.title || t('untitled');
                         } catch (e) {
                             console.error('Error loading IPFS:', e);
@@ -170,7 +166,7 @@ export default function ArtistEditionsPage() {
                 for (const edition of editionsData) {
                     if (!edition.metadata) continue;
                     try {
-                        const ipfsData = await getFromIPFSGateway(edition.metadata) as EditionIPFSData;
+                        const ipfsData = await getFromIPFSGateway<EditionIPFSData>(edition.metadata);
                         setEditions(prev =>
                             prev.map(e =>
                                 e.tokenId === edition.tokenId ? { ...e, ipfsData } : e,

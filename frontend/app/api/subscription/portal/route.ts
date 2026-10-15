@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getOrCreateSubscription } from '@/lib/db';
 import { APP_URL, getStripe } from '@/lib/stripe';
+import { getErrorMessage, getErrorStatus } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,11 +30,10 @@ export async function POST(req: NextRequest) {
             return_url: `${APP_URL}/artist/subscription`,
         });
         return NextResponse.json({ url: portal.url });
-    } catch (err: any) {
-        const status = err?.status ?? 500;
+    } catch (err) {
         return NextResponse.json(
-            { error: err?.message || 'internal_error' },
-            { status },
+            { error: getErrorMessage(err) },
+            { status: getErrorStatus(err) },
         );
     }
 }

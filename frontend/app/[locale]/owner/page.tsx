@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAccount, useWriteContract, useReadContract } from 'wagmi';
 import { useTranslations } from 'next-intl';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
@@ -11,8 +11,6 @@ export default function AdminPage() {
     const [newAdminAddress, setNewAdminAddress] = useState('');
     const [removeAdminAddress, setRemoveAdminAddress] = useState('');
     const [checkAdminAddress, setCheckAdminAddress] = useState('');
-    const [isOwner, setIsOwner] = useState(false);
-    const [isCheckingOwner, setIsCheckingOwner] = useState(true);
 
     const { writeContract, isPending: isAddingAdmin } = useWriteContract();
     const { writeContract: writeRemoveAdmin, isPending: isRemovingAdmin } = useWriteContract();
@@ -30,14 +28,10 @@ export default function AdminPage() {
         args: checkAdminAddress ? [checkAdminAddress as `0x${string}`] : undefined,
     });
 
-    useEffect(() => {
-        if (address && ownerAddress) {
-            setIsOwner(address.toLowerCase() === (ownerAddress as string).toLowerCase());
-            setIsCheckingOwner(false);
-        } else if (!isLoadingOwner) {
-            setIsCheckingOwner(false);
-        }
-    }, [address, ownerAddress, isLoadingOwner]);
+    // Derived from the on-chain read rather than mirrored into state.
+    const isOwner = address !== undefined && ownerAddress !== undefined
+        && address.toLowerCase() === (ownerAddress as string).toLowerCase();
+    const isCheckingOwner = isLoadingOwner && ownerAddress === undefined;
 
     const handleAddAdmin = (e: React.FormEvent) => {
         e.preventDefault();

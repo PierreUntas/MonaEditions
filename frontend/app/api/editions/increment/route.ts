@@ -16,6 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { recordEdition } from '@/lib/db';
+import { getErrorMessage, getErrorStatus } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,11 +42,10 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({ recorded: true });
-    } catch (err: any) {
-        const status = err?.status ?? 500;
+    } catch (err) {
         return NextResponse.json(
-            { error: err?.message || 'internal_error' },
-            { status },
+            { error: getErrorMessage(err) },
+            { status: getErrorStatus(err) },
         );
     }
 }

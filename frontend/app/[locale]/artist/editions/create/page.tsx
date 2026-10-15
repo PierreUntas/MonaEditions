@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
-import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI } from '@/config/contracts';
+import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI, ARTWORK_TOKENIZATION_ADDRESS, ARTWORK_TOKENIZATION_ABI, NEW_ARTWORK_EDITION_EVENT } from '@/config/contracts';
 import { BASE_URL, activeChain, activeRpcUrl } from '@/config/constants';
 import { uploadToIPFS, uploadFileToIPFS } from '@/app/utils/ipfs';
 import { base64ToBlob, downloadFile } from '@/app/utils/file';
@@ -17,6 +17,8 @@ import QRCode from 'qrcode';
 import * as XLSX from 'xlsx';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { getPrivyWalletAddress } from '@/lib/privy-user';
+import type { RegistryArtist } from '@/types/contracts';
 
 // Utility function
 
@@ -31,13 +33,10 @@ export default function CreateEditionPage() {
     const t = useTranslations('Create');
     const { address } = useAccount();
     const { user, getAccessToken } = usePrivy();
-    const walletAddress = (user?.wallet || (user?.linkedAccounts as any[])?.find((a: any) => a.type === 'wallet'))?.address;
+    const walletAddress = getPrivyWalletAddress(user);
     const activeAddress = (walletAddress || address) as `0x${string}` | undefined;
     const { snapshot: subscription, refresh: refreshSubscription } = useSubscription();
     const [amount, setAmount] = useState('');
-    const [isAuthorized, setIsAuthorized] = useState(false);
-    const [isCheckingAuthorization, setIsCheckingAuthorization] = useState(true);
-    const [isApproved, setIsApproved] = useState(false);
     
     // Grouped loading states
     const [loadingStates, setLoadingStates] = useState({
@@ -93,22 +92,13 @@ export default function CreateEditionPage() {
         functionName: 'isApprovedForAll',
         args: activeAddress ? [activeAddress, ARTWORK_REGISTRY_ADDRESS] : undefined,
     });
-    useEffect(() => {
-        if (artistData) {
-            const artist = artistData as any;
-            setIsAuthorized(artist.authorized);
-            setIsCheckingAuthorization(false);
-        } else if (!isLoadingArtist && artistData !== undefined) {
-            setIsCheckingAuthorization(false);
-        }
-    }, [artistData, isLoadingArtist]);
 
-    useEffect(() => {
-        if (approvalStatus !== undefined) {
-            setIsApproved(approvalStatus as boolean);
-        }
-    }, [approvalStatus]);
-
+    // All three flags are derived from their on-chain reads rather than mirrored
+    // into state: `undefined` means the read has not answered yet, which is
+    // exactly the "still checking" condition the gate needs.
+    const isAuthorized = (artistData as RegistryArtist | undefined)?.authorized === true;
+    const isCheckingAuthorization = artistData === undefined;
+    const isApproved = approvalStatus === true;
     // Warn the user if they try to leave without downloading the keys
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -427,11 +417,11 @@ export default function CreateEditionPage() {
 
             if (editionCreatedEvent) {
                 const decoded = decodeEventLog({
-                    abi: ARTWORK_REGISTRY_ABI,
+                    abi: [NEW_ARTWORK_EDITION_EVENT],
                     data: editionCreatedEvent.data,
                     topics: editionCreatedEvent.topics,
-                }) as any;
-                const editionId = decoded.args.editionId?.toString();
+                });
+                const editionId = decoded.args.editionId.toString();
                 setCreatedEditionId(editionId);
                 // Record the edition off-chain for quota tracking (fire and forget)
                 try {
@@ -453,13 +443,16 @@ export default function CreateEditionPage() {
                 try {
                     const logs = await publicClientInstance.getLogs({
                         address: ARTWORK_REGISTRY_ADDRESS,
-                        event: { type: 'event', name: 'NewArtworkEdition', inputs: [{ type: 'address', name: 'artist', indexed: true }, { type: 'uint256', name: 'editionId', indexed: true }] } as any,
+                        event: NEW_ARTWORK_EDITION_EVENT,
                         args: { artist: activeAddress },
                         fromBlock: BigInt(Math.max(0, Number(await publicClientInstance.getBlockNumber()) - 5)),
                         toBlock: 'latest',
                     });
-                    if (logs.length > 0) {
-                        const editionId = (logs[logs.length - 1] as any).args?.editionId?.toString();
+                    // `args.editionId` is optional in viem's non-strict log type,
+                    // so the guard both narrows it and skips a malformed log.
+                    const lastEditionId = logs.at(-1)?.args.editionId;
+                    if (lastEditionId !== undefined) {
+                        const editionId = lastEditionId.toString();
                         setCreatedEditionId(editionId);
                         try {
                             await incrementEdition(getAccessToken, BigInt(editionId));

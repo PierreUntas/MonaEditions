@@ -2,14 +2,14 @@
 
 import { usePrivy } from "@privy-io/react-auth";
 import { useState } from "react";
+import { getPrivyWalletAddress } from '@/lib/privy-user';
 
 const Header = () => {
     const { login, logout, authenticated, user } = usePrivy();
     const [copied, setCopied] = useState(false);
 
     // Get the user's first wallet (embedded or external)
-    const wallet = user?.wallet || user?.linkedAccounts?.find((account: any) => account.type === 'wallet');
-    const walletAddress = (wallet as any)?.address;
+    const walletAddress = getPrivyWalletAddress(user);
 
     const copyAddress = () => {
         if (walletAddress) {

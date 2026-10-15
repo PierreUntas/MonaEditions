@@ -3,7 +3,7 @@ import Footer from './Footer';
 import CookieNotice from './CookieNotice';
 import {PropsWithChildren} from "react";
 
-const Layout = ({ children }: PropsWithChildren<{}>) => {
+const Layout = ({ children }: PropsWithChildren) => {
     return (
         <div className="app">
             <Navbar />

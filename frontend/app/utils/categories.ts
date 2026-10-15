@@ -53,6 +53,6 @@ export function getCategoryLabel(categoryEn: string): string {
  * Get English key from French label
  */
 export function getCategoryKey(categoryFr: string): string {
-    const entry = Object.entries(CATEGORIES_FR).find(([_, fr]) => fr === categoryFr);
+    const entry = Object.entries(CATEGORIES_FR).find(([, fr]) => fr === categoryFr);
     return entry ? entry[0] : categoryFr;
 }

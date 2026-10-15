@@ -15,6 +15,7 @@ import { sql } from '@vercel/postgres';
 import { requireAuth } from '@/lib/auth';
 import { isAdminOrOwner } from '@/lib/admin';
 import { normalizeWallet } from '@/lib/db';
+import { getErrorMessage, getErrorStatus } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,12 +67,11 @@ export async function POST(req: NextRequest) {
         `;
 
         return NextResponse.json({ ok: true, wallet });
-    } catch (err: any) {
-        console.error('[revoke-atelier] failed:', err?.message);
-        const status = err?.status ?? 500;
+    } catch (err) {
+        console.error('[revoke-atelier] failed:', getErrorMessage(err));
         return NextResponse.json(
-            { error: err?.message || 'internal_error' },
-            { status },
+            { error: getErrorMessage(err) },
+            { status: getErrorStatus(err) },
         );
     }
 }

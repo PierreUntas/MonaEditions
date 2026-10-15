@@ -2,7 +2,7 @@
 const IPFS_API = '/api/ipfs';
 
 // In-memory cache to avoid repeated requests
-const ipfsCache = new Map<string, any>();
+const ipfsCache = new Map<string, unknown>();
 
 const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL || 'https://ipfs.io/ipfs/';
 
@@ -27,7 +27,7 @@ async function parseErrorResponse(response: Response, defaultMessage: string): P
     return errorMessage;
 }
 
-export async function uploadToIPFS(data: any): Promise<string> {
+export async function uploadToIPFS(data: unknown): Promise<string> {
     const formData = new FormData();
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
     formData.append('file', blob);
@@ -153,10 +153,17 @@ function cleanCID(cid: string): string {
         .trim();
 }
 
-export async function getFromIPFSGateway(cid: string): Promise<any> {
+/**
+ * Reads a JSON document from the public IPFS gateway, with an in-memory cache.
+ *
+ * The gateway returns unvalidated JSON, so the caller names the shape it
+ * expects — e.g. `getFromIPFSGateway<EditionMetadata>(cid)` — and every field
+ * of those shapes is optional. Defaults to `unknown` when no shape is given.
+ */
+export async function getFromIPFSGateway<T = unknown>(cid: string): Promise<T> {
     const cleanCid = cleanCID(cid);
     if (ipfsCache.has(cleanCid)) {
-        return ipfsCache.get(cleanCid);
+        return ipfsCache.get(cleanCid) as T;
     }
 
     const url = `${IPFS_GATEWAY}${cleanCid}`;
@@ -174,7 +181,7 @@ export async function getFromIPFSGateway(cid: string): Promise<any> {
             throw new Error(`IPFS error: ${response.statusText}`);
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as T;
         ipfsCache.set(cleanCid, data);
         return data;
     } catch (error) {

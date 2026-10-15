@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 interface FaqItem { q: string; a: string }
 interface FaqSection { category: string; items: FaqItem[] }
@@ -69,12 +70,12 @@ export default function FaqPage() {
 
                 <div className="mt-12 border border-[var(--border)] bg-[var(--bg-card)] p-6 text-center">
                     <p className="text-[14px] font-light text-[var(--text-secondary)] mb-4">{t('noResultsPrompt')}</p>
-                    <a
+                    <Link
                         href="/contact"
                         className="inline-block bg-[var(--bg-inverse)] text-[var(--text-on-inverse)] font-medium text-[12px] tracking-[0.06em] py-3 px-8 border border-[var(--text-primary)] hover:bg-[var(--accent-hover)] transition-all duration-200 no-underline"
                     >
                         {t('contactButton')}
-                    </a>
+                    </Link>
                 </div>
             </div>
         </div>

@@ -11,14 +11,14 @@ import { MerkleTree } from 'merkletreejs';
 import { publicClient, getDeploymentBlock } from '@/lib/client';
 import { BASE_URL } from '@/config/constants';
 import { downloadFile } from '@/app/utils/file';
+import { getErrorMessage } from '@/lib/errors';
+import type { RegistryArtist, RegistryEdition } from '@/types/contracts';
 
 export default function AdminPage() {
     const { address } = useAccount();
     const [newArtistAddress, setNewArtistAddress] = useState('');
     const [removeArtistAddress, setRemoveArtistAddress] = useState('');
     const [checkArtistAddress, setCheckArtistAddress] = useState('');
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
     const [isAuthorizingArtist, setIsAuthorizingArtist] = useState(false);
     const [isRevokingArtist, setIsRevokingArtist] = useState(false);
     const [disableEditionId, setDisableEditionId] = useState('');
@@ -56,6 +56,15 @@ export default function AdminPage() {
     }
     const [artists, setArtists] = useState<ArtistRow[]>([]);
     const [isLoadingArtists, setIsLoadingArtists] = useState(false);
+
+    // Reading `Date.now()` while rendering would make the render impure, so the
+    // clock is state: captured on mount and refreshed every minute, which also
+    // keeps the relative timestamps honest while the dashboard stays open.
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+        const id = setInterval(() => setNow(Date.now()), 60_000);
+        return () => clearInterval(id);
+    }, []);
     const [artistsSearch, setArtistsSearch] = useState('');
 
     // On-chain enrichment per artist wallet — claims, unique collectors,
@@ -90,14 +99,10 @@ export default function AdminPage() {
         args: checkArtistAddress ? [checkArtistAddress as `0x${string}`] : undefined,
     });
 
-    useEffect(() => {
-        if (isAdminResult !== undefined) {
-            setIsAdmin(isAdminResult as boolean);
-            setIsCheckingAdmin(false);
-        } else if (!isLoadingAdmin && isAdminResult !== undefined) {
-            setIsCheckingAdmin(false);
-        }
-    }, [isAdminResult, isLoadingAdmin]);
+    // Derived from the on-chain read rather than mirrored into state:
+    // `undefined` means the read has not answered yet, i.e. still checking.
+    const isAdmin = isAdminResult === true;
+    const isCheckingAdmin = isAdminResult === undefined;
 
     useEffect(() => {
         if (!isCheckingAdmin && !isLoadingAdmin && address && !isAdmin) {
@@ -105,7 +110,7 @@ export default function AdminPage() {
         }
     }, [isCheckingAdmin, isLoadingAdmin, address, isAdmin, router]);
 
-const isArtistAuthorized = artistData ? (artistData as any).authorized : undefined;
+const isArtistAuthorized = artistData ? (artistData as RegistryArtist).authorized : undefined;
 
     const handleAuthorizeArtist = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -137,7 +142,7 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
             if (transactionAttempted1) {
                 await new Promise(r => setTimeout(r, 5000));
                 try {
-                    const artist = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [newArtistAddress as `0x${string}`] }) as any;
+                    const artist = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [newArtistAddress as `0x${string}`] }) as RegistryArtist;
                     if (artist.authorized) { setNewArtistAddress(''); return; }
                 } catch {}
             }
@@ -176,7 +181,7 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
             if (transactionAttempted2) {
                 await new Promise(r => setTimeout(r, 5000));
                 try {
-                    const artist = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [removeArtistAddress as `0x${string}`] }) as any;
+                    const artist = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [removeArtistAddress as `0x${string}`] }) as RegistryArtist;
                     if (!artist.authorized) { setRemoveArtistAddress(''); return; }
                 } catch {}
             }
@@ -195,15 +200,18 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'fetch_failed');
             setArtists(data.artists || []);
-        } catch (err: any) {
+        } catch (err) {
             console.error('Failed to load artists:', err);
         } finally {
             setIsLoadingArtists(false);
         }
     };
 
-    // Auto-load on first render when the user is confirmed as admin
+    // Auto-load on first render when the user is confirmed as admin.
+    // The loader flips its own `isLoadingArtists` flag, which is what
+    // set-state-in-effect objects to; fetching on a gate is the intent.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- see the note above this effect
         if (isAdmin) loadArtists();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAdmin]);
@@ -297,8 +305,10 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
         }
     };
 
-    // Trigger on-chain enrichment once artists are loaded
+    // Trigger on-chain enrichment once artists are loaded. Same shape as
+    // above: the loader owns its loading flag.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- see the note above this effect
         if (artists.length > 0) loadPilotStats();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [artists.length]);
@@ -315,14 +325,14 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
 
         // Atelier subscribers with no editions after 14 days → attention.
         const isAtelier = a.plan === 'atelier' && a.status === 'active';
-        const ageMs = Date.now() - new Date(a.createdAt).getTime();
+        const ageMs = now - new Date(a.createdAt).getTime();
         const ageDays = ageMs / (24 * 3600 * 1000);
         if (isAtelier && a.editionsCount === 0 && ageDays > 14) return 'attention';
 
         // Recent on-chain activity = active.
         const last = stats?.lastActivityDate;
         if (last) {
-            const sinceMs = Date.now() - last.getTime();
+            const sinceMs = now - last.getTime();
             const sinceDays = sinceMs / (24 * 3600 * 1000);
             if (sinceDays < 30) return 'active';
             return 'dormant';
@@ -337,7 +347,7 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
     /** Format a date as "il y a 2j" / "il y a 3h" / "à l'instant". */
     const formatRelative = (date: Date | null): string => {
         if (!date) return '—';
-        const sec = Math.max(0, (Date.now() - date.getTime()) / 1000);
+        const sec = Math.max(0, (now - date.getTime()) / 1000);
         if (sec < 60) return "à l'instant";
         if (sec < 3600) return `il y a ${Math.floor(sec / 60)} min`;
         if (sec < 86400) return `il y a ${Math.floor(sec / 3600)} h`;
@@ -371,8 +381,8 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
             await showAlert('Abonnement Atelier offert avec succès.');
             setCompArtistAddress('');
             loadArtists();
-        } catch (err: any) {
-            await showAlert(`Erreur : ${err?.message || 'inconnue'}`);
+        } catch (err) {
+            await showAlert(`Erreur : ${getErrorMessage(err, 'inconnue')}`);
         } finally {
             setIsGrantingAtelier(false);
         }
@@ -406,8 +416,8 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
             await showAlert('Abonnement Atelier révoqué.');
             setCompArtistAddress('');
             loadArtists();
-        } catch (err: any) {
-            await showAlert(`Erreur : ${err?.message || 'inconnue'}`);
+        } catch (err) {
+            await showAlert(`Erreur : ${getErrorMessage(err, 'inconnue')}`);
         } finally {
             setIsRevokingAtelier(false);
         }
@@ -508,7 +518,7 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
             if (transactionAttempted3) {
                 await new Promise(r => setTimeout(r, 5000));
                 try {
-                    const edition = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [BigInt(disableEditionId)] }) as any;
+                    const edition = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [BigInt(disableEditionId)] }) as RegistryEdition;
                     if (edition[2] === true) { await showAlert(`Édition #${disableEditionId} désactivée.`); setDisableEditionId(''); return; }
                 } catch {}
             }
@@ -546,7 +556,7 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
             if (transactionAttempted4) {
                 await new Promise(r => setTimeout(r, 5000));
                 try {
-                    const edition = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [BigInt(replaceEditionId)] }) as any;
+                    const edition = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [BigInt(replaceEditionId)] }) as RegistryEdition;
                     if (edition[1] === replaceMerkleRoot) { await showAlert(`Racine Merkle de l'édition #${replaceEditionId} remplacée. L'édition est réactivée.`); setReplaceEditionId(''); setReplaceMerkleRoot(''); return; }
                 } catch {}
             }
@@ -582,7 +592,7 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
         return (
             <div className="min-h-screen bg-[var(--bg-page)]">
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-                    <p className=" italic text-[22px] text-[var(--text-muted)]">Accès refusé : vous n'êtes pas admin</p>
+                    <p className=" italic text-[22px] text-[var(--text-muted)]">Accès refusé : vous n’êtes pas admin</p>
                 </div>
             </div>
         );
@@ -610,7 +620,7 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
                     <form onSubmit={handleAuthorizeArtist} className="space-y-4">
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[var(--text-muted)] mb-2">
-                                Adresse de l'artiste
+                                Adresse de l’artiste
                             </label>
                             <input
                                 type="text"
@@ -640,7 +650,7 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
                     <form onSubmit={handleRevokeArtist} className="space-y-4">
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[var(--text-muted)] mb-2">
-                                Adresse de l'artiste
+                                Adresse de l’artiste
                             </label>
                             <input
                                 type="text"
@@ -700,7 +710,7 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
                     <form onSubmit={handleDisableEdition} className="space-y-4">
                         <div>
                             <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[var(--text-muted)] mb-2">
-                                ID de l'édition
+                                ID de l’édition
                             </label>
                             <input
                                 type="number"
@@ -729,13 +739,13 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
                             Récupération après compromission des <em className="italic text-[var(--text-secondary)]">QR codes</em>
                         </h2>
                         <p className="text-[13px] font-light text-[var(--text-secondary)] leading-[1.7]">
-                            Utilisez ce flux en cas de compromission des clés secrètes. Désactivez d'abord l'édition ci-dessus, puis suivez les étapes ci-dessous pour générer de nouvelles clés uniquement pour les certificats non encore réclamés et soumettre la nouvelle racine Merkle.
+                            Utilisez ce flux en cas de compromission des clés secrètes. Désactivez d’abord l’édition ci-dessus, puis suivez les étapes ci-dessous pour générer de nouvelles clés uniquement pour les certificats non encore réclamés et soumettre la nouvelle racine Merkle.
                         </p>
                     </div>
 
                     {/* Step 1 — Analyze */}
                     <div>
-                        <p className="text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--text-muted)] mb-3">Étape 1 — Analyser l'édition</p>
+                        <p className="text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--text-muted)] mb-3">Étape 1 — Analyser l’édition</p>
                         <form onSubmit={handleAnalyzeEdition} className="flex gap-3">
                             <input
                                 type="number"
@@ -801,7 +811,7 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
                             <p className="text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--text-muted)] mb-3">Étape 4 — Soumettre la nouvelle racine Merkle</p>
                             <form onSubmit={handleReplaceMerkleRoot} className="space-y-4">
                                 <div>
-                                    <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[var(--text-muted)] mb-2">ID de l'édition</label>
+                                    <label className="block text-[12px] font-normal tracking-[0.12em] uppercase text-[var(--text-muted)] mb-2">ID de l’édition</label>
                                     <input type="number" value={replaceEditionId} onChange={(e) => setReplaceEditionId(e.target.value)} placeholder="Ex: 1" className="w-full px-4 py-3 bg-[var(--bg-card)] border border-[var(--border)] text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--text-primary)] transition-colors" min="1" required />
                                 </div>
                                 <div>
@@ -822,7 +832,7 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
                         Offrir un <em className="italic text-[var(--text-secondary)]">abonnement Atelier</em>
                     </h2>
                     <p className="text-[13px] font-light text-[var(--text-secondary)] mb-5 leading-[1.7]">
-                        Octroi off-chain d'un abonnement Atelier gratuit illimité à un artiste (typiquement pour les pilotes). Aucune transaction Stripe n'est créée. Pour révoquer un abonnement Stripe payant, l'artiste doit passer par son Customer Portal.
+                        Octroi off-chain d’un abonnement Atelier gratuit illimité à un artiste (typiquement pour les pilotes). Aucune transaction Stripe n’est créée. Pour révoquer un abonnement Stripe payant, l’artiste doit passer par son Customer Portal.
                     </p>
                     <div className="space-y-4">
                         <div>
@@ -868,21 +878,13 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
                     // -------- Aggregate stats for top cards --------
                     const totalArtists = artists.length;
                     const totalEditions = artists.reduce((sum, a) => sum + a.editionsCount, 0);
-                    let totalClaims = 0;
-                    let recentClaims = 0;
-                    let atelierCount = 0;
-                    let attentionCount = 0;
                     const enriched = artists.map(a => {
                         const stats = pilotStatsMap.get(a.walletAddress.toLowerCase());
-                        if (stats) {
-                            totalClaims += stats.totalClaims;
-                            recentClaims += stats.recentClaims;
-                        }
-                        if (a.plan === 'atelier' && a.status === 'active') atelierCount++;
-                        const health = computeHealth(a, stats);
-                        if (health === 'attention') attentionCount++;
-                        return { artist: a, stats, health };
+                        return { artist: a, stats, health: computeHealth(a, stats) };
                     });
+                    const totalClaims = enriched.reduce((sum, e) => sum + (e.stats?.totalClaims ?? 0), 0);
+                    const recentClaims = enriched.reduce((sum, e) => sum + (e.stats?.recentClaims ?? 0), 0);
+                    const attentionCount = enriched.filter(e => e.health === 'attention').length;
 
                     const filtered = enriched.filter(({ artist: a, health }) => {
                         if (pilotFilter !== 'all' && health !== pilotFilter) return false;
@@ -966,7 +968,7 @@ const isArtistAuthorized = artistData ? (artistData as any).authorized : undefin
 
                             {artists.length === 0 && !isLoadingArtists && (
                                 <p className="text-[13px] italic text-[var(--text-muted)] text-center py-8">
-                                    Aucun pilote inscrit pour l'instant.
+                                    Aucun pilote inscrit pour l’instant.
                                 </p>
                             )}
 

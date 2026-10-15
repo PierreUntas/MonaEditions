@@ -27,6 +27,7 @@ import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import { ipfsToHttp } from '@/app/utils/file';
 import { getCategoryLabel } from '@/app/utils/categories';
 import ShareMenu from '@/components/shared/ShareMenu';
+import { useClientUrl } from '@/app/hooks/useClientUrl';
 
 // =========================================================================
 // Types
@@ -604,11 +605,7 @@ function ProvLine({ label, value, href }: { label: string; value: string; href: 
  */
 function ShareEditionButton({ title, artistName }: { title: string; artistName: string }) {
     const t = useTranslations('Explore.edition');
-    const [pageUrl, setPageUrl] = useState('');
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') setPageUrl(window.location.href);
-    }, []);
+    const pageUrl = useClientUrl();
 
     return (
         <ShareMenu

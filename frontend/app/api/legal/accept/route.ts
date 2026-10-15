@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { requireAuth } from '@/lib/auth';
+import { getErrorMessage, getErrorStatus } from '@/lib/errors';
 import {
     getOrCreateSubscription,
     normalizeWallet,
@@ -46,11 +47,10 @@ export async function POST(req: NextRequest) {
         await setPreferredLocale(wallet, detectLocale(req));
 
         return NextResponse.json({ ok: true });
-    } catch (err: any) {
-        const status = err?.status ?? 500;
+    } catch (err) {
         return NextResponse.json(
-            { error: err?.message || 'internal_error' },
-            { status },
+            { error: getErrorMessage(err) },
+            { status: getErrorStatus(err) },
         );
     }
 }

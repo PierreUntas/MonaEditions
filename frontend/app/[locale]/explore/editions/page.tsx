@@ -10,6 +10,8 @@ import { parseAbiItem } from 'viem';
 import { publicClient, getDeploymentBlock } from '@/lib/client';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import type { RegistryArtist, RegistryEdition, RegistryReview } from '@/types/contracts';
+import type { ArtistMetadata } from '@/types/metadata';
 
 // New artwork IPFS structure
 interface EditionIPFSData {
@@ -70,16 +72,16 @@ function ExplorePageContent() {
                     const tokenId = log.args.editionId as bigint;
                     const artistAddress = log.args.artist as `0x${string}`;
                     const [[editionMetadata, , editionDisabled], balance, artistData] = await Promise.all([
-                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [tokenId] }) as Promise<any>,
+                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [tokenId] }) as Promise<RegistryEdition>,
                         publicClient.readContract({ address: ARTWORK_TOKENIZATION_ADDRESS, abi: ARTWORK_TOKENIZATION_ABI, functionName: 'balanceOf', args: [artistAddress, tokenId] }) as Promise<bigint>,
-                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [artistAddress] }) as Promise<any>
+                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [artistAddress] }) as Promise<RegistryArtist>
                     ]);
 
                     let artistName = t('anonymousArtist');
                     let artistLocation = t('locationUnknown');
                     if (artistData.metadata?.trim()) {
                         try {
-                            const artistIpfsData = await getFromIPFSGateway(artistData.metadata);
+                            const artistIpfsData = await getFromIPFSGateway<ArtistMetadata>(artistData.metadata);
                             artistName = artistIpfsData.name || t('anonymousArtist');
                             artistLocation = artistIpfsData.location || t('locationUnknown');
                         } catch (e) {
@@ -90,7 +92,7 @@ function ExplorePageContent() {
                     let artworkTitle = t('untitled');
                     if (editionMetadata?.trim()) {
                         try {
-                            const editionIpfsData = await getFromIPFSGateway(editionMetadata);
+                            const editionIpfsData = await getFromIPFSGateway<EditionIPFSData>(editionMetadata);
                             artworkTitle = editionIpfsData.title || t('untitled');
                         } catch (e) {
                             console.error('Error loading edition IPFS data:', e);
@@ -120,7 +122,7 @@ function ExplorePageContent() {
                 setLoadingStates(prev => ({ ...prev, loadingIPFS: true }));
                 const ipfsResults = await Promise.all(editionsData.map(async (edition) => {
                     if (!edition.metadata) return null;
-                    try { return { tokenId: edition.tokenId, ipfsData: await getFromIPFSGateway(edition.metadata) as EditionIPFSData }; }
+                    try { return { tokenId: edition.tokenId, ipfsData: await getFromIPFSGateway<EditionIPFSData>(edition.metadata) }; }
                     catch { return null; }
                 }));
 
@@ -136,8 +138,8 @@ function ExplorePageContent() {
                     try {
                         const count = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviewsCount', args: [edition.tokenId] }) as bigint;
                         if (count > 0n) {
-                            const comments = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviews', args: [edition.tokenId, 0n, count] }) as any[];
-                            const avg = comments.length > 0 ? comments.reduce((s, c) => s + Number(c[1]), 0) / comments.length : undefined;
+                            const comments = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviews', args: [edition.tokenId, 0n, count] }) as RegistryReview[];
+                            const avg = comments.length > 0 ? comments.reduce((s, c) => s + c.rating, 0) / comments.length : undefined;
                             return { tokenId: edition.tokenId, averageRating: avg, commentsCount: Number(count) };
                         }
                         return null;

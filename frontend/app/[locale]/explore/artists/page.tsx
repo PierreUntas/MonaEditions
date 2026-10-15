@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { parseAbiItem } from 'viem';
 import { publicClient, getDeploymentBlock } from '@/lib/client';
 import { useTranslations } from 'next-intl';
+import type { RegistryArtist } from '@/types/contracts';
 
 // New artist IPFS structure
 interface ArtistIPFSData {
@@ -61,7 +62,7 @@ export default function ArtistsPage() {
 
                 const artistsData = await Promise.all(uniqueAddresses.map(async (addr) => {
                     const [artistData, editionLogs] = await Promise.all([
-                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [addr as `0x${string}`] }) as Promise<any>,
+                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtist', args: [addr as `0x${string}`] }) as Promise<RegistryArtist>,
                         publicClient.getLogs({ address: ARTWORK_REGISTRY_ADDRESS, event: parseAbiItem('event NewArtworkEdition(address indexed artist, uint indexed editionId)'), args: { artist: addr as `0x${string}` }, fromBlock: getDeploymentBlock(), toBlock: 'latest' })
                     ]);
 
@@ -69,7 +70,7 @@ export default function ArtistsPage() {
                     let artistLocation = t('locationUnknown');
                     if (artistData.metadata?.trim()) {
                         try {
-                            const ipfsData = await getFromIPFSGateway(artistData.metadata);
+                            const ipfsData = await getFromIPFSGateway<ArtistIPFSData>(artistData.metadata);
                             artistName = ipfsData.name || t('anonymousArtist');
                             artistLocation = ipfsData.location || t('locationUnknown');
                         } catch (e) {
@@ -97,7 +98,7 @@ export default function ArtistsPage() {
                 setLoadingStates(prev => ({ ...prev, loadingIPFS: true }));
                 const ipfsResults = await Promise.all(valid.map(async (p) => {
                     if (!p.metadata?.trim()) return null;
-                    try { return { address: p.address, ipfsData: await getFromIPFSGateway(p.metadata) as ArtistIPFSData }; }
+                    try { return { address: p.address, ipfsData: await getFromIPFSGateway<ArtistIPFSData>(p.metadata) }; }
                     catch { return null; }
                 }));
 

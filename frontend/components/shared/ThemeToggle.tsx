@@ -32,7 +32,11 @@ export default function ThemeToggle() {
     const [theme, setTheme] = useState<Theme>('light');
     const [mounted, setMounted] = useState(false);
 
+    // The active theme lives on the <html> element, put there by an inline
+    // script before React boots. Reading it after mount is what keeps the
+    // toggle in step with the DOM without a hydration mismatch.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- see the note above this effect
         setTheme(readInitialTheme());
         setMounted(true);
     }, []);

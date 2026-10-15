@@ -17,7 +17,9 @@ import {
     recordWithdrawalWaiver,
     type Locale,
 } from '@/lib/db';
+import Stripe from 'stripe';
 import { APP_URL, STRIPE_PRICE_ID, getStripe } from '@/lib/stripe';
+import { getErrorCode, getErrorMessage, getErrorStatus } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,24 +109,24 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'no_session_url' }, { status: 500 });
         }
         return NextResponse.json({ url: session.url });
-    } catch (err: any) {
+    } catch (err) {
         // Log the full error to Vercel function logs so we can diagnose
         // mismatches between code / Stripe account configuration / env vars.
+        const stripeError = err instanceof Stripe.errors.StripeError ? err : undefined;
         console.error('[checkout] failed:', {
-            message: err?.message,
-            code: err?.code,
-            type: err?.type,
-            statusCode: err?.statusCode,
-            raw: err?.raw,
+            message: getErrorMessage(err),
+            code: getErrorCode(err),
+            type: stripeError?.type,
+            statusCode: stripeError?.statusCode,
+            raw: stripeError?.raw,
         });
-        const status = err?.statusCode ?? err?.status ?? 500;
         return NextResponse.json(
             {
-                error: err?.message || 'internal_error',
-                code: err?.code,
-                type: err?.type,
+                error: getErrorMessage(err),
+                code: getErrorCode(err),
+                type: stripeError?.type,
             },
-            { status },
+            { status: getErrorStatus(err) },
         );
     }
 }

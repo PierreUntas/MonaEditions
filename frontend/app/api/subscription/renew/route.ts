@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getOrCreateSubscription, updateSubscription } from '@/lib/db';
 import { APP_URL, STRIPE_PRICE_ID, getStripe } from '@/lib/stripe';
+import { getErrorCode, getErrorMessage, getErrorStatus } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,12 +46,12 @@ export async function POST(req: NextRequest) {
                     prorate: false,
                 });
                 cancellationConfirmed = true;
-            } catch (e: any) {
-                if (e?.code === 'resource_missing') {
+            } catch (e) {
+                if (getErrorCode(e) === 'resource_missing') {
                     // Subscription already deleted Stripe-side — safe to mark canceled.
                     cancellationConfirmed = true;
                 } else {
-                    console.error('Failed to cancel existing subscription:', e?.message);
+                    console.error('Failed to cancel existing subscription:', getErrorMessage(e));
                     return NextResponse.json(
                         { error: 'cancel_failed' },
                         { status: 502 },
@@ -99,11 +100,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'no_session_url' }, { status: 500 });
         }
         return NextResponse.json({ url: session.url });
-    } catch (err: any) {
-        const status = err?.status ?? 500;
+    } catch (err) {
         return NextResponse.json(
-            { error: err?.message || 'internal_error' },
-            { status },
+            { error: getErrorMessage(err) },
+            { status: getErrorStatus(err) },
         );
     }
 }

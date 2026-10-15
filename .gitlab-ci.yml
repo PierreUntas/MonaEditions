@@ -1,0 +1,48 @@
+# GitLab CI — mirrors .github/workflows/ci.yml for this repository.
+#
+# The jobs here need no project variables: the contract tests run against
+# Hardhat's in-process network, and the placeholder RPC URLs below exist only
+# to satisfy Hardhat's config validation, which checks every declared network
+# even when the tests use none of them. The frontend job stops at lint and
+# typecheck — the production build runs on Vercel for every push, with the real
+# environment variables.
+
+stages:
+  - test
+
+default:
+  image: node:22
+
+contracts:
+  stage: test
+  variables:
+    SEPOLIA_RPC_URL: "https://rpc.invalid/placeholder"
+    BASE_RPC_URL: "https://rpc.invalid/placeholder"
+    BASE_SEPOLIA_RPC_URL: "https://rpc.invalid/placeholder"
+  cache:
+    key:
+      files:
+        - contracts/package-lock.json
+    paths:
+      - contracts/node_modules/
+  before_script:
+    - cd contracts
+    - npm ci
+  script:
+    - npx hardhat compile
+    - npx hardhat test
+
+frontend:
+  stage: test
+  cache:
+    key:
+      files:
+        - frontend/package-lock.json
+    paths:
+      - frontend/node_modules/
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - npm run lint
+    - npx tsc --noEmit

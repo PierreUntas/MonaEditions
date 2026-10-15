@@ -38,9 +38,11 @@ export default function WithdrawalConsentModal({ open, onConfirm, onCancel }: Pr
     const [error, setError] = useState<string | null>(null);
     const checkboxRef = useRef<HTMLInputElement>(null);
 
-    // Reset state when the modal is opened/closed.
+    // Reset state when the modal is opened/closed. The fields are the user's
+    // own input, so they are state; reopening has to clear them.
     useEffect(() => {
         if (open) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- see the note above this effect
             setAccepted(false);
             setBusy(false);
             setError(null);

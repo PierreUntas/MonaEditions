@@ -8,6 +8,8 @@
 
 import { PrivyClient } from '@privy-io/server-auth';
 import { NextRequest } from 'next/server';
+import { HttpError } from './errors';
+import { findLinkedAccountAddress, getPrivyWalletAddress } from './privy-user';
 
 let _privy: PrivyClient | null = null;
 
@@ -36,9 +38,7 @@ export async function requireAuth(req: NextRequest): Promise<AuthContext> {
     const authHeader = req.headers.get('authorization') || '';
     const match = authHeader.match(/^Bearer\s+(.+)$/i);
     if (!match) {
-        const err = new Error('missing_bearer_token');
-        (err as any).status = 401;
-        throw err;
+        throw new HttpError('missing_bearer_token', 401);
     }
     const token = match[1];
 
@@ -46,9 +46,7 @@ export async function requireAuth(req: NextRequest): Promise<AuthContext> {
     try {
         verified = await getPrivy().verifyAuthToken(token);
     } catch {
-        const err = new Error('invalid_token');
-        (err as any).status = 401;
-        throw err;
+        throw new HttpError('invalid_token', 401);
     }
 
     const userId = verified.userId;
@@ -59,20 +57,14 @@ export async function requireAuth(req: NextRequest): Promise<AuthContext> {
     // We prefer the embedded Privy wallet (user.wallet) when present so the
     // off-chain DB key matches the address the frontend actually uses for
     // on-chain transactions, then fall back to any other linked wallet.
-    const primaryWallet = (user as any).wallet;
-    const linkedWallet = user.linkedAccounts.find((a: any) => a.type === 'wallet') as any;
-    const walletAddress: string | undefined =
-        primaryWallet?.address ?? linkedWallet?.address;
+    const walletAddress = getPrivyWalletAddress(user);
 
     if (!walletAddress) {
-        const err = new Error('no_wallet_linked');
-        (err as any).status = 403;
-        throw err;
+        throw new HttpError('no_wallet_linked', 403);
     }
 
     // Locate the email account if any (Privy email login)
-    const emailAccount = user.linkedAccounts.find((a: any) => a.type === 'email') as any;
-    const email = emailAccount?.address ?? null;
+    const email = findLinkedAccountAddress(user, 'email');
 
     return {
         walletAddress: walletAddress.toLowerCase(),

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getErrorMessage } from '@/lib/errors';
 
 export const config = {
     api: { bodyParser: { sizeLimit: '20mb' } },
@@ -74,12 +75,12 @@ export async function POST(request: NextRequest) {
             size,
             name: file.name,
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error("💥 IPFS RPC upload error:", error);
         return NextResponse.json(
             {
                 error: "Échec de l'upload vers le RPC IPFS",
-                details: error?.message || String(error),
+                details: getErrorMessage(error),
             },
             { status: 500 }
         );

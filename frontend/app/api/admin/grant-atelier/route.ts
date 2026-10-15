@@ -20,6 +20,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { isAdminOrOwner } from '@/lib/admin';
+import { getErrorMessage, getErrorStatus } from '@/lib/errors';
 import {
     getOrCreateSubscription,
     updateSubscription,
@@ -59,12 +60,11 @@ export async function POST(req: NextRequest) {
         });
 
         return NextResponse.json({ ok: true, wallet });
-    } catch (err: any) {
-        console.error('[grant-atelier] failed:', err?.message);
-        const status = err?.status ?? 500;
+    } catch (err) {
+        console.error('[grant-atelier] failed:', getErrorMessage(err));
         return NextResponse.json(
-            { error: err?.message || 'internal_error' },
-            { status },
+            { error: getErrorMessage(err) },
+            { status: getErrorStatus(err) },
         );
     }
 }

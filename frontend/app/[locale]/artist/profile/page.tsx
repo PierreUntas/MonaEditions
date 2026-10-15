@@ -14,19 +14,22 @@ import QRCode from 'qrcode';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useSubscription, acceptPrivacy } from '@/app/hooks/useSubscription';
+import { getPrivyWalletAddress } from '@/lib/privy-user';
+import type { ArtistMetadata } from '@/types/metadata';
+import type { RegistryArtist } from '@/types/contracts';
 
 export default function ArtistProfilePage() {
     const t = useTranslations('Artist');
     const tCommon = useTranslations('Common');
     const { address } = useAccount();
     const { user, getAccessToken } = usePrivy();
-    const walletAddress = (user?.wallet || (user?.linkedAccounts as any[])?.find((a: any) => a.type === 'wallet'))?.address;
+    const walletAddress = getPrivyWalletAddress(user);
     const activeAddress = (walletAddress || address) as `0x${string}` | undefined;
     const [name, setName] = useState('');
     const [location, setLocation] = useState('');
-    const [isAuthorized, setIsAuthorized] = useState(false);
-    const [isCheckingAuthorization, setIsCheckingAuthorization] = useState(true);
-    const [isRegistered, setIsRegistered] = useState(false);
+    // Set the moment a profile save confirms on-chain, so the UI switches to
+    // "registered" without waiting for the contract read to refresh.
+    const [justRegistered, setJustRegistered] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
 
     // Grouped loading states
@@ -71,6 +74,13 @@ export default function ArtistProfilePage() {
         functionName: 'getArtist',
         args: activeAddress ? [activeAddress] : undefined,
     });
+
+    // Derived from the on-chain read rather than mirrored into state:
+    // `undefined` means the read has not answered yet, i.e. still checking.
+    const onChainArtist = artistData as RegistryArtist | undefined;
+    const isAuthorized = onChainArtist?.authorized === true;
+    const isCheckingAuthorization = artistData === undefined;
+    const isRegistered = justRegistered || (onChainArtist?.metadata.length ?? 0) > 0;
 
     const MAX_FILE_SIZE = 20 * 1024 * 1024;
     const MAX_PHOTOS = 7;
@@ -162,7 +172,7 @@ export default function ArtistProfilePage() {
     const loadIPFSData = async (cid: string) => {
         setLoadingStates(prev => ({ ...prev, loadingIPFS: true }));
         try {
-            const ipfsData = await getFromIPFSGateway(cid);
+            const ipfsData = await getFromIPFSGateway<ArtistMetadata>(cid);
             if (ipfsData) {
                 if (ipfsData.name) setName(ipfsData.name);
                 if (ipfsData.location) setLocation(ipfsData.location);
@@ -202,19 +212,13 @@ export default function ArtistProfilePage() {
         }
     };
 
+    // The flags above are derived; this effect only has the side effect left:
+    // pulling the profile's IPFS document once the registry read lands.
     useEffect(() => {
-        if (artistData) {
-            const artist = artistData as any;
-            setIsAuthorized(artist.authorized);
-            setIsRegistered(artist.metadata && artist.metadata.length > 0);
-            setIsCheckingAuthorization(false);
-            if (artist.metadata) {
-                loadIPFSData(artist.metadata);
-            }
-        } else if (!isLoadingArtist && artistData !== undefined) {
-            setIsCheckingAuthorization(false);
-        }
-    }, [artistData, isLoadingArtist]);
+        const cid = (artistData as RegistryArtist | undefined)?.metadata;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- see the note above this effect
+        if (cid) loadIPFSData(cid);
+    }, [artistData]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -309,7 +313,7 @@ export default function ArtistProfilePage() {
             );
             await publicClient.waitForTransactionReceipt({ hash: txResult.hash });
 
-            setIsRegistered(true);
+            setJustRegistered(true);
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 6000);
             refetchArtist();
@@ -326,9 +330,9 @@ export default function ArtistProfilePage() {
                         abi: ARTWORK_REGISTRY_ABI,
                         functionName: 'getArtist',
                         args: [activeAddress],
-                    }) as any;
+                    }) as RegistryArtist;
                     if (current.metadata === savedCid) {
-                        setIsRegistered(true);
+                        setJustRegistered(true);
                         setSaveSuccess(true);
                         setTimeout(() => setSaveSuccess(false), 6000);
                         return;
@@ -369,7 +373,7 @@ export default function ArtistProfilePage() {
             <div className="min-h-screen bg-[var(--bg-page)]">
                 <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
                     <p className=" italic text-[22px] text-[var(--text-muted)] text-center max-w-md px-6">
-                        Accès refusé : vous n'êtes pas autorisé comme artiste
+                        Accès refusé : vous n’êtes pas autorisé comme artiste
                     </p>
                 </div>
             </div>
@@ -407,9 +411,9 @@ export default function ArtistProfilePage() {
                         </p>
                         <p className="text-[13px] font-light text-[#991b1b] leading-[1.7]">
                             {t('pastDue.description')}{' '}
-                            <a href="/artist/subscription" className="underline underline-offset-4 hover:no-underline">
+                            <Link href="/artist/subscription" className="underline underline-offset-4 hover:no-underline">
                                 {t('pastDue.linkText')}
-                            </a>{' '}
+                            </Link>{' '}
                             {t('pastDue.descriptionEnd')}
                         </p>
                     </div>

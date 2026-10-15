@@ -11,6 +11,8 @@ import { parseAbiItem } from 'viem';
 import { publicClient, getDeploymentBlock } from '@/lib/client';
 import { useTranslations } from 'next-intl';
 import ShareMenu from '@/components/shared/ShareMenu';
+import type { RegistryArtist, RegistryEdition, RegistryReview } from '@/types/contracts';
+import { useClientUrl } from '@/app/hooks/useClientUrl';
 
 interface ArtistInfo {
     name: string;
@@ -92,7 +94,7 @@ export default function ArtistPageClient() {
                     abi: ARTWORK_REGISTRY_ABI,
                     functionName: 'getArtist',
                     args: [artistAddress as `0x${string}`]
-                }) as any;
+                }) as RegistryArtist;
 
                 let artistName = t('anonymous');
                 let artistLocation = '';
@@ -100,7 +102,7 @@ export default function ArtistPageClient() {
                 if (artistData.metadata?.trim()) {
                     setLoadingStates(prev => ({ ...prev, loadingIPFS: true }));
                     try {
-                        const ipfsData = await getFromIPFSGateway(artistData.metadata) as ArtistIPFSData;
+                        const ipfsData = await getFromIPFSGateway<ArtistIPFSData>(artistData.metadata);
                         setArtistIPFSData(ipfsData);
                         artistName = ipfsData.name || t('anonymous');
                         artistLocation = ipfsData.location || '';
@@ -130,7 +132,7 @@ export default function ArtistPageClient() {
                 // Compute these in parallel with the edition fetching loop to
                 // keep latency down. Both are best-effort: failures don't break
                 // the rest of the page.
-                let computedStats: ArtistStats = { editionsCount: logs.length, collectorsCount: 0 };
+                const computedStats: ArtistStats = { editionsCount: logs.length, collectorsCount: 0 };
                 try {
                     // Member since: timestamp of the earliest NewArtworkEdition event.
                     if (logs.length > 0) {
@@ -169,14 +171,14 @@ export default function ArtistPageClient() {
                 for (const log of logs) {
                     const tokenId = log.args.editionId as bigint;
                     const [[editionMetadata, , editionDisabled], balance] = await Promise.all([
-                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [tokenId] }) as Promise<any>,
+                        publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getArtworkEdition', args: [tokenId] }) as Promise<RegistryEdition>,
                         publicClient.readContract({ address: ARTWORK_TOKENIZATION_ADDRESS, abi: ARTWORK_TOKENIZATION_ABI, functionName: 'balanceOf', args: [artistAddress as `0x${string}`, tokenId] }) as Promise<bigint>
                     ]);
 
                     let artworkTitle = t('untitled');
                     if (editionMetadata?.trim()) {
                         try {
-                            const editionIpfsData = await getFromIPFSGateway(editionMetadata);
+                            const editionIpfsData = await getFromIPFSGateway<EditionIPFSData>(editionMetadata);
                             artworkTitle = editionIpfsData.title || t('untitled');
                         } catch (e) {
                             console.error('Error loading edition IPFS data:', e);
@@ -193,13 +195,12 @@ export default function ArtistPageClient() {
                     const count = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviewsCount', args: [edition.tokenId] }) as bigint;
                     let avgRating = 0;
                     if (count > 0n) {
-                        const comments = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviews', args: [edition.tokenId, 0n, count] }) as any[];
-                        avgRating = comments.reduce((a: number, c: any) => {
-                        return a + Number(c[1]); }, 0) / comments.length;
+                        const comments = await publicClient.readContract({ address: ARTWORK_REGISTRY_ADDRESS, abi: ARTWORK_REGISTRY_ABI, functionName: 'getEditionReviews', args: [edition.tokenId, 0n, count] }) as RegistryReview[];
+                        avgRating = comments.reduce((a, c) => a + c.rating, 0) / comments.length;
                     }
                     if (edition.metadata?.trim()) {
                         try {
-                            const ipfs = await getFromIPFSGateway(edition.metadata);
+                            const ipfs = await getFromIPFSGateway<EditionIPFSData>(edition.metadata);
                             setEditions(prev => prev.map(e => e.tokenId === edition.tokenId ? { ...e, ipfsData: ipfs, averageRating: avgRating, commentsCount: Number(count) } : e));
                         } catch {
                             setEditions(prev => prev.map(e => e.tokenId === edition.tokenId ? { ...e, averageRating: avgRating, commentsCount: Number(count) } : e));
@@ -618,13 +619,7 @@ function StatDot() {
  */
 function ArtistShareButton({ artistName }: { artistName: string }) {
     const t = useTranslations('Explore.artist');
-    const [pageUrl, setPageUrl] = useState('');
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setPageUrl(window.location.href);
-        }
-    }, []);
+    const pageUrl = useClientUrl();
 
     return (
         <ShareMenu

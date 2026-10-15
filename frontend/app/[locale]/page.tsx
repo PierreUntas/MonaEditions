@@ -12,6 +12,7 @@ import {
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import { ipfsToHttp } from '@/app/utils/file';
 import { publicClient, getDeploymentBlock } from '@/lib/client';
+import type { ArtistMetadata, EditionMetadata } from '@/types/metadata';
 
 interface RecentEdition {
     tokenId: bigint;
@@ -60,15 +61,15 @@ export default function Home() {
                             ]);
 
                             const [editionMeta, artistMeta] = await Promise.all([
-                                getFromIPFSGateway(editionData[0]).catch(() => null),
+                                getFromIPFSGateway<EditionMetadata>(editionData[0]).catch(() => null),
                                 artistInfo.metadata
-                                    ? getFromIPFSGateway(artistInfo.metadata).catch(() => null)
+                                    ? getFromIPFSGateway<ArtistMetadata>(artistInfo.metadata).catch(() => null)
                                     : Promise.resolve(null),
                             ]);
 
-                            const title = (editionMeta as any)?.title || 'Œuvre certifiée';
-                            const artistName = (artistMeta as any)?.name || 'Artiste';
-                            const firstImage = (editionMeta as any)?.images?.[0];
+                            const title = editionMeta?.title || 'Œuvre certifiée';
+                            const artistName = artistMeta?.name || 'Artiste';
+                            const firstImage = editionMeta?.images?.[0];
                             const imageUrl = firstImage ? ipfsToHttp(firstImage) : null;
 
                             return { tokenId, title, imageUrl, artistName } as RecentEdition;

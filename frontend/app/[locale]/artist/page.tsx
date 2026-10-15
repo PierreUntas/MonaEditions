@@ -34,6 +34,8 @@ import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import { ipfsToHttp, base64ToBlob, downloadFile } from '@/app/utils/file';
 import { useModal } from '@/app/ModalProvider';
 import { useSubscription } from '@/app/hooks/useSubscription';
+import { getPrivyWalletAddress } from '@/lib/privy-user';
+import type { EditionMetadata } from '@/types/metadata';
 
 interface ArtistIPFSData {
     name?: string;
@@ -66,7 +68,7 @@ export default function ArtistDashboardPage() {
     const tArtist = useTranslations('Artist');
     const { address } = useAccount();
     const { user, ready: privyReady, authenticated } = usePrivy();
-    const walletAddress = (user?.wallet || (user?.linkedAccounts as any[])?.find((a: any) => a.type === 'wallet'))?.address;
+    const walletAddress = getPrivyWalletAddress(user);
     const activeAddress = (walletAddress || address) as `0x${string}` | undefined;
 
     const { showAlert } = useModal();
@@ -91,10 +93,13 @@ export default function ArtistDashboardPage() {
     const isRegistered = !!onChainArtist?.metadata && onChainArtist.metadata.length > 0;
 
     // -------- Load IPFS profile + stats once we have the address --------
+    // Loads the artist's IPFS profile and derived stats; the early return
+    // still has to release the loading flag, hence the write from the effect.
     useEffect(() => {
         if (!activeAddress || !isRegistered || !onChainArtist?.metadata) {
             // Either no address yet or no on-chain registration: nothing to load.
             // We still flip isLoadingData off once authorization check is done.
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- see the note above this effect
             if (!isLoadingArtist) setIsLoadingData(false);
             return;
         }
@@ -107,7 +112,7 @@ export default function ArtistDashboardPage() {
                 // 1. Artist IPFS profile (name, photo) — best-effort
                 let ipfs: ArtistIPFSData | null = null;
                 try {
-                    ipfs = await getFromIPFSGateway(onChainArtist.metadata!) as ArtistIPFSData;
+                    ipfs = await getFromIPFSGateway<ArtistIPFSData>(onChainArtist.metadata!);
                 } catch (e) {
                     console.error('Failed to load artist IPFS profile:', e);
                 }
@@ -229,7 +234,7 @@ export default function ArtistDashboardPage() {
 
                             if (editionMetadata?.trim()) {
                                 try {
-                                    const meta = await getFromIPFSGateway(editionMetadata);
+                                    const meta = await getFromIPFSGateway<EditionMetadata>(editionMetadata);
                                     if (meta?.title) title = meta.title;
                                     if (meta?.images?.[0]) imageUrl = ipfsToHttp(meta.images[0]);
                                     if (typeof meta?.editionSize === 'number') editionSize = meta.editionSize;

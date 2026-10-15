@@ -1,8 +1,17 @@
+
 import { parseAbiItem } from 'viem';
 
 // Contract addresses
 export const ARTWORK_REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_ARTWORK_REGISTRY_ADDRESS as `0x${string}`;
 export const ARTWORK_TOKENIZATION_ADDRESS = process.env.NEXT_PUBLIC_ARTWORK_TOKENIZATION_ADDRESS as `0x${string}`;
+
+/**
+ * The event the app watches to discover editions: the registry has no
+ * enumeration function, so pages list editions by reading these logs.
+ */
+export const NEW_ARTWORK_EDITION_EVENT = parseAbiItem(
+    'event NewArtworkEdition(address indexed artist, uint256 indexed editionId)',
+);
 
 // ABI ArtworkRegistry
 export const ARTWORK_REGISTRY_ABI =[

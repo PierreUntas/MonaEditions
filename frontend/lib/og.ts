@@ -39,7 +39,7 @@ export function buildLocalizedUrl(path: string, locale: string): string {
  * (timeout, parse error, gateway unreachable) so callers can fall back
  * to a neutral card without crashing the page.
  */
-export async function fetchIPFSSafe<T = any>(cid: string, timeoutMs = 5000): Promise<T | null> {
+export async function fetchIPFSSafe<T = unknown>(cid: string, timeoutMs = 5000): Promise<T | null> {
     if (!cid?.trim()) return null;
     try {
         const result = await Promise.race([

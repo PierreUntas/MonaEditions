@@ -35,8 +35,12 @@ export default function CookieNotice() {
     // Start hidden to avoid SSR/client mismatch flash; flip on after mount.
     const [visible, setVisible] = useState(false);
 
+    // Whether the notice was dismissed lives in browser storage, which the
+    // server cannot read — so it is checked after mount instead of during
+    // render, which would make the server and client markup disagree.
     useEffect(() => {
         if (!hasAcknowledged()) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- see the note above this effect
             setVisible(true);
         }
     }, []);

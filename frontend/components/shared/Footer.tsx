@@ -4,14 +4,13 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { usePrivy } from '@privy-io/react-auth';
 import { useAccount, useReadContract } from 'wagmi';
-import { useEffect, useState } from 'react';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
+import type { RegistryArtist } from '@/types/contracts';
 
 const Footer = () => {
     const t = useTranslations('Footer');
     const { authenticated } = usePrivy();
     const { address } = useAccount();
-    const [isArtist, setIsArtist] = useState(false);
 
     const { data: artistData } = useReadContract({
         address: ARTWORK_REGISTRY_ADDRESS,
@@ -20,9 +19,9 @@ const Footer = () => {
         args: address ? [address] : undefined,
     });
 
-    useEffect(() => {
-        if (artistData) setIsArtist((artistData as any).authorized === true);
-    }, [artistData]);
+    // Derived from the on-chain read rather than mirrored into state, so the
+    // flag can never lag behind the read it comes from.
+    const isArtist = (artistData as RegistryArtist | undefined)?.authorized === true;
 
     const colCount = 2 + (authenticated ? 1 : 0) + (isArtist ? 1 : 0);
     const gridClass = {

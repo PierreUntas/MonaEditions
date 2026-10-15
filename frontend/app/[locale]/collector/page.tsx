@@ -37,6 +37,8 @@ import { getFromIPFSGateway, uploadToIPFS } from '@/app/utils/ipfs';
 import { ipfsToHttp } from '@/app/utils/file';
 import { useModal } from '@/app/ModalProvider';
 import ShareMenu from '@/components/shared/ShareMenu';
+import type { ArtistMetadata, EditionMetadata } from '@/types/metadata';
+import { useClientUrl } from '@/app/hooks/useClientUrl';
 
 // =========================================================================
 // Types
@@ -132,7 +134,7 @@ export default function CollectorPage() {
                         let imageUrl: string | null = null;
                         if (editionMetadataCid?.trim()) {
                             try {
-                                const editionIpfs = await getFromIPFSGateway(editionMetadataCid);
+                                const editionIpfs = await getFromIPFSGateway<EditionMetadata>(editionMetadataCid);
                                 if (editionIpfs?.title) artworkTitle = editionIpfs.title;
                                 if (editionIpfs?.images?.[0]) imageUrl = ipfsToHttp(editionIpfs.images[0]);
                             } catch (e) {
@@ -143,7 +145,7 @@ export default function CollectorPage() {
                         let artistName = t('anonymousArtist');
                         if (artistData.metadata?.trim()) {
                             try {
-                                const artistIpfs = await getFromIPFSGateway(artistData.metadata);
+                                const artistIpfs = await getFromIPFSGateway<ArtistMetadata>(artistData.metadata);
                                 if (artistIpfs?.name) artistName = artistIpfs.name;
                             } catch (e) {
                                 console.error('Error loading artist metadata:', e);
@@ -608,13 +610,7 @@ function CollectionCard({
     onTransfer: () => void;
 }) {
     const t = useTranslations('Collector');
-    const [pageUrl, setPageUrl] = useState('');
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setPageUrl(`${window.location.origin}/explore/edition/${token.tokenId.toString()}`);
-        }
-    }, [token.tokenId]);
+    const pageUrl = useClientUrl(`/explore/edition/${token.tokenId.toString()}`);
 
     return (
         <article className="border border-[var(--border)] bg-[var(--bg-card)] overflow-hidden">

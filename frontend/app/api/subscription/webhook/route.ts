@@ -24,12 +24,25 @@ import {
     normalizeWallet,
 } from '@/lib/db';
 import { getStripe } from '@/lib/stripe';
+import { getErrorMessage } from '@/lib/errors';
 import {
     sendWelcomeAtelier,
     sendSubscriptionCanceled,
     sendPaymentFailed,
     sendRenewalConfirmation,
 } from '@/lib/email';
+
+/**
+ * Stripe moved `current_period_start` / `current_period_end` from the
+ * subscription onto its items, so the installed SDK's `Stripe.Subscription`
+ * no longer declares them — while the webhook payloads for the API version
+ * this account is on still carry them at the top level. Declaring just those
+ * two fields keeps the rest of the subscription strongly typed.
+ */
+interface StripeSubscriptionPeriod {
+    current_period_start?: number;
+    current_period_end?: number;
+}
 
 export const dynamic = 'force-dynamic';
 // Stripe needs the raw request body to verify the signature
@@ -48,8 +61,8 @@ export async function POST(req: NextRequest) {
     let event: Stripe.Event;
     try {
         event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-    } catch (err: any) {
-        console.error('Stripe webhook signature verification failed:', err.message);
+    } catch (err) {
+        console.error('Stripe webhook signature verification failed:', getErrorMessage(err));
         return NextResponse.json({ error: 'invalid_signature' }, { status: 400 });
     }
 
@@ -135,11 +148,12 @@ async function handleSubscriptionUpsert(sub: Stripe.Subscription) {
 
     const status = mapStripeStatus(sub.status);
     const isActiveOrTrialing = sub.status === 'active' || sub.status === 'trialing';
-    const periodStart = (sub as any).current_period_start
-        ? new Date((sub as any).current_period_start * 1000)
+    const period = sub as Stripe.Subscription & StripeSubscriptionPeriod;
+    const periodStart = period.current_period_start
+        ? new Date(period.current_period_start * 1000)
         : null;
-    const periodEnd = (sub as any).current_period_end
-        ? new Date((sub as any).current_period_end * 1000)
+    const periodEnd = period.current_period_end
+        ? new Date(period.current_period_end * 1000)
         : null;
 
     // Detect cancellation transition: cancel_at_period_end changed

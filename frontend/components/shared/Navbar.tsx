@@ -7,6 +7,9 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { ARTWORK_REGISTRY_ADDRESS, ARTWORK_REGISTRY_ABI } from '@/config/contracts';
 import ThemeToggle from "@/components/shared/ThemeToggle";
+import { getPrivyWallet, getPrivyWalletAddress } from '@/lib/privy-user';
+import type { RegistryArtist } from '@/types/contracts';
+import Link from 'next/link';
 
 export default function Navbar() {
     const t = useTranslations('Navbar');
@@ -25,13 +28,8 @@ export default function Navbar() {
         router.replace(pathname, { locale: newLocale });
     };
 
-    const [isOwner, setIsOwner] = useState(false);
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [isArtist, setIsArtist] = useState(false);
-
-    const wallet = user?.wallet || user?.linkedAccounts?.find((a: any) => a.type === 'wallet');
-    const walletAddress = (wallet as any)?.address;
-    const chainId = (wallet as any)?.chainId;
+    const walletAddress = getPrivyWalletAddress(user);
+    const chainId = getPrivyWallet(user)?.chainId;
     
     const activeAddress = walletAddress || address;
     
@@ -78,18 +76,12 @@ export default function Navbar() {
         args: activeAddress ? [activeAddress] : undefined,
     });
 
-    useEffect(() => {
-        if (activeAddress && ownerAddress)
-            setIsOwner(activeAddress.toLowerCase() === (ownerAddress as string).toLowerCase());
-    }, [activeAddress, ownerAddress]);
-
-    useEffect(() => {
-        if (isAdminResult !== undefined) setIsAdmin(isAdminResult as boolean);
-    }, [isAdminResult]);
-
-    useEffect(() => {
-        if (artistData) setIsArtist((artistData as any).authorized === true);
-    }, [artistData]);
+    // The three role flags are derived from their on-chain reads rather than
+    // mirrored into state, so they cannot lag behind the reads they come from.
+    const isOwner = activeAddress !== undefined && ownerAddress !== undefined
+        && activeAddress.toLowerCase() === (ownerAddress as string).toLowerCase();
+    const isAdmin = isAdminResult === true;
+    const isArtist = (artistData as RegistryArtist | undefined)?.authorized === true;
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 20);
@@ -114,13 +106,13 @@ export default function Navbar() {
                     ${scrolled ? 'border-b border-[var(--border)] shadow-sm' : 'border-b border-transparent'}`}
             >
                 {/* Logo — SVG monochrome noir, inversé en blanc via CSS filter en dark mode */}
-                <a href="/" className="flex items-center gap-2.5 group no-underline">
+                <Link href="/" className="flex items-center gap-2.5 group no-underline">
                     <img
                         src="/logo-mona.svg"
                         alt="Mona Editions Logo"
                         className="w-[100px] h-[100px] object-contain flex-shrink-0 dark:invert"
                     />
-                </a>
+                </Link>
 
                 {/* Center links */}
                 <nav className="hidden md:flex gap-9 absolute left-1/2 -translate-x-1/2">

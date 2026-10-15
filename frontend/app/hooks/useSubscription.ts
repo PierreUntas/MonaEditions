@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
+import { getErrorMessage } from '@/lib/errors';
 
 export type Plan = 'free' | 'atelier';
 export type SubStatus = 'none' | 'active' | 'canceled' | 'past_due' | 'incomplete';
@@ -74,15 +75,18 @@ export function useSubscription(): UseSubscriptionState {
             }
             const data = (await res.json()) as SubscriptionSnapshot;
             setSnapshot(data);
-        } catch (e: any) {
-            setError(e?.message || 'fetch_failed');
+        } catch (e) {
+            setError(getErrorMessage(e, 'fetch_failed'));
         } finally {
             setLoading(false);
         }
     }, [authenticated, getAccessToken]);
 
+    // Fetches the subscription snapshot once Privy reports an authenticated
+    // session. `refresh` owns the loading/error state it writes.
     useEffect(() => {
         if (ready && authenticated) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- see the note above this effect
             refresh();
         }
     }, [ready, authenticated, refresh]);

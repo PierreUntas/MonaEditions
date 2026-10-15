@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { sendClaimReceipt } from '@/lib/email';
 import type { Locale } from '@/lib/db';
+import { getErrorMessage } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,8 +71,8 @@ export async function POST(req: NextRequest) {
         );
 
         return NextResponse.json({ ok: true });
-    } catch (err: any) {
-        console.error('[notify-claim] failed:', err?.message);
-        return NextResponse.json({ ok: false, error: err?.message }, { status: 200 });
+    } catch (err) {
+        console.error('[notify-claim] failed:', getErrorMessage(err));
+        return NextResponse.json({ ok: false, error: getErrorMessage(err) }, { status: 200 });
     }
 }

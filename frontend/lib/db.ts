@@ -6,6 +6,7 @@
  */
 
 import { sql } from '@vercel/postgres';
+import { getErrorCode } from './errors';
 
 // ---- Domain types ----------------------------------------------------------
 
@@ -63,10 +64,35 @@ export function normalizeWallet(addr: string): string {
 }
 
 /**
+ * The `artist_subscriptions` row as Postgres returns it, in snake_case.
+ *
+ * Dates come back as whatever the driver decoded — a `Date` for timestamp
+ * columns, a string if the column is text — so they are widened here and
+ * normalized by {@link rowToSubscription}.
+ */
+interface SubscriptionRow {
+    wallet_address: string;
+    email: string | null;
+    stripe_customer_id: string | null;
+    stripe_subscription_id: string | null;
+    plan: ArtistSubscription['plan'];
+    status: ArtistSubscription['status'];
+    current_period_start: Date | string | null;
+    current_period_end: Date | string | null;
+    cancel_at_period_end: boolean;
+    free_quota_used: number;
+    privacy_accepted_at: Date | string | null;
+    withdrawal_waiver_accepted_at: Date | string | null;
+    preferred_locale: string | null;
+    created_at: Date | string;
+    updated_at: Date | string;
+}
+
+/**
  * Map a raw DB row (snake_case) to our camelCase domain type.
  * Returns null if the row is missing.
  */
-function rowToSubscription(row: any): ArtistSubscription | null {
+function rowToSubscription(row: SubscriptionRow | undefined): ArtistSubscription | null {
     if (!row) return null;
     return {
         walletAddress: row.wallet_address,
@@ -139,14 +165,14 @@ export async function getOrCreateSubscription(
 ): Promise<ArtistSubscription> {
     const wallet = normalizeWallet(walletAddress);
 
-    const existing = await sql`
+    const existing = await sql<SubscriptionRow>`
         SELECT * FROM artist_subscriptions WHERE wallet_address = ${wallet} LIMIT 1
     `;
     if (existing.rows.length > 0) {
         return rowToSubscription(existing.rows[0])!;
     }
 
-    const inserted = await sql`
+    const inserted = await sql<SubscriptionRow>`
         INSERT INTO artist_subscriptions (wallet_address, email, plan, status, free_quota_used)
         VALUES (${wallet}, ${email}, 'free', 'none', 0)
         ON CONFLICT (wallet_address) DO UPDATE SET email = COALESCE(artist_subscriptions.email, EXCLUDED.email)
@@ -240,7 +266,7 @@ export async function recordEdition(
 ): Promise<{ recorded: boolean; reason?: string }> {
     const wallet = normalizeWallet(walletAddress);
 
-    const subRows = await sql`SELECT * FROM artist_subscriptions WHERE wallet_address = ${wallet} LIMIT 1`;
+    const subRows = await sql<SubscriptionRow>`SELECT * FROM artist_subscriptions WHERE wallet_address = ${wallet} LIMIT 1`;
     const sub = rowToSubscription(subRows.rows[0]);
     if (!sub) return { recorded: false, reason: 'no_subscription_row' };
 
@@ -283,9 +309,9 @@ export async function markStripeEventProcessed(
             VALUES (${eventId}, ${eventType})
         `;
         return true;
-    } catch (e: any) {
+    } catch (e) {
         // Unique violation = already processed
-        if (e?.code === '23505') return false;
+        if (getErrorCode(e) === '23505') return false;
         throw e;
     }
 }
@@ -294,7 +320,7 @@ export async function markStripeEventProcessed(
  * Find a subscription by Stripe customer id (used by webhooks).
  */
 export async function findByStripeCustomerId(customerId: string): Promise<ArtistSubscription | null> {
-    const r = await sql`
+    const r = await sql<SubscriptionRow>`
         SELECT * FROM artist_subscriptions WHERE stripe_customer_id = ${customerId} LIMIT 1
     `;
     return rowToSubscription(r.rows[0]);

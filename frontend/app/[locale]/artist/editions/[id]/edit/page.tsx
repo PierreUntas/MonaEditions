@@ -11,6 +11,10 @@ import { CATEGORIES_EN, CATEGORIES_FR } from '@/app/utils/categories';
 import { useModal } from '@/app/ModalProvider';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { getPrivyWalletAddress } from '@/lib/privy-user';
+import { getErrorMessage } from '@/lib/errors';
+import type { RegistryArtist } from '@/types/contracts';
+import type { EditionMetadata } from '@/types/metadata';
 
 interface EditionData {
     title: string;
@@ -30,7 +34,7 @@ export default function EditEditionPage() {
 
     const { address } = useAccount();
     const { user } = usePrivy();
-    const walletAddress = (user?.wallet || (user?.linkedAccounts as any[])?.find((a: any) => a.type === 'wallet'))?.address;
+    const walletAddress = getPrivyWalletAddress(user);
     const activeAddress = (walletAddress || address) as `0x${string}` | undefined;
 
     const { sendTransaction } = useSendTransaction();
@@ -61,7 +65,6 @@ export default function EditEditionPage() {
     }, [editionData.technique]);
 
     const [isLoading, setIsLoading] = useState(true);
-    const [isAuthorized, setIsAuthorized] = useState(false);
     const [loadingStates, setLoadingStates] = useState({
         uploadingImage: false,
         uploading: false,
@@ -93,9 +96,8 @@ export default function EditEditionPage() {
         args: activeAddress ? [activeAddress, editionId] : undefined,
     });
 
-    useEffect(() => {
-        if (artistData) setIsAuthorized((artistData as any).authorized === true);
-    }, [artistData]);
+    // Derived from the on-chain read instead of mirrored into state.
+    const isAuthorized = (artistData as RegistryArtist | undefined)?.authorized === true;
 
     // Verrouillage métadonnée selon l'invariant v2 :
     // la modification n'est possible que si l'artiste détient encore
@@ -111,14 +113,18 @@ export default function EditEditionPage() {
         }
     }, [artistBalance, editionData.editionSize]);
 
+    // Seeds the edit form from the edition's IPFS document. The form is
+    // user-editable afterwards, so the values are state rather than derived —
+    // which is why this effect writes state.
     useEffect(() => {
         if (!editionOnChain) return;
         const [metadata] = editionOnChain as [string, `0x${string}`, boolean];
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- see the note above this effect
         if (!metadata) { setIsLoading(false); return; }
 
-        getFromIPFSGateway(metadata)
-            .then((ipfsData: any) => {
+        getFromIPFSGateway<EditionMetadata>(metadata)
+            .then((ipfsData) => {
                 setEditionData({
                     title: ipfsData.title || ipfsData.name || '',
                     year: ipfsData.year || new Date().getFullYear(),
@@ -145,7 +151,7 @@ export default function EditEditionPage() {
                 newCids.push(`ipfs://${cid}`);
             }
             setEditionData(prev => ({ ...prev, images: [...prev.images, ...newCids] }));
-        } catch (error) {
+        } catch {
             await showAlert(t('form.uploadError'));
         } finally {
             setLoadingStates(prev => ({ ...prev, uploadingImage: false }));
@@ -206,8 +212,8 @@ export default function EditEditionPage() {
             setSaved(true);
             window.scrollTo({ top: 0, behavior: 'smooth' });
             await showAlert(t('updateSuccess'));
-        } catch (error: any) {
-            const rawMessage = error?.message || '';
+        } catch (error) {
+            const rawMessage = getErrorMessage(error, '');
             if (rawMessage.includes('MetadataLocked')) {
                 await showAlert(t('errorMetadataLocked'));
             } else {

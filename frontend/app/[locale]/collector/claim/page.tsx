@@ -43,6 +43,9 @@ import { publicClient } from '@/lib/client';
 import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import { ipfsToHttp } from '@/app/utils/file';
 import ShareMenu from '@/components/shared/ShareMenu';
+import { getErrorMessage } from '@/lib/errors';
+import type { ArtistMetadata, EditionMetadata } from '@/types/metadata';
+import { useClientUrl } from '@/app/hooks/useClientUrl';
 
 // =========================================================================
 // Types
@@ -118,15 +121,21 @@ function ClaimFlow() {
     const [txHash, setTxHash] = useState<string | null>(null);
 
     // ---------- Sync URL params back into state (e.g. on QR rescan) ----------
+    // The three fields stay editable by hand, so they are state seeded from the
+    // query string rather than derived from it — a rescan must overwrite them.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- see the note above this effect
         if (editionIdParam) setEditionId(editionIdParam);
         if (secretKeyParam) setSecretKey(secretKeyParam);
         if (merkleProofParam) setMerkleProofInput(merkleProofParam);
     }, [editionIdParam, secretKeyParam, merkleProofParam]);
 
     // ---------- Fetch artwork data on mount ----------
+    // Fetches from the chain and IPFS; the no-edition branch has to release the
+    // loading flag, hence the write from the effect.
     useEffect(() => {
         if (!editionId) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- see the note above this effect
             setArtworkLoading(false);
             return;
         }
@@ -173,7 +182,10 @@ function ClaimFlow() {
                 console.warn('Claim notification failed (non-blocking):', e);
             }
         },
-        [getAccessToken, editionId, artwork?.title, artwork?.artistName],
+        // `artwork` whole, not its two fields: the compiler infers the object
+        // as the dependency, and a narrower list makes it skip optimizing this
+        // component entirely.
+        [getAccessToken, editionId, artwork],
     );
 
     // ---------- Claim handler ----------
@@ -255,7 +267,7 @@ function ClaimFlow() {
             setTxHash(txResult.hash);
             setPhase('success');
             void sendClaimNotification(txResult.hash);
-        } catch (err: any) {
+        } catch (err) {
             console.error('Claim error:', err);
 
             // Privy sometimes throws even when the tx actually succeeded
@@ -418,7 +430,7 @@ async function fetchArtworkData(editionIdStr: string): Promise<ArtworkData> {
     // 2. IPFS edition metadata + artist on-chain record in parallel.
     const [editionIpfs, artistRecord] = await Promise.all([
         editionMetadataCid?.trim()
-            ? getFromIPFSGateway(editionMetadataCid).catch(() => null)
+            ? getFromIPFSGateway<EditionMetadata>(editionMetadataCid).catch(() => null)
             : Promise.resolve(null),
         artistAddress
             ? publicClient.readContract({
@@ -434,20 +446,22 @@ async function fetchArtworkData(editionIdStr: string): Promise<ArtworkData> {
     let artistName = '';
     if (artistRecord?.metadata?.trim()) {
         try {
-            const artistIpfs = await getFromIPFSGateway(artistRecord.metadata);
-            artistName = (artistIpfs as any)?.name?.trim() || '';
+            const artistIpfs = await getFromIPFSGateway<ArtistMetadata>(artistRecord.metadata);
+            artistName = artistIpfs?.name?.trim() || '';
         } catch (e) {
             console.warn('Artist IPFS fetch failed:', e);
         }
     }
 
+    const firstImage = editionIpfs?.images?.[0];
+
     return {
         editionId: tokenId,
-        title: (editionIpfs as any)?.title?.trim() || '',
-        technique: (editionIpfs as any)?.technique || undefined,
-        dimensions: (editionIpfs as any)?.dimensions || undefined,
-        year: (editionIpfs as any)?.year || undefined,
-        image: (editionIpfs as any)?.images?.[0] ? ipfsToHttp((editionIpfs as any).images[0]) : null,
+        title: editionIpfs?.title?.trim() || '',
+        technique: editionIpfs?.technique || undefined,
+        dimensions: editionIpfs?.dimensions || undefined,
+        year: editionIpfs?.year || undefined,
+        image: firstImage ? ipfsToHttp(firstImage) : null,
         disabled,
         artistAddress,
         artistName,
@@ -455,8 +469,8 @@ async function fetchArtworkData(editionIdStr: string): Promise<ArtworkData> {
 }
 
 /** Map a raw error to a friendly code. */
-function mapError(err: any): ErrorCode {
-    const msg = (err?.message || '').toLowerCase();
+function mapError(err: unknown): ErrorCode {
+    const msg = getErrorMessage(err, '').toLowerCase();
     if (msg.includes('user rejected') || msg.includes('user denied') || msg.includes('rejected the request')) {
         return 'rejected';
     }
@@ -627,12 +641,7 @@ function SuccessView({
     // The shareable URL points to the *public* edition page, NOT the claim
     // page (which contains a secret key in its query string). Built from
     // window.location.origin so it works on prod, preview, and localhost.
-    const [editionUrl, setEditionUrl] = useState('');
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setEditionUrl(`${window.location.origin}/explore/edition/${artwork.editionId.toString()}`);
-        }
-    }, [artwork.editionId]);
+    const editionUrl = useClientUrl(`/explore/edition/${artwork.editionId.toString()}`);
 
     const artistName = artwork.artistName || '—';
     const successTitle = t('successTitle', { artist: artistName });

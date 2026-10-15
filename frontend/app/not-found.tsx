@@ -22,7 +22,7 @@ export default function NotFound() {
                     Page introuvable / Seite nicht gefunden
                 </h1>
                 <p className="text-[14px] font-light text-[var(--text-secondary)] mb-8 leading-[1.7]">
-                    L'adresse demandée n'existe pas. / Die angeforderte Adresse existiert nicht.
+                    L’adresse demandée n’existe pas. / Die angeforderte Adresse existiert nicht.
                 </p>
                 <Link
                     href="/"

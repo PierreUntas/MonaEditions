@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { requireAuth } from '@/lib/auth';
 import { isAdminOrOwner } from '@/lib/admin';
+import { getErrorMessage, getErrorStatus } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,12 +81,11 @@ export async function GET(req: NextRequest) {
         }));
 
         return NextResponse.json({ artists: rows });
-    } catch (err: any) {
-        console.error('[admin/artists] failed:', err?.message);
-        const status = err?.status ?? 500;
+    } catch (err) {
+        console.error('[admin/artists] failed:', getErrorMessage(err));
         return NextResponse.json(
-            { error: err?.message || 'internal_error' },
-            { status },
+            { error: getErrorMessage(err) },
+            { status: getErrorStatus(err) },
         );
     }
 }

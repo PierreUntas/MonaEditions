@@ -124,8 +124,8 @@ Avec un Merkle Tree, on ne stocke qu'**un seul hash racine** (la merkle root) on
 
 **Base mainnet :**
 
-- `ArtworkRegistry` : `0x157DbA323117DC54A7907E55d0cA7553974E79a5`
-- `ArtworkTokenization` : `0x73D6Dd9498Fed8F85cc7ceBAc8593eE6C93b3A54`
+- `ArtworkRegistry` : `0x4f093952cF2377eFa05BC15E32ffFF63Cd4Fc208`
+- `ArtworkTokenization` : `0xF4D0B110015E4Cb131Ac294E3384A8332F9e8Ae6`
 
 **Sepolia (testnet) :**
 

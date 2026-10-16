@@ -170,17 +170,10 @@ Les contrats v1 restent on-chain de toute façon (immuables), mais on les retire
 
 ## Adresses
 
-À renseigner après déploiement :
-
 | Réseau | ArtworkRegistry v2 | ArtworkTokenization v2 |
 |--------|---------------------|------------------------|
-| Sepolia | _à déployer_ | _à déployer_ |
-| Base mainnet | _à déployer_ | _à déployer_ |
-
-Pour mémoire, les adresses v1 sont :
-
-- Base mainnet : ArtworkRegistry `0x157DbA323117DC54A7907E55d0cA7553974E79a5`, ArtworkTokenization `0x73D6Dd9498Fed8F85cc7ceBAc8593eE6C93b3A54`.
-- Sepolia : ArtworkRegistry `0xfa954e2AEC0827Bb69433db64F99F6E9df562113`, ArtworkTokenization `0x1f7Bac7B3F6B49E2147541aB58f2C6365A7Ed148`.
+| Base mainnet | `0x4f093952cF2377eFa05BC15E32ffFF63Cd4Fc208` | `0xF4D0B110015E4Cb131Ac294E3384A8332F9e8Ae6` |
+| Sepolia | `0xfa954e2AEC0827Bb69433db64F99F6E9df562113` | `0x1f7Bac7B3F6B49E2147541aB58f2C6365A7Ed148` |
 
 ## Estimation d'effort
 

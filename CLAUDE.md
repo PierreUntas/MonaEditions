@@ -62,20 +62,7 @@ must still hold the full initial supply to update metadata). It also emits
 the standard EIP-1155 `URI` event on mint and metadata update so external
 marketplaces auto-index changes. See `docs/technique/06-evolution-v2.md`.
 
-**Superseded v2 deployment** (Base mainnet, deployed 2026-06-14, replaced after
-8 days): `ArtworkRegistry` `0xc17d2c192290D72828345486a33892Ac805010fE`,
-`ArtworkTokenization` `0xE3D0F890B474799B661E6a66eB9950BFC2216F49`.
-
-Same code as the current pair, not an earlier version: the two tokenization
-contracts are byte-identical on-chain, and the two registries differ only in
-the tokenization address each embeds as an immutable. Anything minted against
-this pair still lives there — it is a separate instance, not an upgrade.
-
-**Legacy addresses** (Base mainnet — v1, kept on-chain for existing certificates):
-- `ArtworkRegistry` v1: `0x157DbA323117DC54A7907E55d0cA7553974E79a5`
-- `ArtworkTokenization` v1: `0x73D6Dd9498Fed8F85cc7ceBAc8593eE6C93b3A54`
-
-**Deployed addresses** (Sepolia testnet — v1):
+**Deployed addresses** (Sepolia testnet):
 - `ArtworkRegistry`: `0xfa954e2AEC0827Bb69433db64F99F6E9df562113`
 - `ArtworkTokenization`: `0x1f7Bac7B3F6B49E2147541aB58f2C6365A7Ed148`
 

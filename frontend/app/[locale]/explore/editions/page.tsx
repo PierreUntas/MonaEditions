@@ -12,6 +12,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { RegistryArtist, RegistryEdition, RegistryReview } from '@/types/contracts';
 import type { ArtistMetadata } from '@/types/metadata';
+import Image from 'next/image';
 
 // New artwork IPFS structure
 interface EditionIPFSData {
@@ -229,11 +230,16 @@ function ExplorePageContent() {
                             >
                                 {/* First image from portfolio, or placeholder */}
                                 {edition.ipfsData?.images?.[0] ? (
-                                    <div className="w-full aspect-[4/3] overflow-hidden bg-[var(--border-soft)]">
-                                        <img
+                                    <div className="relative w-full aspect-[4/3] overflow-hidden bg-[var(--border-soft)]">
+                                        <Image
                                             src={ipfsToHttp(edition.ipfsData.images[0])}
                                             alt={edition.title}
-                                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                                            fill
+                                            // One card per row on phones, two at md, three at lg —
+                                            // matches the grid below so the optimizer picks the
+                                            // width the card actually gets.
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                            className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
                                         />
                                     </div>
                                 ) : (

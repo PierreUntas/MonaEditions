@@ -5,7 +5,38 @@ import { withSentryConfig } from '@sentry/nextjs';
 // Points the plugin to our i18n/request.ts config file
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
+/**
+ * Hosts the image optimizer is allowed to fetch from.
+ *
+ * Artwork photographs are served by whichever IPFS gateway
+ * NEXT_PUBLIC_IPFS_GATEWAY_URL names, with ipfs.io as the fallback that
+ * `ipfsToHttp` uses when the variable is unset — so the host is read from the
+ * same variable instead of being hardcoded here, and both are allowed.
+ */
+function ipfsImageHosts(): string[] {
+    const hosts = new Set(['ipfs.io']);
+    const configured = process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL;
+    if (configured) {
+        try {
+            hosts.add(new URL(configured).hostname);
+        } catch {
+            console.warn(`[next.config] NEXT_PUBLIC_IPFS_GATEWAY_URL is not a URL: ${configured}`);
+        }
+    }
+    return [...hosts];
+}
+
 const nextConfig: NextConfig = {
+    images: {
+        // Artwork photos come straight from IPFS at full size — 300 Ko to 1 Mo
+        // each — so they are resized and re-encoded per layout instead of being
+        // shipped whole to a 400 px thumbnail.
+        remotePatterns: ipfsImageHosts().map((hostname) => ({
+            protocol: 'https' as const,
+            hostname,
+        })),
+    },
+
     webpack: (config, { isServer }) => {
         config.externals.push('pino-pretty', 'lokijs', 'encoding');
 

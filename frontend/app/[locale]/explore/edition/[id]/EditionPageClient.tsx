@@ -28,6 +28,7 @@ import { ipfsToHttp } from '@/app/utils/file';
 import { getCategoryLabel } from '@/app/utils/categories';
 import ShareMenu from '@/components/shared/ShareMenu';
 import { useClientUrl } from '@/app/hooks/useClientUrl';
+import Image from 'next/image';
 
 // =========================================================================
 // Types
@@ -285,10 +286,17 @@ export default function EditionPageClient() {
                 {images.length > 0 ? (
                     <>
                         <div className="w-full bg-[var(--border-soft)] flex items-center justify-center" style={{ minHeight: '50vh' }}>
-                            <img
+                            <Image
                                 src={ipfsToHttp(images[selectedImage])}
                                 alt={t('imageAlt', { n: selectedImage + 1, title: edition.title })}
-                                className="max-w-full max-h-[75vh] object-contain"
+                                // The natural size is unknown — these only tell the
+                                // optimizer what to generate; `w-auto h-auto` leaves the
+                                // displayed size to the CSS below, as before.
+                                width={1600}
+                                height={1200}
+                                sizes="100vw"
+                                priority
+                                className="max-w-full max-h-[75vh] w-auto h-auto object-contain"
                             />
                         </div>
                         {images.length > 1 && (
@@ -305,9 +313,12 @@ export default function EditionPageClient() {
                                                 : 'border-[var(--border)] opacity-60 hover:opacity-100'
                                         }`}
                                     >
-                                        <img
+                                        <Image
                                             src={ipfsToHttp(img)}
                                             alt=""
+                                            width={64}
+                                            height={64}
+                                            sizes="64px"
                                             className="w-full h-full object-cover"
                                         />
                                     </button>
@@ -425,9 +436,12 @@ export default function EditionPageClient() {
 
                 <div className="flex items-start gap-5 flex-wrap">
                     {artistIPFSData?.logo ? (
-                        <img
+                        <Image
                             src={ipfsToHttp(artistIPFSData.logo)}
                             alt={t('logoAlt', { name: artist.name })}
+                            width={64}
+                            height={64}
+                            sizes="64px"
                             className="w-16 h-16 object-contain border border-[var(--border-soft)] bg-[var(--bg-page)] flex-shrink-0"
                         />
                     ) : (

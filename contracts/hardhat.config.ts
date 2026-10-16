@@ -45,20 +45,18 @@ export default defineConfig({
             gasPrice: "auto",
         },
     },
-    etherscan: {
-        apiKey: {
-            base: process.env.BASESCAN_API_KEY || "",
-            sepolia: process.env.ETHERSCAN_API_KEY || "",
+    // Hardhat 3 reads verification settings from `verify`, not from the
+    // top-level `etherscan` block that Hardhat 2 used — and it talks to the
+    // Etherscan v2 API, which covers every chain with a single key, so the
+    // per-network keys and `customChains` entry are no longer needed.
+    verify: {
+        etherscan: {
+            apiKey: process.env.BASESCAN_API_KEY || "",
         },
-        customChains: [
-            {
-                network: "base",
-                chainId: 8453,
-                urls: {
-                    apiURL: "https://api.basescan.org/api",
-                    browserURL: "https://basescan.org"
-                }
-            }
-        ]
+        // Blockscout answers 403 for this project; Etherscan is the source of
+        // truth for Base, so the plugin is told not to try it.
+        blockscout: {
+            enabled: false,
+        },
     },
 });

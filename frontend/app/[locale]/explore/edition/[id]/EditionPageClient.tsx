@@ -27,6 +27,7 @@ import { getFromIPFSGateway } from '@/app/utils/ipfs';
 import { ipfsToHttp } from '@/app/utils/file';
 import { getCategoryLabel } from '@/app/utils/categories';
 import ShareMenu from '@/components/shared/ShareMenu';
+import ImageLightbox from '@/components/shared/ImageLightbox';
 import { useClientUrl } from '@/app/hooks/useClientUrl';
 import Image from 'next/image';
 
@@ -107,6 +108,7 @@ export default function EditionPageClient() {
         loadingIPFS: false,
     });
     const [selectedImage, setSelectedImage] = useState<number>(0);
+    const [zoomOpen, setZoomOpen] = useState(false);
 
     useEffect(() => {
         const fetchEditionDetails = async () => {
@@ -285,7 +287,13 @@ export default function EditionPageClient() {
                 {/* Main image */}
                 {images.length > 0 ? (
                     <>
-                        <div className="w-full bg-[var(--border-soft)] flex items-center justify-center" style={{ minHeight: '50vh' }}>
+                        <button
+                            type="button"
+                            onClick={() => setZoomOpen(true)}
+                            aria-label={t('zoomOpen')}
+                            className="group w-full bg-[var(--border-soft)] flex items-center justify-center cursor-zoom-in border-0 p-0"
+                            style={{ minHeight: '50vh' }}
+                        >
                             <Image
                                 src={ipfsToHttp(images[selectedImage])}
                                 alt={t('imageAlt', { n: selectedImage + 1, title: edition.title })}
@@ -298,7 +306,7 @@ export default function EditionPageClient() {
                                 priority
                                 className="max-w-full max-h-[75vh] w-auto h-auto object-contain"
                             />
-                        </div>
+                        </button>
                         {images.length > 1 && (
                             <div className="flex gap-2 p-4 border-t border-[var(--border-soft)] overflow-x-auto">
                                 {images.map((img, i) => (
@@ -562,6 +570,21 @@ export default function EditionPageClient() {
                     </div>
                 </div>
             </div>
+
+            {zoomOpen && images.length > 0 && (
+                <ImageLightbox
+                    images={images.map(ipfsToHttp)}
+                    index={selectedImage}
+                    onIndexChange={setSelectedImage}
+                    onClose={() => setZoomOpen(false)}
+                    altFor={(i) => t('imageAlt', { n: i + 1, title: edition.title })}
+                    labels={{
+                        close: t('zoomClose'),
+                        previous: t('zoomPrevious'),
+                        next: t('zoomNext'),
+                    }}
+                />
+            )}
         </Shell>
     );
 }

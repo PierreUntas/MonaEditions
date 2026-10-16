@@ -43,8 +43,13 @@ Les œuvres d'art certifiées via la plateforme restent la propriété intellect
 
 Les certificats émis par Mona Editions sont matérialisés par des jetons ERC-1155 émis sur le réseau Base mainnet par les contrats suivants :
 
-- ArtworkRegistry : `0xc17d2c192290D72828345486a33892Ac805010fE`
-- ArtworkTokenization : `0xE3D0F890B474799B661E6a66eB9950BFC2216F49`
+- ArtworkRegistry : `0x4f093952cF2377eFa05BC15E32ffFF63Cd4Fc208`
+- ArtworkTokenization : `0xF4D0B110015E4Cb131Ac294E3384A8332F9e8Ae6`
+
+Les éditions créées avant le 22 juin 2026 sont ancrées sur une première
+instance de ces mêmes contrats, qui reste consultable : ArtworkRegistry
+`0xc17d2c192290D72828345486a33892Ac805010fE`, ArtworkTokenization
+`0xE3D0F890B474799B661E6a66eB9950BFC2216F49`.
 
 Ces contrats sont publics et leur code est vérifié sur Basescan. Une fois minté, un certificat ne peut être modifié ni supprimé par l'éditeur. La nature décentralisée de la blockchain implique que les données enregistrées sont publiques et permanentes.
 

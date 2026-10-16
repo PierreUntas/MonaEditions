@@ -48,15 +48,28 @@ npx hardhat verify --network base <address>        # Verify on Basescan
 
 **Key security**: `claimedKeys[editionId][keccak256(secretKey)]` prevents replay. ReentrancyGuard on mint.
 
-**Deployed addresses** (Base mainnet — v2, current production):
-- `ArtworkRegistry`: `0xc17d2c192290D72828345486a33892Ac805010fE`
-- `ArtworkTokenization`: `0xE3D0F890B474799B661E6a66eB9950BFC2216F49`
+**Deployed addresses** (Base mainnet — v2, current production, deployed 2026-06-22):
+- `ArtworkRegistry`: `0x4f093952cF2377eFa05BC15E32ffFF63Cd4Fc208`
+- `ArtworkTokenization`: `0xF4D0B110015E4Cb131Ac294E3384A8332F9e8Ae6`
+
+These are the addresses `frontend/.env` uses in production and the ones
+recorded in `ignition/deployments/chain-8453/deployed_addresses.json` — the
+authoritative pair. Check them there rather than here if the two ever disagree.
 
 The v2 differs from v1 by removing the `hasBeenClaimed` flag and replacing
 the metadata-immutability invariant with a balance-based check (the artist
 must still hold the full initial supply to update metadata). It also emits
 the standard EIP-1155 `URI` event on mint and metadata update so external
 marketplaces auto-index changes. See `docs/technique/06-evolution-v2.md`.
+
+**Superseded v2 deployment** (Base mainnet, deployed 2026-06-14, replaced after
+8 days): `ArtworkRegistry` `0xc17d2c192290D72828345486a33892Ac805010fE`,
+`ArtworkTokenization` `0xE3D0F890B474799B661E6a66eB9950BFC2216F49`.
+
+Same code as the current pair, not an earlier version: the two tokenization
+contracts are byte-identical on-chain, and the two registries differ only in
+the tokenization address each embeds as an immutable. Anything minted against
+this pair still lives there — it is a separate instance, not an upgrade.
 
 **Legacy addresses** (Base mainnet — v1, kept on-chain for existing certificates):
 - `ArtworkRegistry` v1: `0x157DbA323117DC54A7907E55d0cA7553974E79a5`
